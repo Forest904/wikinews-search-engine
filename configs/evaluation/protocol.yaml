@@ -1,5 +1,7 @@
 # Protocollo progettato, non ancora eseguito — vedi docs/prd.md e docs/roadmap.md.
-version: v1
+version: m5-draft-1
+status: draft
+silver_mode: codex_chat
 topics_target: 40
 development_topics_target: 24
 test_topics_target: 16

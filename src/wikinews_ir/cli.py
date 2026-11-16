@@ -58,6 +58,8 @@ def seed_demo(settings: Settings | None = None) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Wikinews IR CLI")
     sub = parser.add_subparsers(dest="command", required=True)
+    from wikinews_ir.evaluation.cli import configure, dispatch
+    configure(sub)
     sub.add_parser("seed-demo", help="Carica solo le fixture sintetiche")
     corpus = sub.add_parser("corpus", help="Audit e preprocessing offline del dump")
     commands = corpus.add_subparsers(dest="corpus_command", required=True)
@@ -85,6 +87,16 @@ def main() -> None:
     from wikinews_ir.retrieval.profiles import SUPPORTED_PROFILES
     export.add_argument("--profiles", nargs="+", choices=SUPPORTED_PROFILES, default=SUPPORTED_PROFILES)
     args = parser.parse_args()
+    if args.command == "benchmark":
+        import httpx
+        try:
+            result = dispatch(args)
+        except (ValueError, OSError, KeyError, TypeError, httpx.HTTPError) as exc:
+            parser.exit(1, f"Benchmark: {exc}\n")
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        if result.get("valid") is False:
+            parser.exit(1, "Benchmark: validazione fallita\n")
+        return
     if args.command in {"index", "runs"}:
         from elasticsearch.exceptions import ApiError, TransportError
 

@@ -3,10 +3,12 @@
 Monorepo sperimentale per un motore di ricerca **lessicale** delle notizie italiane
 Wikinotizie, basato su Elasticsearch, con valutazione IR riproducibile.
 
-> **Stato attuale:** **M4 completata e verificata localmente**: 11.032 articoli,
+> **Stato attuale:** **M5-A completata e verificata localmente**: 11.032 articoli,
 > profili E0–E4, highlight, paginazione, dettaglio ed export TREC riproducibile.
 > Vedi [report M4](docs/m4-validation.md) e [roadmap](docs/roadmap.md).
-> Benchmark e valutazione restano M5/M6; CI remota da verificare dopo il push.
+> Infrastruttura benchmark e pacchetti silver per chat Codex disponibili:
+> [guida](docs/evaluation.md), [verifica M5-A](docs/m5a-validation.md).
+> UI annotazione, raccolta reale e metriche restano M5-B/D e M6; CI remota da verificare dopo il push.
 
 ## Documentazione di progetto
 

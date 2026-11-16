@@ -31,7 +31,7 @@ Si adotta un **monorepo modulare**: un solo codice Python, un servizio Elasticse
 | Test/quality | pytest, Ruff | Unit, integration e lint |
 | Infra | Docker Compose | Avvio locale Elasticsearch e, se opportuno, API |
 | CI | GitHub Actions | Lint e unit test; integration test su fixture dove sostenibile |
-| LLM Judge | Adapter Python sostituibile | Modello configurabile; esecuzione **offline** dal path applicativo |
+| LLM Judge | Pacchetto e validatore Python, nuova chat Codex | Modello scelto dall'operatore; nessun client API LLM |
 | Wikinotizie | Adapter HTTP/Search API | Baseline esterna; dati online riconciliati con snapshot |
 
 **Pin delle versioni (M0 completata):** Elasticsearch 9.5.6 e client Python 9.5.1
@@ -92,13 +92,15 @@ wikinews-search-engine/
 │   │   ├── query_builder.py      # Elasticsearch DSL controllata
 │   │   └── profiles.py           # validazione profili e opzioni
 │   ├── evaluation/
-│   │   ├── pooling.py            # merge top-k e candidate provenance
-│   │   ├── annotation.py         # qrels/giudizi/manual-review
-│   │   ├── metrics.py            # metriche ir-measures
-│   │   └── experiments.py        # generazione run e confronto
+│   │   ├── benchmark.py          # contratti operativi, pool, selezione, pacchetti
+│   │   ├── contracts.py          # schemi topic, documenti, giudizi
+│   │   ├── artifacts.py          # manifest e scritture atomiche
+│   │   ├── cli.py                # comandi benchmark
+│   │   ├── silver.py             # workspace Codex, import e qrels
+│   │   ├── portable_validator.py # validatore standalone del batch
+│   │   └── runs.py               # export E0–E4; metriche in M6
 │   ├── adapters/
-│   │   ├── llm_judge.py          # modello configurabile + output strutturato
-│   │   └── wikinews_search.py    # ricerca esterna e snapshot risultati
+│   │   └── wikimedia.py          # acquisizione/replay ranking esterno (M5-A)
 │   ├── web/
 │   │   ├── templates/           # Jinja2
 │   │   └── static/              # CSS/JS
@@ -322,9 +324,11 @@ L'orchestrator invoca gli stessi profili del `RetrievalEngine`, raccoglie top-k,
 
 Input query testuale; output risultati con titolo, URL, ordine e identificativo se disponibile. Ricondurre al `document_id` del dump, annotando risultati assenti. Salvare data di raccolta e risposta normalizzata. **Non convertire rank esterno in etichette di rilevanza**.
 
-### 9.4 Adapter LLM
+### 9.4 Silver tramite chat Codex separata
 
-Interfaccia astratta `judge(topic, article) -> judgment`; prompt/rubrica versionati, output validato contro uno schema, motivazione ed evidenza testuale, possibilità di astensione e retry controllati. L'LLM non riceve i ranking dei motori o il giudizio umano, non esplora autonomamente il Web e non modifica le gold labels. Credenziali e costi sono confinati all'esecuzione offline.
+`benchmark silver prepare` crea un workspace autonomo con topic, rubriche, testi congelati, prompt, schema e validatore Python standalone. L'utente apre una nuova chat Codex in VS Code e avvia manualmente l'annotazione; non sono implementati client API LLM. Il pacchetto non contiene gold, ranking o proposte precedenti. Il prompt vieta consultazione del Web e di materiali esterni, impone evidenze e astensioni motivate, salvataggi progressivi e conservazione delle correzioni.
+
+`silver validate/import` verifica completezza, identità, citazioni e integrità degli input, conserva output originali e normalizzati e registra modello dichiarato (o `unknown`), operatore ed esecuzione. I checksum non certificano la correttezza semantica. La separazione della chat è organizzativa, non una sandbox; sono riproducibili artefatti e validazione, non necessariamente ragionamento ed etichette. Il gold resta un flusso umano distinto. Contratti e comandi in [evaluation.md](evaluation.md).
 
 ### 9.5 Metriche e report
 
@@ -357,7 +361,7 @@ L'avvio della Web UI per la demo non deve reimportare l'intero dump: gli indici 
 - Log e messaggi di errore comprensibili, senza esporre credenziali o stack trace in UI.
 - Gestire timeout e indisponibilità Elasticsearch con errore controllato, non con crash della pagina.
 - Non rendere i contenuti raw HTML di Wikinews direttamente eseguibili nella pagina.
-- Le API esterne (Wikinotizie/LLM) non sono necessarie per usare la ricerca dopo l'indicizzazione.
+- La ricerca Wikinotizie live e la chat Codex per il silver non sono necessarie per usare la ricerca dopo l'indicizzazione.
 - Verificare e documentare gli obblighi di attribuzione/licenza del dump prima di pubblicare estratti o fixture derivate.
 
 ## 12. Test, CI e osservabilità
@@ -392,7 +396,7 @@ in questo documento e nel PRD.
 - Identificazione affidabile della data di pubblicazione.
 - Politica fuzzy e phrase chiusa in M4 (sezione 17); sinonimi rinviati.
 - Dimensioni reali del pooling e gestione metrica dei non giudicati.
-- Disponibilità, modello e costi del giudice LLM; uso configurabile e non bloccante.
+- Modello scelto nella chat Codex, calibrazione del prompt e budget di revisione; produzione silver non bloccante per sviluppo e pubblicazione.
 - Prestazioni, risorse e comportamento di fallback sulla macchina della demo.
 
 Queste sono **questioni aperte documentate**, non licenze di modificare il comportamento del sistema senza tracciamento.

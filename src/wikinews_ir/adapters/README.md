@@ -1,4 +1,6 @@
-# Adapter esterni — pianificati per M5
+# Adapter Wikimedia — M5-A
 
-LLM judge offline e query al motore Wikinotizie con riconciliazione degli ID
-rispetto allo snapshot. Non sono integrati nell'API Web.
+`wikimedia.py` acquisisce o riproduce ranking Wikinotizie e riconcilia page ID
+con il corpus M2. Test HTTP simulati, nessuna dipendenza dal percorso Web.
+Il silver usa pacchetti e validazione in `evaluation/silver.py`, con una nuova
+chat Codex avviata manualmente: nessun adapter API LLM.
