@@ -13,9 +13,10 @@ Wikinotizie, basato su Elasticsearch, con valutazione IR riproducibile.
 >
 > **M5-C: preparazione locale pronta.** Pilot reale da 24 coppie, timer e tripla
 > calibrazione, 40 topic in bozza e strumenti di budget/congelamento. Le valutazioni
-> umane e il congelamento effettivo restano pendenti:
+> umane e il congelamento effettivo restano pendenti. Prima prova silver indipendente
+> completata: **24 giudizi**, modello dichiarato GPT-6.0-Astra, validati e importati:
 > [guida pilot](docs/m5c-pilot.md), [verifica M5-C](docs/m5c-validation.md).
-> Pubblicazione, pilot, raccolta reale e metriche restano M7-A, M5-C/D e M6;
+> Pubblicazione, completamento pilot, raccolta di produzione e metriche restano M7-A, M5-C/D e M6;
 > CI remota da verificare dopo il push.
 
 ## Documentazione di progetto

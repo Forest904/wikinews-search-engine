@@ -11,5 +11,6 @@ workflow silver in una nuova chat Codex e qrels separati. `portable_validator.py
 viene copiato nel workspace del batch e usa solo la libreria standard Python.
 Nessun client API LLM. Documentazione: `docs/evaluation.md`.
 La UI M5-B è disponibile in `/annotate` e `/coordinate`, con guida in `docs/annotation.md`.
-Raccolta reale, metriche con ir-measures e report sperimentali restano successivi.
-Non sono ancora presenti giudizi o metriche sperimentali reali.
+Importate le prime 24 silver reali di calibrazione (GPT-6.0-Astra dichiarato):
+diario in `docs/m5c-validation.md`. Raccolta di produzione, confronto umano/silver,
+metriche con ir-measures e report sperimentali restano successivi.

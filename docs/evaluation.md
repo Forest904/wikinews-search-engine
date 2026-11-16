@@ -5,9 +5,10 @@ La preparazione locale M5-C è ora disponibile: [pilot e congelamento](m5c-pilot
 aggiungono misurazione e gate; il protocollo reale rimane draft fino al pilot umano.
 
 M5-A implementa contratti, pooling e pacchetti di giudizio. Il protocollo è **draft**:
-non esistono ancora gold o silver reali prodotti da questa pipeline. M5-B aggiunge
+sono state importate le prime **24 silver di calibrazione**, senza gold consolidato
+o confronto umano/silver; [diario e risultati](m5c-validation.md#diario--prima-raccolta-silver-indipendente-16-novembre-2026). M5-B aggiunge
 la [UI di annotazione](annotation.md), verificata localmente; M5-C calibrazione e
-congelamento; M5-D raccoglierà i giudizi. Metriche e report
+congelamento; M5-D raccoglierà i giudizi di produzione. Metriche e report
 sperimentali rimangono M6. Evidenze locali: [m5a-validation.md](m5a-validation.md).
 
 ## Identità e formati

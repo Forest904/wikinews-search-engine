@@ -31,7 +31,7 @@ Regole di esecuzione:
 | M4 — Retrieval avanzato | E2/E3/E4 e possibili estensioni | M3 | Completato localmente: E2/E3/E4, highlight e baseline invariate |
 | M5-A — Infrastruttura benchmark | Topic, pooling, schema giudizi, pacchetti silver Codex ed export | M3, M4 | Completata localmente su fixture; 48 coppie esterne riconciliate, nessun gold/silver reale |
 | M5-B — Strumento di annotazione | Pagina condivisa, assegnazioni e revisione | M5-A | Completata localmente su fixture: flusso multiutente, persistenza, revisione ed export verificati |
-| M5-C — Pilot e congelamento | Calibrazione, budget, topic e protocollo congelati | M5-A, M5-B; M7-A per pilot online | Preparazione locale pronta; tempi umani e congelamento ancora pendenti |
+| M5-C — Pilot e congelamento | Calibrazione, budget, topic e protocollo congelati | M5-A, M5-B; M7-A per pilot online | 24 silver di calibrazione importate; confronto umano, tempi e congelamento pendenti |
 | M5-D — Raccolta e consolidamento | Gold/silver separati e pool tracciabili | M5-C; M7-A per raccolta condivisa | Copertura prevista raggiunta e qualità annotazione controllata |
 | M6-A — Implementazione valutazione | Metriche, confronti e generazione report | M5-A | Calcoli verificati su fixture con risultati attesi |
 | M6-B — Esperimenti reali | Tuning development, confronto finale, error analysis | M4, M6-A; gold development per tuning, M5-D per finale | Test gold usato una volta secondo protocollo congelato |
@@ -212,7 +212,7 @@ dopo il push; selezione del profilo finale riservata a M5/M6.
 - [x] Implementare export gold/silver separati, checksum e manifest; astensioni e coppie non giudicate non diventano grado `0`.
 - [x] Testare deduplicazione del pool, split per famiglia, citazioni, astensioni, separazione delle fonti ed export su fixture.
 
-**Gate M5-A:** contratti e pipeline funzionano su fixture senza gold reale. L'esecuzione silver reale e il benchmark definitivo restano attività successive.
+**Gate M5-A:** contratti e pipeline funzionano su fixture senza gold reale. La prima esecuzione silver reale è successivamente documentata nel [diario M5-C](m5c-validation.md); il benchmark definitivo resta pendente.
 
 **Stato: M5-A completata e verificata localmente (2026-11-16).** Quattro topic adattati come bozze di calibrazione; 48/48 coppie presenti con revisione corrispondente, ma testo pulito diverso in tutti i casi. Nessuna etichetta importata. Workflow e limiti in [evaluation.md](evaluation.md); evidenze in [m5a-validation.md](m5a-validation.md). UI successivamente completata in M5-B; raccolta reale ancora da eseguire.
 
@@ -242,6 +242,11 @@ reale raccolto. Guida in [annotation.md](annotation.md), evidenze in
 [ADR 0006](decisions/0006-collaborative-annotation.md). CI remota da verificare dopo il push.
 
 ### M5-C — Pilot, budget e congelamento
+
+- [x] Prima prova silver indipendente su 24 coppie di calibrazione: GPT-6.0-Astra
+  dichiarato, validazione/import/export completati il 16 novembre 2026; 13 gradi 2,
+  2 gradi 1, 9 gradi 0, nessuna astensione. [Diario](m5c-validation.md).
+  Questo risultato non completa la raccolta di produzione M5-D.
 
 - [x] Costruire **pilot di 4 topic**, uno per tipologia, usando strategia ibrida corpus/user-driven e riconciliando gli spunti esterni con il corpus M2.
 - [ ] Far giudicare indipendentemente un piccolo insieme comune ai tre validatori, poi discutere i disaccordi e correggere la rubrica prima della produzione.

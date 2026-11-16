@@ -5,6 +5,11 @@ La preparazione locale non certifica il gate M5-C. Servono le valutazioni dei tr
 validatori, la discussione, misure complete e un piano di produzione sostenibile.
 La pubblicazione online rimane M7-A.
 
+Aggiornamento 16 novembre 2026: completata la prima prova silver indipendente,
+24 giudizi con modello dichiarato GPT-6.0-Astra, validati e importati.
+[Diario, risultati e artefatti](m5c-validation.md#diario--prima-raccolta-silver-indipendente-16-novembre-2026).
+Il confronto con i validatori e il congelamento restano pendenti.
+
 ## Materiali pronti
 
 - `benchmarks/topics/calibration-draft.jsonl`: quattro topic, uno per tipologia.
