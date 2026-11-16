@@ -1,0 +1,5 @@
+# Profilo implementato nella vertical slice; tutti i parametri saranno versionati.
+id: bm25
+index_family: standard
+query_type: multi_match
+fields: [title, body]

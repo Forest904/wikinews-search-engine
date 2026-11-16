@@ -1,0 +1,32 @@
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+*.egg-info/
+build/
+dist/
+
+# Local artifacts and raw dump
+/data/raw/*
+/data/processed/*
+/experiments/runs/*
+/experiments/reports/*
+!/data/raw/.gitkeep
+!/data/processed/.gitkeep
+!/experiments/runs/.gitkeep
+!/experiments/reports/.gitkeep
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/

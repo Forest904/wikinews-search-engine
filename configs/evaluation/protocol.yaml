@@ -1,0 +1,9 @@
+# Protocollo progettato, non ancora eseguito — vedi docs/prd.md e docs/roadmap.md.
+version: v1
+topics_target: 40
+development_topics_target: 24
+test_topics_target: 16
+relevance_levels: [0, 1, 2]
+qrels_sources: [human_gold, llm_silver]
+external_baseline: wikinews_ranked_results
+metrics: [nDCG@10, P@5]

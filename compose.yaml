@@ -1,0 +1,37 @@
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.6
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:?Define ELASTIC_PASSWORD in .env}
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    ports:
+      - "${ES_PORT:-127.0.0.1:9200}:9200"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -u elastic:$$ELASTIC_PASSWORD http://localhost:9200/_cluster/health >/dev/null"]
+      interval: 15s
+      timeout: 10s
+      retries: 15
+      start_period: 45s
+    restart: unless-stopped
+
+  app:
+    build: .
+    profiles: ["full"]
+    environment:
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:?Define ELASTIC_PASSWORD in .env}
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - ELASTICSEARCH_INDEX=wikinews_standard_v1
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+volumes:
+  elasticsearch-data:

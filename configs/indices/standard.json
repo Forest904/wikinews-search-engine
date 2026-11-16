@@ -1,0 +1,16 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "analysis": {"analyzer": {"wikinews_standard": {"type": "standard"}}}
+  },
+  "mappings": {
+    "dynamic": "strict",
+    "properties": {
+      "document_id": {"type": "keyword"},
+      "title": {"type": "text", "analyzer": "standard"},
+      "body": {"type": "text", "analyzer": "standard"},
+      "url": {"type": "keyword", "index": false}
+    }
+  }
+}

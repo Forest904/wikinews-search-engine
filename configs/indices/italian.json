@@ -1,0 +1,12 @@
+{
+  "settings": {"number_of_shards": 1, "number_of_replicas": 0},
+  "mappings": {
+    "dynamic": "strict",
+    "properties": {
+      "document_id": {"type": "keyword"},
+      "title": {"type": "text", "analyzer": "italian"},
+      "body": {"type": "text", "analyzer": "italian"},
+      "url": {"type": "keyword", "index": false}
+    }
+  }
+}

@@ -1,0 +1,16 @@
+:root {font-family:system-ui,sans-serif; color:#182434; background:#f7f9fb;}
+.container {max-width:800px; margin:0 auto; padding:42px 20px 72px;}
+.eyebrow {text-transform:uppercase; letter-spacing:.08em; font-size:12px; color:#456a9d;}
+h1 {font-size:clamp(28px,5vw,42px); margin-bottom:8px;}
+.muted {color:#5b6878;}
+form {margin:32px 0 20px; padding:20px; border:1px solid #dae2ea; background:white; border-radius:12px;}
+label {display:block; font-weight:600; margin:10px 0;}
+.search-row {display:flex; gap:10px;}
+input {flex:1; min-width:0;}
+input,select,button {font:inherit; padding:12px; border-radius:8px; border:1px solid #bcc7d5;}
+button {color:white; background:#2359a7; border-color:#2359a7; cursor:pointer;}
+button:hover {background:#174787;}
+#results {padding-left:22px;}
+#results li {padding:18px 0; border-bottom:1px solid #dbe2ea;}
+#results a {font-size:1.1rem; font-weight:600; color:#1b559b;}
+@media(max-width:540px) {.search-row {flex-direction:column;}}
