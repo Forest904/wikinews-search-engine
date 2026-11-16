@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
@@ -15,11 +15,13 @@ from wikinews_ir.retrieval.engine import (
 from wikinews_ir.retrieval.profiles import SUPPORTED_PROFILES
 
 router = APIRouter()
-templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "web" / "templates"))
+templates = Jinja2Templates(
+    directory=str(Path(__file__).resolve().parent.parent / "web" / "templates")
+)
 
 
-def engine() -> RetrievalEngine:
-    return RetrievalEngine()
+def engine(request: Request) -> RetrievalEngine:
+    return request.app.state.engine
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -28,8 +30,8 @@ def home(request: Request):
 
 
 @router.get("/api/health")
-def health():
-    connected = engine().check_ready()
+def health(backend: RetrievalEngine = Depends(engine)):
+    connected = backend.check_ready()
     if not connected:
         raise HTTPException(status_code=503, detail={"app": "ok", "elasticsearch": "unavailable"})
     return {"app": "ok", "elasticsearch": "ready"}
@@ -37,6 +39,7 @@ def health():
 
 @router.get("/api/search", response_model=SearchResponse)
 def search(
+    backend: RetrievalEngine = Depends(engine),
     q: str = Query(min_length=1, max_length=250),
     profile: str = "bm25",
     limit: int = Query(default=10, ge=1, le=100),
@@ -46,7 +49,7 @@ def search(
     if not q.strip():
         raise HTTPException(status_code=422, detail="Query vuota")
     try:
-        return engine().search(query=q, profile=profile, limit=limit)
+        return backend.search(query=q, profile=profile, limit=limit)
     except SearchIndexMissing as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except RetrievalUnavailable as exc:

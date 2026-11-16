@@ -16,7 +16,7 @@ Wikinotizie, basato su Elasticsearch, con valutazione IR riproducibile.
 ## Prerequisiti
 
 - Python **3.12**
-- [`uv`](https://docs.astral.sh/uv/) **0.10.0** (o compatibile con il lockfile)
+- [`uv`](https://docs.astral.sh/uv/) **0.12.9** (o compatibile con il lockfile)
 - Docker Engine / Docker Desktop con Docker Compose v2
 - Idealmente almeno 4 GB disponibili per Docker in locale
 
@@ -25,39 +25,50 @@ Wikinotizie, basato su Elasticsearch, con valutazione IR riproducibile.
 ```bash
 cp .env.example .env
 # Modifica ELASTIC_PASSWORD in .env: usa una password locale non banale.
-uv lock
-uv sync
+uv sync --locked
 
-docker compose up -d elasticsearch
+docker compose up -d --wait elasticsearch
 # Verifica che Elasticsearch sia diventato healthy: docker compose ps
-uv run wikinews-ir seed-demo
-uv run uvicorn wikinews_ir.api.main:app --reload
+uv run --locked uvicorn wikinews_ir.api.main:app --reload
 ```
 
 Apri <http://127.0.0.1:8000/> per la pagina iniziale, <http://127.0.0.1:8000/docs>
 per OpenAPI, <http://127.0.0.1:8000/api/health> per lo stato dei servizi.
-Cerca nell'indice di fixture digitando una parola presente nei cinque articoli
-sintetici. Nessuna notizia del dump reale viene caricata in questo passaggio.
+La homepage funziona anche senza backend; health restituisce 200 con backend
+raggiungibile e autenticato, 503 altrimenti. Non richiede un indice.
+Per abilitare la demo opzionale, dalla checkout locale esegui
+`uv run --locked wikinews-ir seed-demo`, poi cerca una parola nei cinque articoli
+sintetici. Il comando seed usa i file `configs/` e `tests/` della checkout;
+non ? previsto nel container applicativo o nell'installazione del solo wheel.
 
 **Avvio opzionale full Docker:** dopo aver creato `.env`,
-`docker compose --profile full up -d --build` avvia anche il servizio Web.
+`docker compose --profile full up -d --build --wait` avvia anche il servizio Web.
 Questa modalità usa la stessa password di Elasticsearch.
 
 ## Qualità del codice
 
 ```bash
-uv run ruff check .
-uv run pytest -q
+uv run --locked ruff check .
+uv run --locked pytest -q
 ```
 
-`uv.lock` **non è ancora incluso**: non è stato possibile risolvere le dipendenze
-nell’ambiente di generazione (accesso al package index non disponibile).
-Il comando `uv lock`, eseguito sulla tua macchina con accesso a PyPI, produrrà
-il vero lockfile da committare prima della prima release. La build Docker
-iniziale usa `pip install .` e sarà convertita a una build bloccata dopo M0.
+`uv.lock` ? versionato: `uv sync --locked` fallisce se manifest e lockfile divergono.
+Usare `uv lock` solo per aggiornamenti intenzionali delle dipendenze.
+La CI esegue lint e unit test su Ubuntu e Windows con Python 3.12.
 
-I test standard non richiedono Docker; i test di integrazione con Elasticsearch
-saranno aggiunti nelle milestone successive.
+I test standard non richiedono Docker. Per il collaudo autenticato:
+
+```bash
+RUN_INTEGRATION=1 uv run --locked pytest tests/integration -q
+```
+
+In PowerShell:
+
+```powershell
+$env:RUN_INTEGRATION = "1"
+uv run --locked pytest tests/integration -q
+Remove-Item Env:RUN_INTEGRATION
+```
 
 ## Struttura essenziale
 
@@ -84,7 +95,7 @@ Le fixture sono sintetiche, non un campione reale.
 
 ## Scelte e limiti di questo scaffold
 
-- Immagine Elasticsearch **9.5.6**, pin iniziale da verificare nell'ambiente target.
+- Immagine Elasticsearch **9.5.6**, client Python **9.5.1** bloccato nel lockfile.
 - Trasporto HTTP con basic auth **solo su loopback**, per sviluppo locale.
   Non esporre questo setup su Internet: configurare TLS e hardening per altri ambienti.
 - `GET /api/search` supporta inizialmente il solo profilo `bm25`; gli altri file
@@ -99,3 +110,22 @@ Le fixture sono sintetiche, non un campione reale.
 La licenza del **codice** non è ancora stata scelta. Le condizioni di riutilizzo
 **dei contenuti Wikimedia** sono distinte e dovranno essere rispettate nell'eventuale
 redistribuzione di dati. Il repository non include il dump né articoli del corpus.
+
+## Setup Windows e comandi operativi
+
+In PowerShell, sostituire `cp` con `Copy-Item .env.example .env`, quindi modificare
+la password nel file. Gli altri comandi `uv` e `docker compose` sono identici.
+Make ? opzionale: `make setup`, `up`, `down`, `serve`, `lint`, `test`, `check`
+incapsulano i comandi documentati. `docker compose down` conserva il volume;
+non usare `down -v` se si vogliono conservare gli indici.
+
+Se Docker non risponde, avviare Docker Desktop e attendere che `docker info`
+riesca. Se Elasticsearch non diventa healthy, controllare `docker compose ps`
+e `docker compose logs elasticsearch`, memoria disponibile e credenziali.
+Cambiare `ELASTIC_PASSWORD` dopo la prima inizializzazione non aggiorna la password
+salvata nel volume: usare le credenziali originarie o la procedura Elastic di reset.
+`ES_PORT` ? una porta numerica (default 9200), sempre pubblicata su 127.0.0.1;
+se cambia, aggiornare anche `ELASTICSEARCH_URL` per l'app eseguita sull'host.
+
+Le decisioni M0 e le evidenze di verifica sono in
+[ADR 0001](docs/decisions/0001-bootstrap.md).

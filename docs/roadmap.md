@@ -38,15 +38,20 @@ Regole di esecuzione:
 
 ### Attività
 
-- [ ] Creare repository GitHub `wikinews-search-engine` (nome di lavoro) e licenza del codice appropriata.
-- [ ] Creare struttura `src/wikinews_ir`, `tests`, `configs`, `data`, `benchmarks`, `experiments`, `docs`.
-- [ ] Inserire i tre documenti iniziali in `docs/` e collegarli dal README.
-- [ ] Inizializzare `pyproject.toml`, ambiente Python 3.12, `uv.lock` e configurazione Ruff/pytest.
-- [ ] Scegliere e fissare una patch Elasticsearch 9.x e client Python compatibile; registrare la decisione.
-- [ ] Creare `compose.yaml` con Elasticsearch single-node, volume persistente, health check e sicurezza locale.
-- [ ] Creare `.env.example`, `.gitignore`, Dockerfile minimo e Makefile con target iniziali.
-- [ ] Implementare app FastAPI minimale con `GET /api/health` e pagina iniziale di servizio.
+- [x] Creare repository GitHub `wikinews-search-engine` (nome di lavoro) e licenza del codice appropriata.
+- [x] Creare struttura `src/wikinews_ir`, `tests`, `configs`, `data`, `benchmarks`, `experiments`, `docs`.
+- [x] Inserire i tre documenti iniziali in `docs/` e collegarli dal README.
+- [x] Inizializzare `pyproject.toml`, ambiente Python 3.12, `uv.lock` e configurazione Ruff/pytest.
+- [x] Scegliere e fissare una patch Elasticsearch 9.x e client Python compatibile; registrare la decisione.
+- [x] Creare `compose.yaml` con Elasticsearch single-node, volume persistente, health check e sicurezza locale.
+- [x] Creare `.env.example`, `.gitignore`, Dockerfile minimo e Makefile con target iniziali.
+- [x] Implementare app FastAPI minimale con `GET /api/health` e pagina iniziale di servizio.
 - [ ] Attivare GitHub Actions per lint e unit test su fixture minime.
+
+**Stato implementazione (2026-11-16):** workflow GitHub Actions aggiornato per
+Ubuntu/Windows e installazione da lockfile; esecuzione remota ancora da verificare
+dopo pubblicazione del commit. Evidenze locali in [ADR 0001](decisions/0001-bootstrap.md).
+La chiusura formale della milestone resta subordinata alla CI remota verde.
 
 ### Deliverable
 

@@ -1,7 +1,13 @@
 """The same retrieval service will be reused by the API and experiments."""
 
 from elasticsearch import Elasticsearch
-from elasticsearch.exceptions import ApiError, ConnectionError as ElasticsearchConnectionError
+from elasticsearch.exceptions import (
+    ApiError,
+    ConnectionTimeout,
+)
+from elasticsearch.exceptions import (
+    ConnectionError as ElasticsearchConnectionError,
+)
 
 from wikinews_ir.config import Settings, get_settings
 from wikinews_ir.models import SearchHit, SearchResponse
@@ -25,10 +31,13 @@ class RetrievalEngine:
             request_timeout=self.settings.elasticsearch_timeout,
         )
 
+    def close(self) -> None:
+        self.client.close()
+
     def check_ready(self) -> bool:
         try:
-            return bool(self.client.ping())
-        except (ElasticsearchConnectionError, ApiError, OSError):
+            return bool(self.client.options(max_retries=0).ping())
+        except (ElasticsearchConnectionError, ConnectionTimeout, ApiError, OSError):
             return False
 
     def search(self, query: str, profile: str = "bm25", limit: int = 10) -> SearchResponse:
@@ -40,7 +49,7 @@ class RetrievalEngine:
                 size=limit,
                 track_total_hits=True,
             )
-        except ElasticsearchConnectionError as exc:
+        except (ElasticsearchConnectionError, ConnectionTimeout) as exc:
             raise RetrievalUnavailable("Elasticsearch non raggiungibile") from exc
         except ApiError as exc:
             if exc.status_code == 404:

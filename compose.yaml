@@ -9,11 +9,11 @@ services:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:?Define ELASTIC_PASSWORD in .env}
       - ES_JAVA_OPTS=-Xms1g -Xmx1g
     ports:
-      - "${ES_PORT:-127.0.0.1:9200}:9200"
+      - "127.0.0.1:${ES_PORT:-9200}:9200"
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS -u elastic:$$ELASTIC_PASSWORD http://localhost:9200/_cluster/health >/dev/null"]
+      test: ["CMD-SHELL", "curl -fsS -u \"elastic:$$ELASTIC_PASSWORD\" \"http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s\" >/dev/null"]
       interval: 15s
       timeout: 10s
       retries: 15

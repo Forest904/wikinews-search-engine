@@ -1,4 +1,3 @@
 # Decision log (ADR)
 
-Gli Architecture Decision Record verranno aggiunti quando una scelta tecnica
-richiederà alternative, motivazioni e conseguenze documentate.
+- [0001 ? Bootstrap M0](0001-bootstrap.md): stack, lockfile, sicurezza locale e health.

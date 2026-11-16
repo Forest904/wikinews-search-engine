@@ -1,5 +1,6 @@
 """Environment-based settings for local development."""
 
+import math
 import os
 from dataclasses import dataclass
 from functools import lru_cache
@@ -15,6 +16,10 @@ class Settings:
     elastic_password: str = ""
     elasticsearch_index: str = "wikinews_standard_v1"
     elasticsearch_timeout: float = 5.0
+
+    def __post_init__(self):
+        if not math.isfinite(self.elasticsearch_timeout) or self.elasticsearch_timeout <= 0:
+            raise ValueError("ELASTICSEARCH_TIMEOUT must be a finite positive number")
 
 
 @lru_cache

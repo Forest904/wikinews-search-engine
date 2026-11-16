@@ -1,18 +1,17 @@
 .PHONY: setup up down serve seed test lint check
 
 setup:
-	uv lock
-	uv sync
+	uv sync --locked
 up:
-	docker compose up -d elasticsearch
+	docker compose up -d --wait elasticsearch
 down:
 	docker compose down
 serve:
-	uv run uvicorn wikinews_ir.api.main:app --reload
+	uv run --locked uvicorn wikinews_ir.api.main:app --reload
 seed:
-	uv run wikinews-ir seed-demo
+	uv run --locked wikinews-ir seed-demo
 test:
-	uv run pytest -q
+	uv run --locked pytest -q
 lint:
-	uv run ruff check .
+	uv run --locked ruff check .
 check: lint test
