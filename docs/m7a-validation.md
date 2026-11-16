@@ -35,8 +35,17 @@ concordato in [ADR 0008](decisions/0008-operational-deployment.md).
 - [ ] Annotazione disponibile con ES arrestato.
 - [ ] Nessuna perdita dopo riavvio app/VPS e aggiornamento.
 - [ ] Copia dal server al PC e ripristino locale di account, giudizi e cronologia.
-- [ ] Memoria, assenza OOM, tempi e salvataggi misurati sulla VPS da 4 GB.
+- [ ] Memoria, assenza OOM, tempi e salvataggi misurati sulla VPS da 2 GB.
 - [ ] Istruzioni consegnate ai validatori e percorso provato prima della raccolta.
 
 Non usare fixture per segnare questi punti come verificati su dati reali.
 Il collaudo usa un archivio separato; il pilot reale resta distinto dal benchmark finale.
+
+## Aggiornamento durante la pubblicazione
+
+L'utente conferma health live e annotazione online, ricerca HTTP 503 su VPS
+da 1 GB / 1 vCPU. I log forniti mostrano Java incapace di allocare 1 GiB,
+uscita 70 e OOMKilled=false: errore di allocazione, non terminazione OOM del kernel.
+Concordato rescale a 2 GB; Compose ridotto a heap 512 MiB / limite ES 1 GiB,
+app 384 MiB e proxy 128 MiB. Rescale, indicizzazione e concorrenza da verificare;
+queste modifiche non dichiarano ancora sostenibile il carico sulla VPS reale.

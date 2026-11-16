@@ -38,7 +38,7 @@ services:
       - /opt/newsfinder/imports:/imports:ro
       - /opt/newsfinder/reports:/reports
     networks: [frontend, backend]
-    mem_limit: 768m
+    mem_limit: 384m
     restart: unless-stopped
     logging: *logging
     healthcheck:
@@ -55,11 +55,11 @@ services:
       xpack.security.http.ssl.enabled: "false"
       xpack.security.transport.ssl.enabled: "false"
       ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?Set Elasticsearch password}
-      ES_JAVA_OPTS: -Xms1g -Xmx1g
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
     networks: [backend]
-    mem_limit: 2g
+    mem_limit: 1g
     restart: unless-stopped
     logging: *logging
     healthcheck:
