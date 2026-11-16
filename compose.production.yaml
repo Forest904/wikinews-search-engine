@@ -37,7 +37,11 @@ services:
       - annotation-data:/app/data/annotation
       - /opt/newsfinder/imports:/imports:ro
       - /opt/newsfinder/reports:/reports
-    networks: [frontend, backend]
+    networks:
+      frontend:
+        # Keep the proxy's trusted address free even when app starts first.
+        ipv4_address: 172.30.71.3
+      backend: {}
     mem_limit: 384m
     restart: unless-stopped
     logging: *logging
