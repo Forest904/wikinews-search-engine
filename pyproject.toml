@@ -47,6 +47,7 @@ select = ["E4", "E7", "E9", "F", "I", "UP"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [
+  "annotation_e2e: requires Chromium, no Elasticsearch or network services",
   "integration: requires a running authenticated Elasticsearch",
   "e2e: requires Chromium and authenticated Elasticsearch",
 ]

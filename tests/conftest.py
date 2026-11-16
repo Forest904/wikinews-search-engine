@@ -11,7 +11,8 @@ from wikinews_ir.retrieval.engine import RetrievalEngine
 
 def pytest_collection_modifyitems(items):
     for item in items:
-        for marker, flag in (("integration", "RUN_INTEGRATION"), ("e2e", "RUN_E2E")):
+        for marker, flag in (("integration", "RUN_INTEGRATION"), ("e2e", "RUN_E2E"),
+                             ("annotation_e2e", "RUN_ANNOTATION_E2E")):
             if marker in item.keywords and os.getenv(flag) != "1":
                 item.add_marker(pytest.mark.skip(reason=f"Set {flag}=1 to run"))
 

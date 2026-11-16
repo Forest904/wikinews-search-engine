@@ -1,6 +1,6 @@
 # Roadmap end-to-end — Wikinews Search Engine
 
-**Versione documento:** 0.2.1 · **Data:** 2026-11-16 · **Stato:** piano approvato come sequenza di riferimento
+**Versione documento:** 0.2.2 · **Data:** 2026-11-16 · **Stato:** piano approvato come sequenza di riferimento
 
 **Documenti correlati:** [PRD](./prd.md) · [Architettura](./architeture.md)
 
@@ -30,7 +30,7 @@ Regole di esecuzione:
 | M3 — Baseline completa | E0/E1 con corpus reale, API/UI stabile | M1, M2 | Completato localmente: 11.032 articoli per indice e run identiche dopo rebuild |
 | M4 — Retrieval avanzato | E2/E3/E4 e possibili estensioni | M3 | Completato localmente: E2/E3/E4, highlight e baseline invariate |
 | M5-A — Infrastruttura benchmark | Topic, pooling, schema giudizi, pacchetti silver Codex ed export | M3, M4 | Completata localmente su fixture; 48 coppie esterne riconciliate, nessun gold/silver reale |
-| M5-B — Strumento di annotazione | Pagina condivisa, assegnazioni e revisione | M5-A | Flusso multiutente e persistenza verificati |
+| M5-B — Strumento di annotazione | Pagina condivisa, assegnazioni e revisione | M5-A | Completata localmente su fixture: flusso multiutente, persistenza, revisione ed export verificati |
 | M5-C — Pilot e congelamento | Calibrazione, budget, topic e protocollo congelati | M5-A, M5-B; M7-A per pilot online | Tempi misurati e regole fissate prima della produzione |
 | M5-D — Raccolta e consolidamento | Gold/silver separati e pool tracciabili | M5-C; M7-A per raccolta condivisa | Copertura prevista raggiunta e qualità annotazione controllata |
 | M6-A — Implementazione valutazione | Metriche, confronti e generazione report | M5-A | Calcoli verificati su fixture con risultati attesi |
@@ -214,24 +214,32 @@ dopo il push; selezione del profilo finale riservata a M5/M6.
 
 **Gate M5-A:** contratti e pipeline funzionano su fixture senza gold reale. L'esecuzione silver reale e il benchmark definitivo restano attività successive.
 
-**Stato: M5-A completata e verificata localmente (2026-11-16).** Quattro topic adattati come bozze di calibrazione; 48/48 coppie presenti con revisione corrispondente, ma testo pulito diverso in tutti i casi. Nessuna etichetta importata. Workflow e limiti in [evaluation.md](evaluation.md); evidenze in [m5a-validation.md](m5a-validation.md). UI e raccolta rimangono da implementare/eseguire.
+**Stato: M5-A completata e verificata localmente (2026-11-16).** Quattro topic adattati come bozze di calibrazione; 48/48 coppie presenti con revisione corrispondente, ma testo pulito diverso in tutti i casi. Nessuna etichetta importata. Workflow e limiti in [evaluation.md](evaluation.md); evidenze in [m5a-validation.md](m5a-validation.md). UI successivamente completata in M5-B; raccolta reale ancora da eseguire.
 
 ### M5-B — Strumento condiviso di annotazione
 
-- [ ] Integrare nell'app una pagina con query, bisogno informativo, inclusioni/esclusioni e rubrica del topic sempre visibili accanto a titolo e testo completo congelato.
-- [ ] Aggiungere ricerca nel testo ed evidenziazione lessicale facoltativa, senza suggerimenti automatici del grado.
-- [ ] Offrire scorciatoie `0/1/2`, astensione e “riprendi dopo” come stati distinti; causali rapide e nota libera per motivare il giudizio.
-- [ ] Acquisire citazioni selezionando passaggi del testo, con riferimenti verificabili alla versione annotata.
-- [ ] Implementare salvataggio confermato, ripresa della sessione, modifica dell'ultimo giudizio e cronologia delle revisioni; non avanzare silenziosamente se il salvataggio fallisce.
-- [ ] Assegnare blocchi per topic, con ordine dei documenti indipendente dal ranking e sovrapposizioni programmate per la doppia annotazione.
-- [ ] Escludere origine, rank, silver e giudizi altrui dai dati restituiti all'annotatore durante la valutazione indipendente, non soltanto dalla visualizzazione.
-- [ ] Predisporre ruoli di annotatore e coordinatore, coda dei dubbi e adjudication da parte del terzo revisore; conservare entrambe le valutazioni iniziali e la decisione finale separatamente.
-- [ ] Esporre interfacce per assegnazioni, salvataggio/versionamento dei giudizi, adjudication ed export, con autorizzazioni e gestione dei salvataggi concorrenti.
-- [ ] Mostrare avanzamento personale e complessivo, astensioni e revisioni pendenti; mantenere giudizi e risultati test fuori dagli strumenti di tuning. L'accesso per annotare il test non autorizza il suo uso sperimentale anticipato.
-- [ ] Rendere la raccolta indipendente da chiamate live a Elasticsearch, Web o LLM, leggendo topic e documenti dai pacchetti congelati.
-- [ ] Verificare il flusso multiutente: isolamento dei giudizi, autorizzazioni, salvataggi simultanei, interruzione/ripresa, modifica e adjudication.
+- [x] Integrare nell'app una pagina con query, bisogno informativo, inclusioni/esclusioni e rubrica del topic sempre visibili accanto a titolo e testo completo congelato.
+- [x] Aggiungere ricerca nel testo ed evidenziazione lessicale facoltativa, senza suggerimenti automatici del grado.
+- [x] Offrire scorciatoie `0/1/2`, astensione e “riprendi dopo” come stati distinti; causali rapide e nota libera per motivare il giudizio.
+- [x] Acquisire citazioni selezionando passaggi del testo, con riferimenti verificabili alla versione annotata.
+- [x] Implementare salvataggio confermato, ripresa della sessione, modifica dell'ultimo giudizio e cronologia delle revisioni; non avanzare silenziosamente se il salvataggio fallisce.
+- [x] Assegnare blocchi per topic, con ordine dei documenti indipendente dal ranking e sovrapposizioni programmate per la doppia annotazione.
+- [x] Escludere origine, rank, silver e giudizi altrui dai dati restituiti all'annotatore durante la valutazione indipendente, non soltanto dalla visualizzazione.
+- [x] Predisporre ruoli di annotatore e coordinatore, coda dei dubbi e adjudication da parte del terzo revisore; conservare entrambe le valutazioni iniziali e la decisione finale separatamente.
+- [x] Esporre interfacce per assegnazioni, salvataggio/versionamento dei giudizi, adjudication ed export, con autorizzazioni e gestione dei salvataggi concorrenti.
+- [x] Mostrare avanzamento personale e complessivo, astensioni e revisioni pendenti; mantenere giudizi e risultati test fuori dagli strumenti di tuning. L'accesso per annotare il test non autorizza il suo uso sperimentale anticipato.
+- [x] Rendere la raccolta indipendente da chiamate live a Elasticsearch, Web o LLM, leggendo topic e documenti dai pacchetti congelati.
+- [x] Verificare il flusso multiutente: isolamento dei giudizi, autorizzazioni, salvataggi simultanei, interruzione/ripresa, modifica e adjudication.
 
 **Gate M5-B:** il percorso completo funziona localmente con più utenti e dati persistenti. È possibile procedere alla pubblicazione M7-A senza attendere annotazioni reali.
+
+**Stato: M5-B completata e verificata localmente (2026-11-16).** UI dedicata desktop/mobile,
+account locali, SQLite persistente, blocchi congelati, finalizzazione automatica,
+revisione indipendente ed export per split. 173 test superati, incluse tre sessioni
+browser e regressioni retrieval; backup/ripristino locale verificato. Nessun giudizio
+reale raccolto. Guida in [annotation.md](annotation.md), evidenze in
+[m5b-validation.md](m5b-validation.md) e decisioni in
+[ADR 0006](decisions/0006-collaborative-annotation.md). CI remota da verificare dopo il push.
 
 ### M5-C — Pilot, budget e congelamento
 
@@ -364,16 +372,16 @@ Il progetto è **done** soltanto quando tutti i requisiti HW-01..HW-06 del [PRD]
 
 ## 12. Cosa fare ora: prima iterazione concreta
 
-M0–M4 e M5-A sono completate localmente. Il percorso di riferimento è:
+M0–M4, M5-A e M5-B sono completate localmente. Il percorso di riferimento è:
 
 1. **M5-A — Completata:** topic/rubriche, pooling, giudizi, pacchetti silver Codex ed export verificati su fixture; materiale esplorativo riconciliato.
-2. **M5-B — Annotazione:** pagina dedicata, assegnazioni, salvataggi persistenti, giudizi indipendenti e adjudication; collaudo multiutente locale.
+2. **M5-B — Completata:** pagina dedicata, assegnazioni, salvataggi persistenti, giudizi indipendenti, adjudication ed export; collaudo multiutente locale superato su fixture.
 3. **M7-A — Sito condiviso:** decisione di hosting e pubblicazione, accessi e prova di ripristino prima della raccolta reale.
 4. **M5-C — Pilot:** calibrazione dei tre validatori, misura dei tempi, dimensionamento e congelamento del protocollo e dei pool.
 5. **M5-D e M6-A — Lavoro parallelo:** raccolta gold/silver e implementazione/verifica dei report; preparazione di documentazione e demo. M6-A può iniziare già dopo M5-A.
 6. **M6-B e M7-B — Chiusura scientifica:** tuning sul development disponibile, congelamento del profilo, valutazione finale dopo consolidamento e consegna accademica.
 
-**Gate immediato:** predisporre il flusso completo su fixture senza attendere il gold. La raccolta massiva parte soltanto dopo il pilot e il congelamento; nessun dato sintetico sostituisce il benchmark reale.
+**Gate immediato:** M7-A, scegliere hosting e pubblicare il flusso verificato localmente, con accessi e ripristino online. La raccolta massiva parte soltanto dopo il pilot e il congelamento; nessun dato sintetico sostituisce il benchmark reale.
 
 ## 13. Tracciabilità tra requisito e milestone
 

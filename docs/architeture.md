@@ -7,14 +7,22 @@
 
 ## 1. Obiettivi architetturali
 
-Realizzare un sistema di Information Retrieval con quattro responsabilità isolate:
+Realizzare un sistema di Information Retrieval con responsabilità isolate:
 
 1. **Ingestion:** leggere il dump, normalizzare e validare le notizie, creare un corpus versionato.
 2. **Retrieval:** indicizzare in Elasticsearch ed eseguire profili di ricerca configurabili.
 3. **Web/API:** esporre il servizio di ricerca da browser e tramite HTTP.
 4. **Evaluation:** costruire pooling, annotazioni e run; calcolare metriche senza dipendere dalla Web UI.
+5. **Annotazione collaborativa (M5-B):** distribuire pacchetti congelati, salvare
+   giudizi indipendenti, gestire revisioni ed esportare gold tramite SQLite persistente.
 
-Si adotta un **monorepo modulare**: un solo codice Python, un servizio Elasticsearch, nessun database aggiuntivo per l'MVP. Non si introducono microservizi per moduli che possono convivere nello stesso processo/codice. Le elaborazioni di ingestione e valutazione vengono eseguite come job/CLI offline, non nelle normali richieste Web.
+Si adotta un **monorepo modulare**: un solo codice Python e un servizio Elasticsearch
+per la ricerca. Da M5-B, SQLite conserva account, sessioni, pacchetti, assegnazioni,
+giudizi, finali e audit su un volume locale persistente. Non si introducono
+microservizi per moduli che possono convivere nello stesso processo/codice.
+Ingestione e ranking sperimentali restano job/CLI offline. L'annotazione usa il
+proprio archivio e funziona senza Elasticsearch, Web o LLM. Implementazione e
+limiti: [guida annotazione](annotation.md) e [ADR 0006](decisions/0006-collaborative-annotation.md).
 
 ## 2. Stack e criteri di versione
 
@@ -25,6 +33,7 @@ Si adotta un **monorepo modulare**: un solo codice Python, un servizio Elasticse
 | Search | Elasticsearch 9.x | Bloccare una **patch specifica** in Docker e client Python compatibile |
 | API | FastAPI, Pydantic | Contratti tipizzati e OpenAPI |
 | Web | Jinja2, CSS, JavaScript essenziale | Nessuna build Node obbligatoria |
+| Annotazione | SQLite, modulo standard Python | WAL, transazioni, schema versionato e backup; singolo server |
 | Parsing | BeautifulSoup + lxml | Estrazione testo HTML con regole testate |
 | Analisi | pandas | Audit, report, analisi errori |
 | IR metrics | `ir-measures` | nDCG@10, P@5, eventuale MRR@10 |

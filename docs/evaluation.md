@@ -1,8 +1,9 @@
 # Benchmark M5-A — preparazione offline e silver Codex
 
 M5-A implementa contratti, pooling e pacchetti di giudizio. Il protocollo è **draft**:
-non esistono ancora gold o silver reali prodotti da questa pipeline. M5-B aggiungerà
-la UI; M5-C calibrazione e congelamento; M5-D raccoglierà i giudizi. Metriche e report
+non esistono ancora gold o silver reali prodotti da questa pipeline. M5-B aggiunge
+la [UI di annotazione](annotation.md), verificata localmente; M5-C calibrazione e
+congelamento; M5-D raccoglierà i giudizi. Metriche e report
 sperimentali rimangono M6. Evidenze locali: [m5a-validation.md](m5a-validation.md).
 
 ## Identità e formati
@@ -125,12 +126,18 @@ esatta del ragionamento o delle etichette, ma quella degli artefatti e dei contr
 `export-qrels --source gold --judgments <human.jsonl>` accetta giudizi umani e
 decisioni finali nello stesso file. Ogni finale deve riferire tutti i giudizi
 originali della coppia tramite `origin_judgment_ids`; gli originali non sono
-sovrascritti. L'adjudication sarà gestita dalla UI M5-B. Giudizi senza finale,
+sovrascritti. L'adjudication è gestita dalla UI M5-B. Giudizi senza finale,
 finali duplicati, fonti mescolate o riferimenti mancanti impediscono l'export.
 
 I qrels usano quattro colonne TREC: query, `0`, documento, grado. Astensioni
 finalizzate sono escluse e contate; coppie assenti restano unjudged. Gold e silver
 rimangono file e manifest distinti. Non esiste conversione automatica silver→gold.
+
+L'export M5-B include nei qrels solo le coppie consolidate e allega separatamente
+la cronologia completa; `judgments.jsonl` contiene gli originali correnti di tali
+coppie e le rispettive finali. Singoli/accordi vengono consolidati automaticamente,
+con provenienza esplicita; i disaccordi richiedono il revisore indipendente.
+Gli export sono separati per split e il test richiede rilascio esplicito registrato.
 
 ## Verifica offline
 

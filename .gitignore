@@ -19,6 +19,10 @@ dist/
 # Local artifacts and raw dump
 /data/raw/*
 /data/processed/*
+/data/annotation/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
 /experiments/runs/*
 /experiments/reports/*
 !/data/raw/.gitkeep

@@ -21,6 +21,27 @@ jobs:
       - run: uv run --locked ruff check .
       - run: uv run --locked pytest -q
 
+  annotation-browser:
+    runs-on: ubuntu-latest
+    env:
+      RUN_ANNOTATION_E2E: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.9"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: uv sync --locked
+      - run: uv run --locked playwright install --with-deps chromium
+      - run: uv run --locked pytest tests/browser -q
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: annotation-browser
+          path: output/playwright/annotation/
+
   retrieval-and-browser:
     runs-on: ubuntu-latest
     env:

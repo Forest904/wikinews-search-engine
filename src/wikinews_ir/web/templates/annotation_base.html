@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}Area valutatori{% endblock %} · Wikinotizie</title>
+  <link rel="stylesheet" href="/static/annotation.css">
+  <link rel="icon" type="image/svg+xml" href="/static/annotation-mark.svg">
+</head>
+<body>
+  <a class="skip" href="#main">Vai al contenuto</a>
+  <header class="topbar">
+    <a class="brand" href="/annotate"><span class="brand-mark" aria-hidden="true">W</span><span>Wikinotizie<small>Laboratorio di valutazione</small></span></a>
+    <nav aria-label="Area valutatori"><a href="/annotate" {% block annotate_active %}{% endblock %}>Annotazione</a><a href="/coordinate" id="coordinate-link" hidden {% block coordinate_active %}{% endblock %}>Coordinamento</a><a href="/">Ricerca</a></nav>
+    <div id="account" hidden><span id="user-name"></span><button id="logout" class="quiet">Esci</button></div>
+  </header>
+  <main id="main" class="app-shell">
+    <section id="login-panel" class="login-card" hidden>
+      <p class="eyebrow">Area riservata ai valutatori</p><h1>Il tuo contributo, una notizia alla volta.</h1>
+      <p class="muted">Accedi per ritrovare le attività assegnate e riprendere dal tuo ultimo salvataggio.</p>
+      <form id="login"><label for="login-user">Nome utente</label><input id="login-user" name="user_id" autocomplete="username" required>
+      <label for="login-password">Password</label><input id="login-password" name="password" type="password" autocomplete="current-password" required>
+      <button class="primary wide" type="submit">Accedi</button></form>
+      <p class="small muted">Le credenziali sono fornite dal coordinatore del progetto.</p>
+    </section>
+    <div id="message" class="notice" role="status" aria-live="polite">Caricamento della sessione…</div>
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="app-footer">Wikinotizie · Benchmark di ricerca <span>Giudizi indipendenti · Testi congelati</span></footer>
+  <script src="/static/annotation-common.js" defer></script>
+  {% block script %}{% endblock %}
+</body></html>

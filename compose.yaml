@@ -27,11 +27,13 @@ services:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:?Define ELASTIC_PASSWORD in .env}
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - ELASTICSEARCH_INDEX=wikinews_standard_v1
+      - ANNOTATION_DB=/app/data/annotation/annotation.sqlite3
+      - ANNOTATION_COOKIE_SECURE=${ANNOTATION_COOKIE_SECURE:-0}
+    volumes:
+      - annotation-data:/app/data/annotation
     ports:
       - "127.0.0.1:8000:8000"
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
 
 volumes:
   elasticsearch-data:
+  annotation-data:

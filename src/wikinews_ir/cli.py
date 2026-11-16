@@ -60,6 +60,8 @@ def main() -> None:
     sub = parser.add_subparsers(dest="command", required=True)
     from wikinews_ir.evaluation.cli import configure, dispatch
     configure(sub)
+    from wikinews_ir.annotation_cli import configure as configure_annotation
+    configure_annotation(sub)
     sub.add_parser("seed-demo", help="Carica solo le fixture sintetiche")
     corpus = sub.add_parser("corpus", help="Audit e preprocessing offline del dump")
     commands = corpus.add_subparsers(dest="corpus_command", required=True)
@@ -87,6 +89,16 @@ def main() -> None:
     from wikinews_ir.retrieval.profiles import SUPPORTED_PROFILES
     export.add_argument("--profiles", nargs="+", choices=SUPPORTED_PROFILES, default=SUPPORTED_PROFILES)
     args = parser.parse_args()
+    if args.command == "annotation":
+        import sqlite3
+
+        from wikinews_ir.annotation_cli import dispatch as dispatch_annotation
+        try:
+            result = dispatch_annotation(args)
+        except (ValueError, OSError, KeyError, sqlite3.Error) as exc:
+            parser.exit(1, f"Annotazione: {exc}\n")
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return
     if args.command == "benchmark":
         import httpx
         try:

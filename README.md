@@ -3,12 +3,15 @@
 Monorepo sperimentale per un motore di ricerca **lessicale** delle notizie italiane
 Wikinotizie, basato su Elasticsearch, con valutazione IR riproducibile.
 
-> **Stato attuale:** **M5-A completata e verificata localmente**: 11.032 articoli,
+> **Stato attuale:** **M5-B completata e verificata localmente su fixture**: 11.032 articoli,
 > profili E0–E4, highlight, paginazione, dettaglio ed export TREC riproducibile.
 > Vedi [report M4](docs/m4-validation.md) e [roadmap](docs/roadmap.md).
 > Infrastruttura benchmark e pacchetti silver per chat Codex disponibili:
 > [guida](docs/evaluation.md), [verifica M5-A](docs/m5a-validation.md).
-> UI annotazione, raccolta reale e metriche restano M5-B/D e M6; CI remota da verificare dopo il push.
+> UI di annotazione e coordinamento, persistenza e flusso multiutente disponibili:
+> [guida annotazione](docs/annotation.md), [verifica M5-B](docs/m5b-validation.md).
+> Pubblicazione, pilot, raccolta reale e metriche restano M7-A, M5-C/D e M6;
+> CI remota da verificare dopo il push.
 
 ## Documentazione di progetto
 
@@ -50,6 +53,11 @@ Una seconda esecuzione di `index build` verifica e riusa gli indici già pronti.
 Questa modalità usa la stessa password di Elasticsearch.
 
 ## Qualità del codice
+
+Per avviare l'area valutatori senza Elasticsearch, creare gli account e importare
+un pacchetto seguendo [la guida M5-B](docs/annotation.md), poi avviare la stessa app
+e aprire `/annotate` o `/coordinate`. Il database SQLite è persistente e distinto
+dagli indici di ricerca. La guida include fixture, backup e ripristino.
 
 ```bash
 uv run --locked ruff check .

@@ -32,6 +32,16 @@ def home(request: Request):
     return templates.TemplateResponse(request, "index.html", {"profiles": SUPPORTED_PROFILES})
 
 
+@router.get("/annotate", response_class=HTMLResponse)
+def annotate(request: Request):
+    return templates.TemplateResponse(request, "annotate.html")
+
+
+@router.get("/coordinate", response_class=HTMLResponse)
+def coordinate(request: Request):
+    return templates.TemplateResponse(request, "coordinate.html")
+
+
 @router.get("/api/health")
 def health(backend: RetrievalEngine = Depends(engine)):
     connected = backend.check_ready()

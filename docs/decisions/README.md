@@ -8,3 +8,5 @@
 - [0004 — Baseline M3](0004-baseline-corpus.md): indici immutabili, profili E0/E1, API e run riproducibili.
 
 - [0005 — Retrieval M4](0005-advanced-retrieval.md): E2/E3/E4, virgolette, highlight sicuro e versioni delle run.
+
+- [0006 — Annotazione M5-B](0006-collaborative-annotation.md): SQLite, accessi, assegnazioni, revisione, finalizzazione ed export.

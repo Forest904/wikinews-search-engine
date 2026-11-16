@@ -1,0 +1,23 @@
+{% extends "annotation_base.html" %}
+{% block title %}Coordinamento{% endblock %}
+{% block coordinate_active %}aria-current="page"{% endblock %}
+{% block content %}
+<section id="workspace" hidden>
+  <div class="page-heading"><div><p class="eyebrow">Gestione della raccolta</p><h1>Coordinamento</h1><p class="muted">Prepara i blocchi, segui l'avanzamento e assegna le revisioni indipendenti.</p></div><button id="refresh" class="secondary">Aggiorna</button></div>
+  <div class="summary-grid"><div class="metric"><span>Attività assegnate</span><strong id="total-assigned">0</strong></div><div class="metric"><span>Annotazioni completate</span><strong id="total-completed">0</strong></div><div class="metric"><span>Revisioni pendenti</span><strong id="total-reviews">0</strong></div><div class="metric"><span>Coppie finalizzate</span><strong id="total-finalized">0</strong></div></div>
+  <section class="panel"><div class="section-label"><h2>Avanzamento dei valutatori</h2><span class="small muted">Solo conteggi, senza etichette individuali</span></div><div class="table-scroll"><table><thead><tr><th>Valutatore</th><th>Totale</th><th>Da iniziare</th><th>Giudicati</th><th>Astensioni</th><th>Rinviati</th></tr></thead><tbody id="progress-table"></tbody></table></div></section>
+  <div class="coord-grid"><section class="panel"><p class="eyebrow">Assegnazioni</p><h2>Prepara un blocco per topic</h2><p class="small muted">La sovrapposizione è il numero di documenti affidati anche al secondo valutatore. L'ordine è indipendente dal ranking.</p>
+    <form id="block-form" class="stack"><label for="packet">Pacchetto</label><select id="packet" required></select><label for="topic">Topic</label><select id="topic" required></select>
+      <div class="form-row"><div><label for="primary-user">Valutatore principale</label><select id="primary-user" required></select></div><div><label for="secondary-user">Secondo valutatore</label><select id="secondary-user"></select></div></div>
+      <div class="form-row"><div><label for="overlap">Documenti in doppio</label><input id="overlap" type="number" min="0" value="0" required></div><div><label for="seed">Seed dell'ordine</label><input id="seed" value="m5b-1" required></div></div>
+      <button class="primary" type="submit">Prepara e mostra riepilogo</button>
+    </form><div id="block-preview" class="preview" hidden><h3>Riepilogo prima dell'attivazione</h3><p id="preview-summary"></p><details><summary>Ordine delle assegnazioni</summary><ol id="preview-order"></ol></details><p class="small">Dopo l'attivazione le assegnazioni del topic sono congelate.</p><button id="activate-block" class="primary">Attiva questo blocco</button></div>
+  </section><section class="panel"><p class="eyebrow">Blocchi preparati</p><h2>Assegnazioni della raccolta</h2><div id="blocks" class="card-list"></div></section></div>
+  <section class="panel"><p class="eyebrow">Dubbi e disaccordi</p><h2>Coda di revisione</h2><p class="small muted">Scegli un revisore che non abbia annotato la coppia. Vedrà le valutazioni iniziali nella propria postazione.</p><div id="reviews" class="card-list"></div></section>
+  <section class="panel"><p class="eyebrow">Artefatti del benchmark</p><h2>Esporta il gold consolidato</h2><p class="small muted">L'archivio contiene qrels, giudizi correnti, cronologia e manifest. Le coppie pendenti restano unjudged.</p>
+    <form id="export-form" class="export-form"><div><label for="export-packet">Pacchetto</label><select id="export-packet" required></select></div><div><label for="export-split">Split</label><select id="export-split"><option value="calibration">Calibrazione</option><option value="development">Development</option><option value="test">Test — rilascio esplicito</option></select></div>
+    <label id="release-test-label" class="checkbox-label" hidden><input id="release-test" type="checkbox">Confermo il rilascio esplicito del test, registrato nella cronologia.</label><button class="primary" type="submit">Scarica archivio gold</button></form>
+  </section>
+</section>
+{% endblock %}
+{% block script %}<script src="/static/coordinate.js" defer></script>{% endblock %}

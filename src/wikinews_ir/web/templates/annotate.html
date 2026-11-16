@@ -1,0 +1,48 @@
+{% extends "annotation_base.html" %}
+{% block annotate_active %}aria-current="page"{% endblock %}
+{% block content %}
+<section id="workspace" hidden>
+  <div class="page-heading"><div><p class="eyebrow">Valutazione della rilevanza</p><h1>La tua postazione</h1><p class="muted">Leggi il bisogno informativo, seleziona le evidenze e assegna un giudizio.</p></div>
+  <div class="progress-card"><span id="progress-label"></span><progress id="progress" max="1" value="0"></progress><small id="progress-detail"></small></div></div>
+  <div class="work-toolbar"><div class="tabs" role="group" aria-label="Tipo di attività"><button id="annotation-mode" class="tab active" aria-pressed="true">Le mie annotazioni</button><button id="review-mode" class="tab" aria-pressed="false">Revisioni assegnate <span id="review-count" class="badge">0</span></button></div>
+  <button id="last-judgment" class="quiet">Modifica ultimo giudizio</button></div>
+  <div id="empty-state" class="empty-state" hidden><h2>Nessuna attività in questa coda</h2><p>Le nuove assegnazioni compariranno qui. Puoi aggiornare la pagina per controllare.</p></div>
+  <div id="task-area">
+    <div class="task-navigation"><label for="tasks">Attività</label><select id="tasks"></select><button id="previous-task" class="secondary" aria-label="Attività precedente">←</button><button id="next-task" class="secondary" aria-label="Attività successiva">→</button><span id="task-position" class="small muted"></span></div>
+    <nav class="mobile-jumps" aria-label="Sezioni della valutazione"><a href="#topic-panel">Criteri</a><a href="#article-panel">Documento</a><a href="#judgment-panel">Giudizio</a></nav>
+    <div class="annotation-grid">
+      <aside id="topic-panel" class="panel topic-panel"><p class="eyebrow">01 · Il bisogno informativo</p><h2 id="topic-query"></h2><p id="topic-need"></p><p id="topic-narrative" class="small muted"></p>
+        <h3>Includi</h3><ul id="topic-inclusions" class="criteria"></ul><h3>Escludi</h3><ul id="topic-exclusions" class="criteria"></ul>
+        <h3>Rubrica del topic</h3><div id="rubric" class="rubric"></div>
+        <details><summary>Come valutare</summary><p class="small">Usa soltanto questo testo e i criteri del topic. Ogni grado richiede una citazione e una motivazione, anche lo 0. Se il testo è ambiguo, scegli «Astieniti». Per interrompere senza giudicare, scegli «Riprendi dopo».</p><p class="small">Scorciatoie: <kbd>0</kbd>, <kbd>1</kbd>, <kbd>2</kbd> selezionano il grado quando non stai scrivendo.</p></details>
+      </aside>
+      <article id="article-panel" class="panel article-panel"><p class="eyebrow">02 · Il documento</p><h2 id="title"></h2><p id="document-meta" class="small muted"></p>
+        <div class="text-search"><label for="find">Cerca nel testo</label><input id="find" type="search" placeholder="Una parola o una frase…"><span id="find-count" class="small muted"></span></div>
+        <p class="selection-tip">Seleziona un passaggio del testo, poi premi «Aggiungi citazione».</p>
+        <div id="body" class="document-body" tabindex="0"></div>
+      </article>
+      <aside id="judgment-panel" class="panel judgment-panel"><p class="eyebrow">03 · Il tuo giudizio</p><h2 id="judgment-heading">Valuta la rilevanza</h2><span id="current-status" class="status-chip">Da iniziare</span>
+        <div id="review-originals" hidden><h3>Valutazioni da riesaminare</h3><div id="originals"></div></div>
+        <form id="judgment">
+          <fieldset><legend>Grado di rilevanza</legend><div class="grade-options">
+          <label class="grade"><input type="radio" name="grade" value="0"><strong>0</strong><span>Non rilevante</span></label>
+          <label class="grade"><input type="radio" name="grade" value="1"><strong>1</strong><span>Parziale</span></label>
+          <label class="grade"><input type="radio" name="grade" value="2"><strong>2</strong><span>Rilevante</span></label></div></fieldset>
+          <div class="section-label"><h3>Evidenze dal testo</h3><span id="evidence-count" class="badge">0</span></div>
+          <button type="button" id="quote" class="secondary wide">＋ Aggiungi citazione</button>
+          <p id="evidence-empty" class="small muted">Nessuna citazione. Seleziona un passaggio nel documento.</p><ol id="evidence" class="evidence-list"></ol>
+          <label for="reason">Causale rapida <span class="optional">facoltativa</span></label><select id="reason"><option value="">Scegli una causale…</option><option>Risponde direttamente al bisogno informativo</option><option>Copre soltanto parte dei vincoli</option><option>Non soddisfa i criteri del topic</option><option>Testo ambiguo o informazioni insufficienti</option><option>Problema nel testo del documento</option></select>
+          <label for="rationale">Motivazione</label><textarea id="rationale" rows="4" placeholder="Spiega il giudizio facendo riferimento al testo…"></textarea>
+          <p id="save-state" class="small" aria-live="polite">Nessuna modifica da salvare.</p>
+          <button type="button" class="primary wide" data-state="judged" data-advance="true">Salva e continua</button>
+          <div class="action-row"><button type="button" class="secondary" data-state="judged">Salva</button><button type="button" class="secondary" data-state="needs_review">Astieniti</button></div>
+          <button type="button" id="defer" class="quiet wide" data-state="deferred" data-advance="true">Riprendi dopo</button>
+          <button type="button" id="reload-task" class="quiet wide">Ricarica il giudizio salvato</button>
+        </form>
+        <details id="history-details"><summary>Cronologia delle mie revisioni</summary><ol id="history" class="history-list"></ol></details>
+      </aside>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block script %}<script src="/static/annotation.js" defer></script>{% endblock %}
