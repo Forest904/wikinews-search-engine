@@ -1,6 +1,7 @@
 # Roadmap end-to-end — Wikinews Search Engine
 
-**Versione documento:** 0.1.0 · **Data:** 2026-11-16 · **Stato:** piano approvato come sequenza di riferimento  
+**Versione documento:** 0.1.1 · **Data:** 2026-11-16 · **Stato:** piano approvato come sequenza di riferimento
+
 **Documenti correlati:** [PRD](./prd.md) · [Architettura](./architeture.md)
 
 ## 1. Finalità e regole di pianificazione
@@ -21,7 +22,7 @@ Regole di esecuzione:
 
 | Milestone | Risultato dimostrabile | Dipendenze | Gate di uscita |
 |---|---|---|---|
-| M0 — Repo e tecnologia | Progetto Python, Compose, lint, test | Nessuna | Avvio ambiente e CI base |
+| M0 — Repo e tecnologia | Progetto Python, Compose, lint, test | Nessuna | Completato: avvio ambiente e CI base verificati |
 | M1 — Vertical slice | UI → API → Elasticsearch → risultati su fixture | M0 | Ricerca browser funzionante su pochi documenti |
 | M2 — Corpus pipeline | Dump letto, ripulito, deduplicato e manifestato | M0 | Corpus processed deterministico e verificato |
 | M3 — Baseline completa | E0/E1 con corpus reale, API/UI stabile | M1, M2 | Risultati navigabili e run riproducibili |
@@ -46,12 +47,13 @@ Regole di esecuzione:
 - [x] Creare `compose.yaml` con Elasticsearch single-node, volume persistente, health check e sicurezza locale.
 - [x] Creare `.env.example`, `.gitignore`, Dockerfile minimo e Makefile con target iniziali.
 - [x] Implementare app FastAPI minimale con `GET /api/health` e pagina iniziale di servizio.
-- [ ] Attivare GitHub Actions per lint e unit test su fixture minime.
+- [x] Attivare GitHub Actions per lint e unit test su fixture minime.
 
-**Stato implementazione (2026-11-16):** workflow GitHub Actions aggiornato per
-Ubuntu/Windows e installazione da lockfile; esecuzione remota ancora da verificare
-dopo pubblicazione del commit. Evidenze locali in [ADR 0001](decisions/0001-bootstrap.md).
-La chiusura formale della milestone resta subordinata alla CI remota verde.
+**Stato: M0 completata (2026-11-16).** Tutti i criteri di uscita sono soddisfatti:
+installazione da lockfile, collaudo Docker e health, lint e test locali, CI GitHub
+Actions superata (esito remoto confermato dal maintainer). Evidenze e decisioni in
+[ADR 0001](decisions/0001-bootstrap.md). Prossima milestone: M1, completamento della
+vertical slice su fixture.
 
 ### Deliverable
 

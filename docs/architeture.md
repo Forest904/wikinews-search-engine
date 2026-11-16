@@ -34,7 +34,11 @@ Si adotta un **monorepo modulare**: un solo codice Python, un servizio Elasticse
 | LLM Judge | Adapter Python sostituibile | Modello configurabile; esecuzione **offline** dal path applicativo |
 | Wikinotizie | Adapter HTTP/Search API | Baseline esterna; dati online riconciliati con snapshot |
 
-**Pin delle versioni:** non inserire `latest` nelle immagini o dipendenze non bloccate. Le versioni esatte saranno fissate e testate nella fase bootstrap. L'uso di Elasticsearch 9.x è una decisione di stack; non si assume una patch già validata prima della prova tecnica.
+**Pin delle versioni (M0 completata):** Elasticsearch 9.5.6 e client Python 9.5.1
+sono stati collaudati insieme. Python 3.12 e uv 0.12.9 sono i riferimenti per setup,
+Docker e CI; `uv.lock` blocca le dipendenze. Non usare `latest` per le immagini di
+base o dipendenze non bloccate. Decisioni ed evidenze in
+[ADR 0001](decisions/0001-bootstrap.md).
 
 ## 3. Diagramma del sistema
 
@@ -377,11 +381,12 @@ Proposta di `docs/decisions/` con record sintetici che documentano contesto, sce
 - `ADR-005-gold-silver-external-ranking.md`
 - `ADR-006-offline-evaluation.md`
 
-Sono file futuri; gli accordi di alto livello sono già registrati in questo documento e nel PRD.
+Questi ADR tematici restano pianificati. Il bootstrap M0 è documentato in
+[ADR 0001](decisions/0001-bootstrap.md); gli accordi di alto livello sono registrati
+in questo documento e nel PRD.
 
 ## 14. Punti ancora da validare
 
-- Patch Elasticsearch 9.x e compatibilità client/immagine Docker.
 - Regole esatte di cleaning HTML e scelta della revisione.
 - Criterio finale per includere documenti `Pubblicati` o casi eccezionali.
 - Identificazione affidabile della data di pubblicazione.

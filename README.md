@@ -3,7 +3,8 @@
 Monorepo sperimentale per un motore di ricerca **lessicale** delle notizie italiane
 Wikinotizie, basato su Elasticsearch, con valutazione IR riproducibile.
 
-> **Stato attuale:** scaffold iniziale/M0 con un percorso dimostrativo su fixture.
+> **Stato attuale:** **M0 completata**, con ambiente riproducibile, CI superata
+> e un percorso dimostrativo su fixture. Prossimo passo: completare M1.
 > L'ingestion del dump reale, la ground truth multi-sorgente e il ranking avanzato
 > sono **pianificati ma non ancora implementati**. Leggi [la roadmap](docs/roadmap.md).
 
@@ -39,7 +40,7 @@ raggiungibile e autenticato, 503 altrimenti. Non richiede un indice.
 Per abilitare la demo opzionale, dalla checkout locale esegui
 `uv run --locked wikinews-ir seed-demo`, poi cerca una parola nei cinque articoli
 sintetici. Il comando seed usa i file `configs/` e `tests/` della checkout;
-non ? previsto nel container applicativo o nell'installazione del solo wheel.
+non è previsto nel container applicativo o nell'installazione del solo wheel.
 
 **Avvio opzionale full Docker:** dopo aver creato `.env`,
 `docker compose --profile full up -d --build --wait` avvia anche il servizio Web.
@@ -52,7 +53,7 @@ uv run --locked ruff check .
 uv run --locked pytest -q
 ```
 
-`uv.lock` ? versionato: `uv sync --locked` fallisce se manifest e lockfile divergono.
+`uv.lock` è versionato: `uv sync --locked` fallisce se manifest e lockfile divergono.
 Usare `uv lock` solo per aggiornamenti intenzionali delle dipendenze.
 La CI esegue lint e unit test su Ubuntu e Windows con Python 3.12.
 
@@ -93,7 +94,7 @@ Il file non è incluso nello ZIP né va inserito in Git. La pipeline di download
 normalizzazione, deduplicazione e indicizzazione del corpus reale è prevista in **M2**.
 Le fixture sono sintetiche, non un campione reale.
 
-## Scelte e limiti di questo scaffold
+## Scelte e limiti dopo M0
 
 - Immagine Elasticsearch **9.5.6**, client Python **9.5.1** bloccato nel lockfile.
 - Trasporto HTTP con basic auth **solo su loopback**, per sviluppo locale.
@@ -115,7 +116,7 @@ redistribuzione di dati. Il repository non include il dump né articoli del corp
 
 In PowerShell, sostituire `cp` con `Copy-Item .env.example .env`, quindi modificare
 la password nel file. Gli altri comandi `uv` e `docker compose` sono identici.
-Make ? opzionale: `make setup`, `up`, `down`, `serve`, `lint`, `test`, `check`
+Make è opzionale: `make setup`, `up`, `down`, `serve`, `lint`, `test`, `check`
 incapsulano i comandi documentati. `docker compose down` conserva il volume;
 non usare `down -v` se si vogliono conservare gli indici.
 
@@ -124,7 +125,7 @@ riesca. Se Elasticsearch non diventa healthy, controllare `docker compose ps`
 e `docker compose logs elasticsearch`, memoria disponibile e credenziali.
 Cambiare `ELASTIC_PASSWORD` dopo la prima inizializzazione non aggiorna la password
 salvata nel volume: usare le credenziali originarie o la procedura Elastic di reset.
-`ES_PORT` ? una porta numerica (default 9200), sempre pubblicata su 127.0.0.1;
+`ES_PORT` è una porta numerica (default 9200), sempre pubblicata su 127.0.0.1;
 se cambia, aggiornare anche `ELASTICSEARCH_URL` per l'app eseguita sull'host.
 
 Le decisioni M0 e le evidenze di verifica sono in

@@ -1,13 +1,13 @@
-# ADR 0001 ? Bootstrap M0
+# ADR 0001 — Bootstrap M0
 
-Data: 2026-11-16. Decisione: adottata; collaudo locale completato.
+Data: 2026-11-16. Decisione: adottata; M0 completata, collaudo locale e CI superati.
 
 ## Decisioni
 
 Python 3.12, uv 0.12.9, Elasticsearch 9.5.6 e client Python 9.5.1.
-Il client ? limitato alla serie 9.5; uv.lock blocca tutte le dipendenze.
+Il client è limitato alla serie 9.5; uv.lock blocca tutte le dipendenze.
 Sviluppo, CI e Docker installano con `uv sync --locked`; Docker esclude il gruppo dev.
-La licenza del codice ? MIT (2026 Forest904), distinta dai contenuti Wikimedia.
+La licenza del codice è MIT (2026 Forest904), distinta dai contenuti Wikimedia.
 
 Manteniamo lo scaffold e la ricerca demo, senza estendere M1.
 Un lifespan FastAPI possiede un solo client sincrono per istanza e lo chiude
@@ -17,19 +17,19 @@ L'iniezione delle dipendenze permette test senza servizi esterni.
 `GET /api/health` restituisce 200 con `app=ok, elasticsearch=ready`, oppure
 503 con `detail={app: ok, elasticsearch: unavailable}`. Non verifica l'indice.
 La verifica usa autenticazione, timeout configurabile positivo e nessun retry.
-L'app e la homepage partono anche quando Elasticsearch non ? disponibile.
+L'app e la homepage partono anche quando Elasticsearch non è disponibile.
 
 Compose usa un nodo, heap 1 GB, volume persistente, autenticazione basic e HTTP
 senza TLS solo in locale. Le porte host sono vincolate a loopback. L'health check
 attende almeno yellow, compatibile con repliche non assegnate su un singolo nodo.
-L'app containerizzata ? opzionale con profilo full. TLS e distribuzione pubblica
+L'app containerizzata è opzionale con profilo full. TLS e distribuzione pubblica
 restano fuori dal perimetro di questo ambiente di sviluppo.
 
 ## Alternative e conseguenze
 
 Installazioni non bloccate e rigenerazione automatica del lock nel setup sono
-escluse perch? rendono diversi gli ambienti. Un client per richiesta spreca
-connessioni; il lifespan ne rende esplicita la propriet?. Un controllo dell'indice
+escluse perché rendono diversi gli ambienti. Un client per richiesta spreca
+connessioni; il lifespan ne rende esplicita la proprietà. Un controllo dell'indice
 nell'health impedirebbe il collaudo M0 prima del seed e confonderebbe backend e dati.
 La CI base resta senza Docker; i test di integrazione sono opt-in con RUN_INTEGRATION=1.
 
@@ -51,4 +51,5 @@ Collaudo locale completato il 2026-11-16:
 
 Il file `.env` locale contiene una password generata e resta ignorato da Git.
 I servizi di sviluppo sono lasciati attivi su loopback.
-La CI remota richiede la pubblicazione del commit e un'esecuzione GitHub Actions.
+CI GitHub Actions superata: esito remoto confermato dal maintainer il 2026-11-16.
+Con questa verifica tutti i criteri di uscita M0 sono soddisfatti.
