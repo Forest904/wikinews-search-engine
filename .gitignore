@@ -31,3 +31,5 @@ dist/
 .vscode/
 .idea/
 .venv-*/
+
+output/

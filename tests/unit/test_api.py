@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 from wikinews_ir.api.main import app, create_app
 from wikinews_ir.api.routes import engine
+from wikinews_ir.models import SearchRequest
 
 
 @pytest.fixture
@@ -85,6 +86,53 @@ def test_search_uses_shared_backend(client, failure, status):
     try:
         response = client.get("/api/search", params={"q": "calcio"})
         assert response.status_code == status
-        backend.search.assert_called_once_with(query="calcio", profile="bm25", limit=10)
+        backend.search.assert_called_once_with(SearchRequest(query="calcio"))
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.parametrize("params", [
+    {"q": " "}, {"q": "x" * 251}, {"q": "x", "limit": 0},
+    {"q": "x", "limit": 101}, {"q": "x", "profile": "fuzzy"}, {},
+])
+def test_invalid_search_never_calls_backend(client, params):
+    backend = Mock()
+    app.dependency_overrides[engine] = lambda: backend
+    try:
+        assert client.get("/api/search", params=params).status_code == 422
+        backend.search.assert_not_called()
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.parametrize("path", ["/api/articles/demo-01", "/articles/demo-01"])
+@pytest.mark.parametrize("failure,expected", [(None, 200), ("article", 404), ("index", 404), ("offline", 503)])
+def test_article_routes(client, path, failure, expected):
+    from wikinews_ir.models import Article
+    from wikinews_ir.retrieval.engine import (
+        ArticleNotFound,
+        RetrievalUnavailable,
+        SearchIndexMissing,
+    )
+    backend = Mock()
+    if failure:
+        backend.get_article.side_effect = {
+            "article": ArticleNotFound("Articolo non trovato"),
+            "index": SearchIndexMissing("Indice mancante"),
+            "offline": RetrievalUnavailable("Backend non disponibile"),
+        }[failure]
+    else:
+        backend.get_article.return_value = Article(
+            document_id="demo-01", title="<script>alert(1)</script>",
+            body="Testo completo", url="javascript:alert(1)",
+        )
+    app.dependency_overrides[engine] = lambda: backend
+    try:
+        response = client.get(path)
+        assert response.status_code == expected
+        if not failure and path.startswith("/articles/"):
+            assert "<script>" not in response.text
+            assert "javascript:" not in response.text
+            assert "Testo completo" in response.text
     finally:
         app.dependency_overrides.clear()

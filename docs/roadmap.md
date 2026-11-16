@@ -23,7 +23,7 @@ Regole di esecuzione:
 | Milestone | Risultato dimostrabile | Dipendenze | Gate di uscita |
 |---|---|---|---|
 | M0 — Repo e tecnologia | Progetto Python, Compose, lint, test | Nessuna | Completato: avvio ambiente e CI base verificati |
-| M1 — Vertical slice | UI → API → Elasticsearch → risultati su fixture | M0 | Ricerca browser funzionante su pochi documenti |
+| M1 — Vertical slice | UI → API → Elasticsearch → risultati su fixture | M0 | Completato localmente: ricerca browser e Python su fixture |
 | M2 — Corpus pipeline | Dump letto, ripulito, deduplicato e manifestato | M0 | Corpus processed deterministico e verificato |
 | M3 — Baseline completa | E0/E1 con corpus reale, API/UI stabile | M1, M2 | Risultati navigabili e run riproducibili |
 | M4 — Retrieval avanzato | E2/E3/E4 e possibili estensioni | M3 | Profili distinti e testati, senza regressioni critiche |
@@ -52,8 +52,7 @@ Regole di esecuzione:
 **Stato: M0 completata (2026-11-16).** Tutti i criteri di uscita sono soddisfatti:
 installazione da lockfile, collaudo Docker e health, lint e test locali, CI GitHub
 Actions superata (esito remoto confermato dal maintainer). Evidenze e decisioni in
-[ADR 0001](decisions/0001-bootstrap.md). Prossima milestone: M1, completamento della
-vertical slice su fixture.
+[ADR 0001](decisions/0001-bootstrap.md). M1 successivamente completata: vedere la sezione seguente.
 
 ### Deliverable
 
@@ -72,17 +71,22 @@ Repository versionato; `README.md` iniziale; ambiente installabile; servizio Ela
 
 ### Attività
 
-- [ ] Preparare 5–20 documenti **fixture** sintetici o campione riutilizzabile con provenienza nota.
-- [ ] Definire un mapping semplice titolo/corpo e indicizzare le fixture.
-- [ ] Implementare `SearchRequest`, `SearchHit`, `SearchResponse` e `RetrievalEngine`.
-- [ ] Implementare query builder BM25 di base; validare i parametri.
-- [ ] Esporre `/api/search` e `/api/articles/{document_id}`.
-- [ ] Creare form Jinja2 e lista risultati con titolo, snippet, link e empty state.
-- [ ] Eseguire test end-to-end e gestione di Elasticsearch non disponibile.
+- [x] Preparare 5–20 documenti **fixture** sintetici o campione riutilizzabile con provenienza nota.
+- [x] Definire un mapping semplice titolo/corpo e indicizzare le fixture.
+- [x] Implementare `SearchRequest`, `SearchHit`, `SearchResponse` e `RetrievalEngine`.
+- [x] Implementare query builder BM25 di base; validare i parametri.
+- [x] Esporre `/api/search` e `/api/articles/{document_id}`.
+- [x] Creare form Jinja2 e lista risultati con titolo, snippet, link e empty state.
+- [x] Eseguire test end-to-end e gestione di Elasticsearch non disponibile.
 
 ### Exit criteria
 
 Una query digitata nel browser recupera dal motore Elasticsearch il risultato atteso su fixture; lo stesso `RetrievalEngine` può essere chiamato da Python senza browser. La vertical slice deve funzionare **prima** della pipeline definitiva del dump.
+
+**Stato: M1 completata e verificata localmente (2026-11-16).**
+Ricerca browser e uso Python verificati con Elasticsearch reale; 56 test superati,
+inclusi E2E Chromium. Il nuovo job CI remoto resta da verificare dopo il push.
+Decisioni ed evidenze in [ADR 0002](decisions/0002-vertical-slice.md).
 
 ## 5. Fase M2 — Corpus audit, ingestion e data quality
 

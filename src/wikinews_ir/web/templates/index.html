@@ -11,7 +11,7 @@
     <header>
       <p class="eyebrow">Ingegneria dei Dati · Homework 4</p>
       <h1>Ricerca Wikinotizie</h1>
-      <p class="muted">Scaffold iniziale: ricerca solo nelle fixture sintetiche, non ancora nel dump.</p>
+      <p class="muted">Demo su cinque notizie sintetiche: i contenuti non provengono dal dump Wikinotizie.</p>
     </header>
     <form id="search-form">
       <label for="q">Cerca nelle notizie</label>
@@ -24,7 +24,7 @@
         {% for profile in profiles %}<option value="{{ profile }}">{{ profile }}</option>{% endfor %}
       </select>
     </form>
-    <div id="status" class="muted" role="status"></div>
+    <div id="status" class="muted" role="status">Inserisci una parola per cercare nelle fixture.</div>
     <ol id="results" aria-live="polite"></ol>
   </main>
   <script src="/static/app.js" defer></script>

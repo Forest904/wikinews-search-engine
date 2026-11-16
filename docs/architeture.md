@@ -396,3 +396,23 @@ in questo documento e nel PRD.
 - Prestazioni, risorse e comportamento di fallback sulla macchina della demo.
 
 Queste sono **questioni aperte documentate**, non licenze di modificare il comportamento del sistema senza tracciamento.
+
+## 15. Stato implementato dopo M1 (2026-11-16)
+
+Questa sezione distingue i contratti attuali dal blueprint delle sezioni precedenti.
+La UI usa il form Jinja2 esistente e JavaScript per chiamare `/api/search`;
+`/search` server-rendered non è implementato in M1.
+
+- `SearchRequest(query, profile="bm25", limit=10)`: trim, query 1–250 caratteri,
+  limite 1–100, unico profilo BM25 standard. Il motore riceve questo oggetto.
+- L'API conserva `q`, `profile`, `limit`; la risposta conserva `query`, `profile`,
+  `index`, `hits`, `total`, `elapsed_ms` (tempo `took` del backend, non latenza end-to-end).
+- `Article(document_id, title, body, url)` è il modello minimo di dettaglio;
+  `get_article` è condiviso da `/api/articles/{document_id}` e `/articles/{document_id}`.
+- Snippet: primi 240 caratteri del corpo, senza HTML. Dettaglio con autoescaping
+  Jinja2 e link esterni limitati a HTTP/HTTPS. Query e profilo persistono nell'URL.
+- Fixture e mapping sono versionati in Git; il seed dalla checkout valida i dati
+  prima del bulk. I test usano indici temporanei isolati.
+
+Paginazione, metadati del corpus, profili E0/E1 e stabilità dei ranking sperimentali
+restano previsti in M2/M3. Evidenze: [ADR 0002](decisions/0002-vertical-slice.md).

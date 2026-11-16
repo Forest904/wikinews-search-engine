@@ -30,3 +30,63 @@ def test_environment_settings(monkeypatch):
         assert get_settings().elasticsearch_timeout == 2.5
     finally:
         get_settings.cache_clear()
+
+@pytest.mark.parametrize("method", ["search", "get_article"])
+@pytest.mark.parametrize("failure", [ConnectionError("offline"), ConnectionTimeout("slow")])
+def test_retrieval_connection_failures(method, failure):
+    from wikinews_ir.models import SearchRequest
+    from wikinews_ir.retrieval.engine import RetrievalUnavailable
+
+    backend = RetrievalEngine()
+    backend.client.close()
+    backend.client = Mock()
+    getattr(backend.client, "get" if method == "get_article" else "search").side_effect = failure
+    with pytest.raises(RetrievalUnavailable):
+        getattr(backend, method)("demo-01" if method == "get_article" else SearchRequest(query="x"))
+
+
+@pytest.mark.parametrize("method", ["search", "get_article"])
+def test_backend_api_errors_are_sanitized(method):
+    from elastic_transport import ApiResponseMeta, NodeConfig
+    from elasticsearch.exceptions import ApiError
+
+    from wikinews_ir.models import SearchRequest
+    from wikinews_ir.retrieval.engine import RetrievalUnavailable
+
+    backend = RetrievalEngine()
+    backend.client.close()
+    backend.client = Mock()
+    failure = ApiError(
+        "sensitive backend details",
+        ApiResponseMeta(500, "1.1", {}, 0, NodeConfig("http", "localhost", 9200)),
+        {"error": "sensitive backend details"},
+    )
+    getattr(backend.client, "get" if method == "get_article" else "search").side_effect = failure
+    with pytest.raises(RetrievalUnavailable, match="Elasticsearch ha restituito un errore"):
+        getattr(backend, method)("demo-01" if method == "get_article" else SearchRequest(query="x"))
+
+
+def test_search_snippet_and_request_validation():
+    from pydantic import ValidationError
+
+    from wikinews_ir.models import SearchRequest
+
+    backend = RetrievalEngine()
+    backend.client.close()
+    backend.client = Mock()
+    backend.client.search.return_value = {
+        "hits": {"total": {"value": 1}, "hits": [{
+            "_id": "demo-01", "_score": 1.5,
+            "_source": {"title": "Title", "body": "a" * 300, "url": "https://example.org"},
+        }]}, "took": 3,
+    }
+    result = backend.search(SearchRequest(query=" title ", limit=1))
+    assert result.query == "title"
+    assert result.hits[0].snippet == "a" * 240
+    assert result.elapsed_ms == 3
+    backend.client.search.reset_mock()
+    request = SearchRequest(query="title")
+    request.limit = 101
+    with pytest.raises(ValidationError):
+        backend.search(request)
+    backend.client.search.assert_not_called()

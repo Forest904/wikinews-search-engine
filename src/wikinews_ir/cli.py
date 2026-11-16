@@ -6,20 +6,25 @@ from pathlib import Path
 
 from elasticsearch.helpers import bulk
 
+from wikinews_ir.config import Settings
+from wikinews_ir.models import Article
 from wikinews_ir.retrieval.engine import RetrievalEngine
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def seed_demo() -> None:
-    engine = RetrievalEngine()
+def seed_demo(settings: Settings | None = None) -> None:
+    engine = RetrievalEngine(settings) if settings is not None else RetrievalEngine()
     try:
         settings = engine.settings
         if not engine.check_ready():
             raise RuntimeError("Elasticsearch non disponibile; controlla docker compose ps")
-        mapping = json.loads((ROOT / "configs" / "indices" / "standard.json").read_text())
+        mapping = json.loads((ROOT / "configs" / "indices" / "standard.json").read_text(encoding="utf-8"))
         with (ROOT / "tests" / "fixtures" / "articles.json").open(encoding="utf-8") as stream:
-            articles = json.load(stream)
+            articles = [Article.model_validate(item).model_dump() for item in json.load(stream)]
+        ids = [item["document_id"] for item in articles]
+        if len(ids) != len(set(ids)):
+            raise ValueError("Identificativi fixture duplicati")
         if not engine.client.indices.exists(index=settings.elasticsearch_index):
             engine.client.indices.create(index=settings.elasticsearch_index, **mapping)
         actions = [

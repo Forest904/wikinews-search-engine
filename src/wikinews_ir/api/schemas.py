@@ -1,5 +1,5 @@
-"""Future request/response validation helpers; core schemas live in models.py."""
+"""Public API schemas shared with Python callers."""
 
-from wikinews_ir.models import SearchHit, SearchResponse
+from wikinews_ir.models import Article, SearchHit, SearchRequest, SearchResponse
 
-__all__ = ["SearchHit", "SearchResponse"]
+__all__ = ["Article", "SearchHit", "SearchRequest", "SearchResponse"]

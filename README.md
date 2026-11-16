@@ -3,8 +3,9 @@
 Monorepo sperimentale per un motore di ricerca **lessicale** delle notizie italiane
 Wikinotizie, basato su Elasticsearch, con valutazione IR riproducibile.
 
-> **Stato attuale:** **M0 completata**, con ambiente riproducibile, CI superata
-> e un percorso dimostrativo su fixture. Prossimo passo: completare M1.
+> **Stato attuale:** **M1 completata e verificata localmente**, con ricerca e dettaglio
+> su fixture, API condivisa con Python e test browser automatici. Prossimo passo: M2.
+> Il nuovo job CI di integrazione/browser è configurato; l'esito remoto è da verificare.
 > L'ingestion del dump reale, la ground truth multi-sorgente e il ranking avanzato
 > sono **pianificati ma non ancora implementati**. Leggi [la roadmap](docs/roadmap.md).
 
@@ -94,7 +95,7 @@ Il file non è incluso nello ZIP né va inserito in Git. La pipeline di download
 normalizzazione, deduplicazione e indicizzazione del corpus reale è prevista in **M2**.
 Le fixture sono sintetiche, non un campione reale.
 
-## Scelte e limiti dopo M0
+## Scelte e limiti dopo M1
 
 - Immagine Elasticsearch **9.5.6**, client Python **9.5.1** bloccato nel lockfile.
 - Trasporto HTTP con basic auth **solo su loopback**, per sviluppo locale.
@@ -130,3 +131,54 @@ se cambia, aggiornare anche `ELASTICSEARCH_URL` per l'app eseguita sull'host.
 
 Le decisioni M0 e le evidenze di verifica sono in
 [ADR 0001](docs/decisions/0001-bootstrap.md).
+
+## Vertical slice M1
+
+Eseguire `uv run --locked wikinews-ir seed-demo`, poi aprire la homepage e cercare
+`terremoto`: il risultato atteso è **Terremoto in Abruzzo** (`demo-01`). Il titolo
+apre il dettaglio locale; il link di ritorno ripristina la query. Anche `soccorsi`
+trova lo stesso articolo cercando nel corpo. `zzzznonpresente` mostra lo stato vuoto.
+Le [fixture](tests/fixtures/README.md) sono sintetiche; il link esterno nel dettaglio
+porta alla homepage Wikinotizie, non a un articolo reale.
+
+- `GET /api/search?q=terremoto&profile=bm25&limit=10`: query normalizzata con trim,
+  1–250 caratteri, unico profilo `bm25`, limite 1–100 (default 10).
+- `GET /api/articles/demo-01`: ID, titolo, corpo completo e URL.
+- `GET /articles/demo-01`: dettaglio HTML; `q` e `profile` conservano la ricerca di ritorno.
+- Parametri non validi: 422; articolo/indice assente: 404 con messaggi distinti;
+  backend indisponibile: 503. Health verifica la connessione, non l'esistenza dell'indice.
+
+Lo stesso motore è utilizzabile da Python:
+
+```python
+from wikinews_ir.models import SearchRequest
+from wikinews_ir.retrieval.engine import RetrievalEngine
+
+engine = RetrievalEngine()
+try:
+    results = engine.search(SearchRequest(query="terremoto"))
+    print(results.model_dump())
+    print(engine.get_article("demo-01").body)
+finally:
+    engine.close()
+```
+
+Per la verifica completa, con Elasticsearch avviato:
+
+```powershell
+uv run --locked playwright install chromium
+$env:RUN_INTEGRATION = "1"
+$env:RUN_E2E = "1"
+uv run --locked pytest -q
+Remove-Item Env:RUN_INTEGRATION
+Remove-Item Env:RUN_E2E
+```
+
+Su Linux/macOS: `uv run --locked playwright install --with-deps chromium`, poi
+`RUN_INTEGRATION=1 RUN_E2E=1 uv run --locked pytest -q`.
+I test creano indici temporanei `test-m1-*` e li eliminano al termine; i server
+browser usano porte libere. Non occorre caricare prima le fixture nell'indice demo.
+Screenshot e trace sono salvati in `output/playwright/` (ignorato da Git);
+la CI li pubblica come artefatti in caso di fallimento.
+
+Evidenze e confini della milestone: [ADR 0002](docs/decisions/0002-vertical-slice.md).
