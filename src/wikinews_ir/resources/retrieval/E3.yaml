@@ -1,0 +1,15 @@
+id: E3
+version: '1'
+index_family: italian
+query_type: multi_match
+type: best_fields
+operator: or
+fields:
+- title
+- body
+title_boost: 3.0
+fuzzy_boost: 0.2
+fuzziness: AUTO:4,7
+prefix_length: 1
+max_expansions: 25
+fuzzy_transpositions: true

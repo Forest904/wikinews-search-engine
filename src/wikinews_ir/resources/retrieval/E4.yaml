@@ -1,0 +1,13 @@
+id: E4
+version: '1'
+index_family: italian
+query_type: multi_match
+type: best_fields
+operator: or
+fields:
+- title
+- body
+title_boost: 3.0
+phrase_boost: 2.0
+slop: 0
+quote_syntax_version: '1'

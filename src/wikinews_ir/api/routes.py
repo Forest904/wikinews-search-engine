@@ -15,7 +15,7 @@ from wikinews_ir.retrieval.engine import (
     RetrievalUnavailable,
     SearchIndexMissing,
 )
-from wikinews_ir.retrieval.profiles import SUPPORTED_PROFILES
+from wikinews_ir.retrieval.profiles import SUPPORTED_PROFILES, ProfileId
 
 router = APIRouter()
 templates = Jinja2Templates(
@@ -44,7 +44,7 @@ def health(backend: RetrievalEngine = Depends(engine)):
 def search(
     backend: RetrievalEngine = Depends(engine),
     q: str = Query(),
-    profile: str = "E0",
+    profile: ProfileId = "E0",
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1, le=100),
     limit: str | None = Query(default=None, include_in_schema=False),
@@ -54,7 +54,7 @@ def search(
             raise HTTPException(status_code=422, detail="Usare page_size al posto di limit")
         search_request = SearchRequest(query=q, profile=profile, page=page, page_size=page_size)
     except ValidationError as exc:
-        raise HTTPException(status_code=422, detail="Parametri di ricerca non validi") from exc
+        raise HTTPException(status_code=422, detail="; ".join(error["msg"] for error in exc.errors())) from exc
     try:
         return backend.search(search_request)
     except SearchIndexMissing as exc:
@@ -64,7 +64,7 @@ def search(
 
 
 @router.get("/api/articles/{document_id}", response_model=Article)
-def article(document_id: str, profile: str = Query(default="E0", pattern="^(E0|E1)$"),
+def article(document_id: str, profile: ProfileId = "E0",
             backend: RetrievalEngine = Depends(engine)):
     try:
         return backend.get_article(document_id, profile)
@@ -77,7 +77,7 @@ def article(document_id: str, profile: str = Query(default="E0", pattern="^(E0|E
 @router.get("/articles/{document_id}", response_class=HTMLResponse)
 def article_page(
     request: Request, document_id: str, q: str = "",
-    profile: str = Query(default="E0", pattern="^(E0|E1)$"),
+    profile: ProfileId = "E0",
     page: int = Query(default=1, ge=1), page_size: int = Query(default=10, ge=1, le=100),
     backend: RetrievalEngine = Depends(engine),
 ):

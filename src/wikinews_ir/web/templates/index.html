@@ -11,7 +11,7 @@
     <header>
       <p class="eyebrow">Ingegneria dei Dati · Homework 4</p>
       <h1>Ricerca Wikinotizie</h1>
-      <p class="muted">Ricerca lessicale nel corpus Wikinotizie. E0: analyzer standard; E1: analyzer italiano.</p>
+      <p class="muted">Ricerca lessicale nel corpus Wikinotizie. E0: analyzer standard; E1: analyzer italiano; E2: titolo pesato; E3: tolleranza ai refusi; E4: frasi.</p>
     </header>
     <form id="search-form">
       <label for="q">Cerca nelle notizie</label>
@@ -23,6 +23,9 @@
       <select id="profile" name="profile">
         {% for profile in profiles %}<option value="{{ profile }}">{{ profile }}</option>{% endfor %}
       </select>
+      <p class="muted">E4 premia la frase completa. Usa "energia solare" Italia per richiedere
+      la frase e almeno un termine esterno. Ogni frase tra virgolette è obbligatoria;
+      il confronto usa l’analisi linguistica italiana. Le virgolette valgono solo in E4.</p>
     </form>
     <div id="status" class="muted" role="status">Inserisci una parola per cercare nelle notizie.</div>
     <ol id="results" aria-live="polite"></ol>

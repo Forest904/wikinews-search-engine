@@ -1,14 +1,14 @@
 """Stable public schemas shared between Web API and retrieval engine."""
 
-from typing import Literal
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from wikinews_ir.retrieval.profiles import ProfileId
 
 
 class SearchRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     query: str = Field(min_length=1, max_length=250)
-    profile: Literal["E0", "E1"] = "E0"
+    profile: ProfileId = "E0"
     page: int = Field(default=1, ge=1)
     page_size: int = Field(default=10, ge=1, le=100)
 
@@ -16,6 +16,9 @@ class SearchRequest(BaseModel):
     def window(self):
         if self.page * self.page_size > 10_000:
             raise ValueError("Paginazione limitata ai primi 10.000 risultati")
+        if self.profile == "E4":
+            from wikinews_ir.retrieval.query_builder import parse_phrases
+            parse_phrases(self.query)
         return self
 
     @field_validator("query", mode="before")
@@ -31,6 +34,11 @@ class Article(BaseModel):
     url: str
 
 
+class HighlightSegment(BaseModel):
+    text: str
+    highlighted: bool = False
+
+
 class SearchHit(BaseModel):
     document_id: str
     rank: int
@@ -38,6 +46,8 @@ class SearchHit(BaseModel):
     title: str
     url: str
     snippet: str = ""
+    title_segments: list[HighlightSegment] = Field(default_factory=list)
+    snippet_segments: list[HighlightSegment] = Field(default_factory=list)
 
 
 class SearchResponse(BaseModel):

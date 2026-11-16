@@ -26,7 +26,7 @@ Regole di esecuzione:
 | M1 — Vertical slice | UI → API → Elasticsearch → risultati su fixture | M0 | Completato localmente: ricerca browser e Python su fixture |
 | M2 — Corpus pipeline | Dump letto, ripulito, deduplicato e manifestato | M0 | Completato localmente: 11.032 articoli e build riproducibili |
 | M3 — Baseline completa | E0/E1 con corpus reale, API/UI stabile | M1, M2 | Completato localmente: 11.032 articoli per indice e run identiche dopo rebuild |
-| M4 — Retrieval avanzato | E2/E3/E4 e possibili estensioni | M3 | Profili distinti e testati, senza regressioni critiche |
+| M4 — Retrieval avanzato | E2/E3/E4 e possibili estensioni | M3 | Completato localmente: E2/E3/E4, highlight e baseline invariate |
 | M5 — Benchmark | Topic, rubriche, split, pooling, gold/silver | M3, M4 parziale | Qrels e pool tracciabili; qualità annotazione controllata |
 | M6 — Esperimenti finali | Metriche, confronti, error analysis | M4, M5 | Test gold usato una volta secondo protocollo congelato |
 | M7 — Release accademica | GitHub, README, slide, demo live | M6 | Installazione pulita e presentazione provate |
@@ -151,17 +151,24 @@ CI remota da verificare dopo il push.
 
 ### Attività
 
-- [ ] Implementare `E2`: boosting del titolo rispetto al corpo; parametro configurabile.
-- [ ] Implementare `E3`: fuzzy matching controllato; scegliere se basso boost, fallback o entrambe le varianti testate.
-- [ ] Implementare `E4`: phrase search; chiarire semantica delle virgolette e comportamento UI.
-- [ ] Definire e, se utile, implementare `E5`: espansione con sinonimi controllati (opzionale).
-- [ ] Valutare miglioramenti UI: highlight e filtro per intervallo date **solo** quando affidabile.
-- [ ] Scrivere test unitari del query builder e test integrazione con coppie query-documento difficili.
-- [ ] Evitare la combinazione indiscriminata di feature: E3/E4/E5 devono confrontarsi singolarmente con E2.
+- [x] Implementare `E2`: boosting del titolo rispetto al corpo; parametro configurabile.
+- [x] Implementare `E3`: fuzzy matching controllato; scegliere se basso boost, fallback o entrambe le varianti testate.
+- [x] Implementare `E4`: phrase search; chiarire semantica delle virgolette e comportamento UI.
+- [x] Valutare `E5`: sinonimi controllati rinviati, con motivazione in ADR 0005.
+- [x] Valutare miglioramenti UI: highlight e filtro per intervallo date **solo** quando affidabile.
+- [x] Scrivere test unitari del query builder e test integrazione con coppie query-documento difficili.
+- [x] Evitare la combinazione indiscriminata di feature: E3/E4/E5 devono confrontarsi singolarmente con E2.
 
 ### Exit criteria
 
 Ogni profilo produce risultati e run con ID/versione riconoscibili. Le feature non interrompono la UI baseline; eventuali regressioni sono misurabili e documentate. La selezione del profilo finale **non** usa il test gold.
+
+**Stato: M4 completata e verificata localmente (2026-11-16).**
+E2/E3/E4 e highlight disponibili in API/UI/Python, con run ripetibili anche dopo
+rebuild. E0/E1 conservano gli hash M3. Nessun cambiamento al corpus; sinonimi e
+filtro date rinviati. Evidenze nel [report M4](m4-validation.md), semantica e
+limiti in [ADR 0005](decisions/0005-advanced-retrieval.md). CI remota da verificare
+dopo il push; selezione del profilo finale riservata a M5/M6.
 
 ## 8. Fase M5 — Benchmark e ground truth multi-sorgente
 

@@ -390,7 +390,7 @@ in questo documento e nel PRD.
 - Regole esatte di cleaning HTML e scelta della revisione.
 - Criterio finale per includere documenti `Pubblicati` o casi eccezionali.
 - Identificazione affidabile della data di pubblicazione.
-- Politica definitiva di query fuzzy, phrase e sinonimi a livello di DSL.
+- Politica fuzzy e phrase chiusa in M4 (sezione 17); sinonimi rinviati.
 - Dimensioni reali del pooling e gestione metrica dei non giudicati.
 - Disponibilità, modello e costi del giudice LLM; uso configurabile e non bloccante.
 - Prestazioni, risorse e comportamento di fallback sulla macchina della demo.
@@ -433,3 +433,26 @@ con paginazione e contesto conservato nel dettaglio; `/search` non è introdotto
 `runs export` salva TREC e manifest da query JSONL, senza qrels; pooling e metriche
 restano M5/M6. Specifiche operative nel README, decisioni in
 [ADR 0004](decisions/0004-baseline-corpus.md), evidenze nel [report M3](m3-validation.md).
+
+## 17. Stato implementato dopo M4 (2026-11-16)
+
+E2–E4 estendono i profili disponibili senza modificare i due indici M3. E2 usa
+title^3/body; E3 aggiunge fuzzy limitato a peso 0.2; E4 aggiunge boost phrase 2
+oppure vincoli obbligatori sulle frasi tra virgolette, slop 0. Termini esterni
+alle virgolette formano una clausola OR obbligatoria. Analyzer italiano e
+validazione condivisa API/Python/export; sintassi errata restituisce 422 in API.
+
+ProfileId centralizza E0–E4; configurazioni versionate e hash sono distribuiti
+nel wheel. La readiness restituisce cinque profili controllando soltanto due
+indici fisici. L'export predefinito produce cinque run, con selezione opzionale
+tramite --profiles e tag costruiti dalla versione effettiva.
+
+SearchHit aggiunge title_segments/snippet_segments di testo e flag highlighted;
+i campi testuali precedenti restano disponibili. Unified highlighter con encoder
+HTML, conversione server in segmenti e rendering DOM con textContent/mark.
+Nessun HTML della risposta viene inserito direttamente nella pagina. In assenza
+di highlight si usa il testo originale; l'highlight non altera il ranking.
+
+E5 e filtro date restano esclusi. Contratti e limiti in
+[ADR 0005](decisions/0005-advanced-retrieval.md); evidenze nel
+[report M4](m4-validation.md). Nessuna selezione del profilo finale prima di M5/M6.

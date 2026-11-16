@@ -1,0 +1,10 @@
+id: E2
+version: '1'
+index_family: italian
+query_type: multi_match
+type: best_fields
+operator: or
+fields:
+- title
+- body
+title_boost: 3.0

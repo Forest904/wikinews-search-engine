@@ -109,3 +109,44 @@ def test_profile_pagination_and_restored_url(seeded_backend, browser_page):
         expect(page.locator("#page-status")).to_contain_text("Pagina 2")
         page.reload()
         expect(page.locator("#page-status")).to_contain_text("Pagina 2")
+
+
+@pytest.mark.parametrize("profile", ["E2", "E3", "E4"])
+def test_advanced_profiles_navigation(seeded_backend, browser_page, profile):
+    page = browser_page
+    with serve(seeded_backend) as url:
+        page.goto(url + f"/?q=italiana&profile={profile}&page_size=1")
+        expect(page.get_by_label("Profilo di retrieval")).to_have_value(profile)
+        expect(page.locator("#results li")).to_have_count(1)
+        expect(page.locator("#results mark").first).to_be_visible()
+        page.get_by_role("button", name="Successiva").click()
+        expect(page.locator("#page-status")).to_contain_text("Pagina 2")
+        page.locator("#results a").click()
+        page.get_by_role("link", name="Torna ai risultati").click()
+        expect(page.locator("#page-status")).to_contain_text("Pagina 2")
+        expect(page.get_by_label("Profilo di retrieval")).to_have_value(profile)
+
+
+def test_phrase_error_and_safe_highlighting(seeded_backend, browser_page):
+    page = browser_page
+    with serve(seeded_backend) as url:
+        page.goto(url + '/?profile=E4')
+        page.get_by_label("Cerca nelle notizie").fill('"terremoto')
+        page.get_by_role("button", name="Cerca", exact=True).click()
+        expect(page.get_by_role("status")).to_contain_text("Chiudere le virgolette")
+        page.get_by_label("Cerca nelle notizie").fill('"terremoto in Abruzzo"')
+        page.get_by_role("button", name="Cerca", exact=True).click()
+        expect(page.locator("#results li")).to_have_count(1)
+        expect(page.locator("#results mark").first).to_be_visible()
+        # Simulate hostile API text to exercise the actual DOM renderer.
+        hostile = '<img src=x onerror="window.injected=true">'
+        page.route("**/api/search?*", lambda route: route.fulfill(json={
+            "total": 1, "elapsed_ms": 0, "page": 1, "page_size": 10,
+            "hits": [{"document_id": "demo-01", "title": hostile, "snippet": hostile,
+                      "title_segments": [{"text": hostile, "highlighted": True}],
+                      "snippet_segments": [{"text": hostile, "highlighted": False}]}],
+        }))
+        page.get_by_role("button", name="Cerca", exact=True).click()
+        expect(page.locator("#results mark")).to_have_text(hostile)
+        expect(page.locator("#results img")).to_have_count(0)
+        assert page.evaluate("window.injected") is None

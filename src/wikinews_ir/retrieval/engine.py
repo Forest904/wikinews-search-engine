@@ -12,7 +12,8 @@ from elasticsearch.exceptions import (
 from wikinews_ir.config import Settings, get_settings
 from wikinews_ir.ingestion.indexer import inspect_index
 from wikinews_ir.models import Article, SearchHit, SearchRequest, SearchResponse
-from wikinews_ir.retrieval.profiles import digest, index_name, profile_config
+from wikinews_ir.retrieval.highlight import HIGHLIGHT, segments
+from wikinews_ir.retrieval.profiles import SUPPORTED_PROFILES, digest, index_name, profile_config
 from wikinews_ir.retrieval.query_builder import build_query
 
 
@@ -65,6 +66,10 @@ class RetrievalEngine:
                 "corpus_sha256", "content_sha256", "document_count", "snapshot_id",
             )):
                 raise RetrievalUnavailable("I profili usano corpus diversi")
+            for profile in SUPPORTED_PROFILES[2:]:
+                config = profile_config(profile)
+                metadata[profile] = {**metadata["E1"], "profile_version": config["version"],
+                                     "profile_sha256": digest(config)}
             return metadata
         except (ElasticsearchConnectionError, ConnectionTimeout, ApiError, ValueError) as exc:
             raise RetrievalUnavailable("Indici non pronti: esegui index build") from exc
@@ -77,6 +82,7 @@ class RetrievalEngine:
             result = self.client.search(
                 index=index_name(self.settings, request.profile),
                 query=body,
+                highlight=HIGHLIGHT,
                 size=request.page_size,
                 from_=(request.page - 1) * request.page_size,
                 sort=[{"_score": "desc"}, {"document_id": "asc"}],
@@ -99,6 +105,8 @@ class RetrievalEngine:
                 score=float(item.get("_score") or 0),
                 title=item.get("_source", {}).get("title", ""),
                 url=item.get("_source", {}).get("url", ""),
+                title_segments=segments(item.get("highlight", {}).get("title")),
+                snippet_segments=segments(item.get("highlight", {}).get("body")),
                 snippet=item.get("_source", {}).get("body", "")[:240],
             )
             for i, item in enumerate(result["hits"]["hits"], start=(request.page - 1) * request.page_size + 1)

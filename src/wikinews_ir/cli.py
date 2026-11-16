@@ -82,6 +82,8 @@ def main() -> None:
     export.add_argument("--queries", type=Path, required=True)
     export.add_argument("--output", type=Path, required=True)
     export.add_argument("--top-k", type=int, default=100)
+    from wikinews_ir.retrieval.profiles import SUPPORTED_PROFILES
+    export.add_argument("--profiles", nargs="+", choices=SUPPORTED_PROFILES, default=SUPPORTED_PROFILES)
     args = parser.parse_args()
     if args.command in {"index", "runs"}:
         from elasticsearch.exceptions import ApiError, TransportError
@@ -95,7 +97,7 @@ def main() -> None:
             if args.command == "index":
                 result = build_indices(backend, args.corpus, rebuild=args.rebuild, output=args.output)
             else:
-                result = export_runs(backend, args.queries, args.output, args.top_k)
+                result = export_runs(backend, args.queries, args.output, args.top_k, args.profiles)
             print(json.dumps(result, ensure_ascii=False, indent=2))
         except (ValueError, OSError, KeyError, TypeError, RetrievalUnavailable,
                 SearchIndexMissing, ApiError, TransportError) as exc:

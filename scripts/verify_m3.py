@@ -23,15 +23,15 @@ def verify(corpus, queries, output, rebuild):
         report = {"execution": execution(), "platform": platform.platform(),
                   "machine": platform.machine(), "timings": {}, "samples": []}
         report["indices"] = build_indices(backend, corpus, output=output / "indices")
-        first = export_runs(backend, queries, output / "run-first")
-        repeat = export_runs(backend, queries, output / "run-repeat")
+        first = export_runs(backend, queries, output / "run-first", profiles=("E0", "E1"))
+        repeat = export_runs(backend, queries, output / "run-repeat", profiles=("E0", "E1"))
         assert first["artifacts"] == repeat["artifacts"], "Ranking ripetuti diversi"
         report["repeat_identical"] = True
         if rebuild:
             report["rebuilt_indices"] = build_indices(
                 backend, corpus, rebuild=True, output=output / "indices"
             )
-            rebuilt = export_runs(backend, queries, output / "run-rebuilt")
+            rebuilt = export_runs(backend, queries, output / "run-rebuilt", profiles=("E0", "E1"))
             assert first["artifacts"] == rebuilt["artifacts"], "Ranking dopo rebuild diversi"
             report["rebuild_identical"] = True
         rows = load_queries(queries)

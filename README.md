@@ -3,10 +3,10 @@
 Monorepo sperimentale per un motore di ricerca **lessicale** delle notizie italiane
 Wikinotizie, basato su Elasticsearch, con valutazione IR riproducibile.
 
-> **Stato attuale:** **M3 completata e verificata localmente**: 11.032 articoli
-> ricercabili con E0/E1, paginazione, dettaglio ed export TREC riproducibile.
-> Vedi [report M3](docs/m3-validation.md) e [roadmap](docs/roadmap.md).
-> Ranking avanzato e benchmark restano pianificati; CI remota da verificare dopo il push.
+> **Stato attuale:** **M4 completata e verificata localmente**: 11.032 articoli,
+> profili E0–E4, highlight, paginazione, dettaglio ed export TREC riproducibile.
+> Vedi [report M4](docs/m4-validation.md) e [roadmap](docs/roadmap.md).
+> Benchmark e valutazione restano M5/M6; CI remota da verificare dopo il push.
 
 ## Documentazione di progetto
 
@@ -139,7 +139,7 @@ Policy, schema, checksum e verifiche: [dataset](docs/dataset.md) e
 - Parametri errati: 422; articolo/indice assente: 404; backend indisponibile,
   indice incompleto/incompatibile o ricerca parziale: 503.
 - Indici configurabili con `ELASTICSEARCH_INDEX` (E0) e `ELASTICSEARCH_ITALIAN_INDEX`
-  (E1). Default `wikinews_standard_v1` e `wikinews_italian_v1`.
+  (E1–E4). Default `wikinews_standard_v1` e `wikinews_italian_v1`.
 - Ricostruzione esplicita: `uv run --locked wikinews-ir index build --rebuild`.
   Ricrea **entrambi** gli indici configurati; durante il rebuild la ricerca non è garantita.
   Necessaria anche per migrare il vecchio indice M1 contenente cinque fixture.
@@ -149,23 +149,53 @@ Policy, schema, checksum e verifiche: [dataset](docs/dataset.md) e
 - Le risorse runtime sono incluse nel wheel e nel container; `configs/` contiene le copie
   leggibili dalla checkout, con test di identità per evitare divergenze.
 
+## Profili avanzati M4
+
+E2 pesa il titolo 3 volte il corpo. E3 aggiunge a E2 fuzzy matching a peso 0.2,
+con espansioni limitate; E4 aggiunge a E2 un boost di frase. E3 ed E4 sono
+indipendenti: il fuzzy non è attivo in E4. Tutti riutilizzano l'indice italiano,
+senza reindicizzazione. Il default resta E0, senza selezione di qualità.
+
+In E4, `energia solare` premia la frase mantenendo i candidati E2;
+`"energia solare" Italia` richiede la frase e almeno un termine esterno.
+Frasi multiple sono tutte obbligatorie. Sono supportate anche `“virgolette tipografiche”`;
+virgolette vuote, annidate o non chiuse producono 422 e un messaggio nella UI.
+Le frasi seguono l'analyzer italiano, non un confronto letterale. Negli altri
+profili le virgolette non sono operatori. Nessuna sintassi di escape aggiuntiva.
+
+Ogni hit aggiunge `title_segments` e `snippet_segments`, liste di
+`{"text":"energia","highlighted":true}`. `title` e `snippet` testuali restano
+disponibili. La UI evidenzia i segmenti in sicurezza e usa il testo originale
+quando mancano. Il frammento non necessariamente mostra tutti i vincoli della query.
+
+I boost si configurano nei YAML E2–E4 di `configs/retrieval/` e nelle copie
+`src/wikinews_ir/resources/retrieval/`: incrementare la versione a ogni modifica
+di ranking e mantenere le copie identiche. Le risorse distribuite sono quelle
+del pacchetto, senza override per richiesta. Default e limiti in
+[ADR 0005](docs/decisions/0005-advanced-retrieval.md). E5 e filtro date rinviati.
+
 ## Export TREC e verifica riproducibile
 
 ```bash
-uv run --locked wikinews-ir runs export --queries configs/smoke/queries.jsonl --output experiments/runs/m3-first --top-k 100
+uv run --locked wikinews-ir runs export --queries configs/smoke/m4-queries.jsonl --output experiments/runs/m4-first --top-k 100
+uv run --locked wikinews-ir runs export --queries configs/smoke/queries.jsonl --output experiments/runs/baseline --profiles E0 E1
+uv run --locked python scripts/verify_m4.py --output output/m4-check --rebuild
 uv run --locked python scripts/verify_m3.py --output output/m3-check --rebuild
 ```
 
 Usare directory di output nuove. Le query JSONL hanno forma
 `{"query_id":"q1","query":"terremoto"}`: ID univoco, non vuoto e senza spazi.
-L'export produce E0.trec, E1.trec e manifest.json; top-k ammesso 1–1.000.
+L'export predefinito produce E0.trec–E4.trec e manifest.json; top-k ammesso 1–1.000.
+`--profiles` permette un sottoinsieme; i tag TREC includono la versione effettiva.
 Il manifest registra anche query senza risultati. I punteggi non vengono alterati:
 rispettare rank e tiebreak `document_id` crescente quando si leggono le run.
 
-Lo script locale verifica riuso, run ripetute e, con `--rebuild`, ricostruzione degli
-indici; misura 50 ricerche per profilo dopo warmup e salva i campioni per la review.
-Le dieci query smoke non sono topic del benchmark e non alimentano il tuning.
-Limiti di cleaning e misure: [report M3](docs/m3-validation.md).
+Gli script verificano riuso, run ripetute e, con `--rebuild`, ricostruzione degli
+indici. M3 resta limitato a E0/E1; M4 verifica E0–E4 e gli hash baseline M3,
+misura 40 ricerche per profilo dopo warmup e salva i campioni per la review.
+Le query smoke non sono topic del benchmark e non alimentano il tuning.
+Limiti di cleaning e misure: [report M3](docs/m3-validation.md) e
+[report M4](docs/m4-validation.md).
 
 ## Licenze
 

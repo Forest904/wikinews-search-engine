@@ -31,7 +31,13 @@ def load_queries(path):
 def export_runs(backend, queries_path, output, top_k=100, profiles=SUPPORTED_PROFILES):
     if not 1 <= top_k <= 1000:
         raise ValueError("top-k deve essere tra 1 e 1000")
+    profiles = tuple(profiles)
+    if not profiles or len(set(profiles)) != len(profiles):
+        raise ValueError("Specificare profili distinti e non vuoti")
     queries = load_queries(queries_path)
+    for profile in profiles:
+        for row in queries:
+            SearchRequest(query=row["query"], profile=profile)
     output = Path(output)
     if output.exists():
         raise ValueError("La directory di output esiste già")
@@ -66,7 +72,7 @@ def export_runs(backend, queries_path, output, top_k=100, profiles=SUPPORTED_PRO
                                 raise ValueError("document_id non rappresentabile in TREC")
                             stream.write(
                                 f"{query['query_id']} Q0 {hit.document_id} {hit.rank} "
-                                f"{hit.score!r} {profile}-v1\n"
+                                f"{hit.score!r} {profile}-v{ready[profile]['profile_version']}\n"
                             )
                             count += 1
                         if count >= min(total, top_k):

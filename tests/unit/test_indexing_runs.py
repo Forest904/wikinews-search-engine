@@ -78,14 +78,14 @@ def test_export_pagination_zero_hits_and_atomic_failure(tmp_path):
     path.write_text('{"query_id":"q1","query":"test"}\n'
                     '{"query_id":"q2","query":"empty"}\n', encoding="utf-8")
     backend = Mock()
-    backend.readiness.return_value = {p: {"index_uuid": p} for p in ("E0", "E1")}
+    backend.readiness.return_value = {p: {"index_uuid": p, "profile_version": "1"} for p in ("E0", "E1", "E2", "E3", "E4")}
     backend.client.info.return_value = {"version": {"number": "test"}}
 
     def search(request):
         ranks = range((request.page - 1) * request.page_size + 1,
                       min(request.page * request.page_size, 103) + 1)
         return SearchResponse(query=request.query, profile=request.profile, index="test",
-                              metadata={"index_uuid": request.profile}, elapsed_ms=0,
+                              metadata={"index_uuid": request.profile, "profile_version": "1"}, elapsed_ms=0,
                               total=103 if request.query == "test" else 0,
                               hits=[SearchHit(document_id=str(i), rank=i, score=1.0,
                                               title="test", url="") for i in ranks]
@@ -120,3 +120,33 @@ def test_bulk_error_never_marks_index_ready(corpus_dir, monkeypatch, tmp_path):
         build_indices(backend, corpus_dir, output=tmp_path / "report")
     client.indices.put_mapping.assert_not_called()
     assert json.loads(next((tmp_path / "report").glob("*-errors.json")).read_text())[0]["document_id"] == "1"
+
+
+@pytest.mark.parametrize("profiles", [(), ("E2", "E2")])
+def test_export_rejects_empty_or_duplicate_profiles(tmp_path, profiles):
+    with pytest.raises(ValueError, match="profili distinti"):
+        export_runs(Mock(), tmp_path / "missing", tmp_path / "out", profiles=profiles)
+
+
+def test_export_validates_phrases_before_backend(tmp_path):
+    path = tmp_path / "queries.jsonl"
+    path.write_text(json.dumps({"query_id": "q", "query": '\"open'}) + "\n")
+    backend = Mock()
+    with pytest.raises(ValueError, match="virgolette"):
+        export_runs(backend, path, tmp_path / "out")
+    backend.readiness.assert_not_called()
+    assert not (tmp_path / "out").exists()
+
+
+def test_export_uses_effective_profile_version(tmp_path):
+    path = tmp_path / "queries.jsonl"
+    path.write_text(json.dumps({"query_id": "q", "query": "energia"}) + "\n")
+    backend = Mock()
+    meta = {"profile_version": "2"}
+    backend.readiness.return_value = {"E2": meta}
+    backend.client.info.return_value = {"version": {"number": "test"}}
+    backend.search.return_value = SearchResponse(
+        query="energia", profile="E2", index="test", metadata=meta, elapsed_ms=0, total=1,
+        hits=[SearchHit(document_id="1", rank=1, score=1.0, title="energia", url="")])
+    export_runs(backend, path, tmp_path / "out", profiles=("E2",))
+    assert (tmp_path / "out/E2.trec").read_text().endswith("E2-v2\n")

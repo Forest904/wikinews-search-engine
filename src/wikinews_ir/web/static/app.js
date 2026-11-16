@@ -4,7 +4,7 @@ const results = document.querySelector('#results');
 const button = form.querySelector('button');
 const initial = new URLSearchParams(window.location.search);
 form.elements.q.value = initial.get('q') || '';
-if (['E0', 'E1'].includes(initial.get('profile'))) form.elements.profile.value = initial.get('profile');
+if (Array.from(form.elements.profile.options).some(option => option.value === initial.get('profile'))) form.elements.profile.value = initial.get('profile');
 const previous = document.querySelector('#previous');
 const next = document.querySelector('#next');
 const pageStatus = document.querySelector('#page-status');
@@ -39,7 +39,8 @@ async function search() {
         422: 'Controlla la query e i parametri di ricerca.',
         503: 'Il servizio di ricerca non è disponibile. Riprova più tardi.',
       };
-      status.textContent = messages[response.status] || 'La ricerca non è riuscita. Riprova.';
+      const error = response.status === 422 ? await response.json() : null;
+      status.textContent = (typeof error?.detail === 'string' ? error.detail : null) || messages[response.status] || 'La ricerca non è riuscita. Riprova.';
       return;
     }
     const data = await response.json();
@@ -56,9 +57,9 @@ async function search() {
       const li = document.createElement('li');
       const link = document.createElement('a');
       link.href = `/articles/${encodeURIComponent(hit.document_id)}?${params}`;
-      link.textContent = hit.title;
+      renderSegments(link, hit.title_segments, hit.title);
       const p = document.createElement('p');
-      p.textContent = hit.snippet;
+      renderSegments(p, hit.snippet_segments, hit.snippet);
       li.append(link, p);
       results.append(li);
     }
@@ -81,3 +82,12 @@ if (initial.has('q')) search();
 form.elements.profile.addEventListener('change', () => { currentPage = 1; search(); });
 previous.addEventListener('click', () => { currentPage -= 1; search(); });
 next.addEventListener('click', () => { currentPage += 1; search(); });
+
+function renderSegments(element, segments, fallback) {
+  if (!segments?.length) { element.textContent = fallback; return; }
+  for (const segment of segments) {
+    const node = segment.highlighted ? document.createElement('mark') : document.createTextNode('');
+    node.textContent = segment.text;
+    element.append(node);
+  }
+}

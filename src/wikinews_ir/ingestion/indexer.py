@@ -12,7 +12,7 @@ from time import perf_counter
 from elasticsearch.helpers import scan, streaming_bulk
 
 from wikinews_ir.ingestion.corpus import ProcessedArticle, checksum
-from wikinews_ir.retrieval.profiles import digest, index_config, index_name
+from wikinews_ir.retrieval.profiles import digest, index_config, index_name, profile_config
 
 
 def execution():
@@ -104,6 +104,10 @@ def inspect_index(client, name, profile):
 def build_indices(backend, directory, profiles=("E0", "E1"), rebuild=False,
                   output=Path("experiments/reports/index-build")):
     identity = validate_corpus(directory)
+    families = {}
+    for profile in profiles:
+        families.setdefault(profile_config(profile)["index_family"], profile)
+    profiles = tuple(families.values())
     names = [index_name(backend.settings, p) for p in profiles]
     if len(set(names)) != len(names) or any(
         not re.fullmatch(r"[a-z0-9][a-z0-9_-]+", n) for n in names
