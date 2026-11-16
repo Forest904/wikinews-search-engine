@@ -1,0 +1,6 @@
+{
+  "distinct_pairs": 600,
+  "double_pairs": 120,
+  "review_reserve_minutes": 120,
+  "annotations_per_user": {"valutatore-1": 240, "valutatore-2": 240, "valutatore-3": 240}
+}

@@ -70,7 +70,12 @@ def export_snapshot(db, actor, packet_id, split, release_test=False):
               release_test=release_test, finalized=len(finals))
         pending = len({(r["query_id"], r["document_id"]) for r in history}
                       - {(r["query_id"], r["document_id"]) for r in finals})
+        timing = [dict(r) for r in db.execute("SELECT * FROM timing WHERE packet_id=?",
+                                             (packet_id,)) if r["query_id"] in ids]
+        discussions = [dict(r) for r in db.execute(
+            "SELECT * FROM pilot_discussions WHERE packet_id=?", (packet_id,))]
         return {"packet": packet, "judgments": rows, "history": history,
+                "timing": timing, "discussions": discussions,
                 "source_manifest": json.loads(source[0]) if source else None,
                 "decisions": decisions, "assignments": assignments, "provenance": provenance,
                 "metadata": {"packet_id": packet_id, "split": split, "exported_by": actor,
@@ -93,6 +98,8 @@ def write_export(snapshot, output):
             "history.jsonl": jsonl(snapshot["history"]),
             "decisions.jsonl": jsonl(snapshot["decisions"]),
             "assignments.jsonl": jsonl(snapshot["assignments"]),
+            "timing.jsonl": jsonl(snapshot.get("timing", [])),
+            "discussions.jsonl": jsonl(snapshot.get("discussions", [])),
             "decision_provenance.json": encoded(snapshot["provenance"]),
             "qrels_gold.tsv": (root / "qrels" / "qrels_gold.tsv").read_text("utf-8"),
             "qrels_manifest.json": (root / "qrels" / "manifest.json").read_text("utf-8"),

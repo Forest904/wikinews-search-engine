@@ -1,0 +1,24 @@
+{"query_id": "P01", "document_id": "26053", "method": "retrieved", "rationale": "Replica: distinguere corpo e navigazione residua."}
+{"query_id": "P01", "document_id": "26056", "method": "retrieved", "rationale": "Lista sismica: utilità di dati e identità evento."}
+{"query_id": "P01", "document_id": "43994", "method": "retrieved", "rationale": "Confronto numerico con un terremoto diverso."}
+{"query_id": "P01", "document_id": "26210", "method": "diagnostic", "rationale": "G8 e ricostruzione: conseguenza diretta o contesto."}
+{"query_id": "P01", "document_id": "26048", "method": "diagnostic", "rationale": "Soccorsi: testo lungo con residui editoriali."}
+{"query_id": "P01", "document_id": "23137", "method": "diagnostic", "rationale": "Sisma in altro paese e anno."}
+{"query_id": "P02", "document_id": "21825", "method": "retrieved", "rationale": "Incidenti e sicurezza degli impianti."}
+{"query_id": "P02", "document_id": "32117", "method": "retrieved", "rationale": "Emergenza in una centrale."}
+{"query_id": "P02", "document_id": "20726", "method": "retrieved", "rationale": "Allerta e informazioni tecniche."}
+{"query_id": "P02", "document_id": "20928", "method": "diagnostic", "rationale": "Diplomazia e dichiarazione di scopi civili."}
+{"query_id": "P02", "document_id": "11351", "method": "diagnostic", "rationale": "Celebrazione culturale di scoperte nucleari."}
+{"query_id": "P02", "document_id": "21300", "method": "diagnostic", "rationale": "Missili e uso militare."}
+{"query_id": "P03", "document_id": "50472", "method": "retrieved", "rationale": "Intervento istituzionale centrale."}
+{"query_id": "P03", "document_id": "40984", "method": "retrieved", "rationale": "Elezione presidenziale."}
+{"query_id": "P03", "document_id": "2840", "method": "retrieved", "rationale": "Coincidenza del nome Sergio."}
+{"query_id": "P03", "document_id": "50864", "method": "diagnostic", "rationale": "Notizia centrata sul premier con atto del Presidente."}
+{"query_id": "P03", "document_id": "46932", "method": "diagnostic", "rationale": "Atto istituzionale e ampio contenuto sulla manovra."}
+{"query_id": "P03", "document_id": "37473", "method": "diagnostic", "rationale": "Stesso ruolo ma persona diversa."}
+{"query_id": "P04", "document_id": "2426", "method": "retrieved", "rationale": "Luogo estero e periodo fuori intervallo."}
+{"query_id": "P04", "document_id": "50220", "method": "retrieved", "rationale": "Alluvione estera recente."}
+{"query_id": "P04", "document_id": "30391", "method": "retrieved", "rationale": "Evento italiano nel periodo richiesto."}
+{"query_id": "P04", "document_id": "38733", "method": "diagnostic", "rationale": "Sardegna 2013, identità e conseguenze dell’evento."}
+{"query_id": "P04", "document_id": "24134", "method": "diagnostic", "rationale": "Stesso tema e paese ma anno escluso."}
+{"query_id": "P04", "document_id": "30649", "method": "diagnostic", "rationale": "Ritrovamento in Sicilia collegato a un evento in Campania."}

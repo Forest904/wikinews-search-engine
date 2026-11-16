@@ -80,6 +80,64 @@ def cite(page, quote="La scuola"):
     expect(page.locator("#evidence")).to_contain_text(quote)
 
 
+def test_pilot_timer_and_independent_discussion(server):
+    url, path, packet_id = server
+    with connect(path) as db:
+        preview = create_block(db, "alice", packet_id, "demo-energia", "alice", "bob", 4, "pilot", "carol")
+        activate_block(db, "alice", preview["block"]["id"])
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch()
+        contexts = [browser.new_context() for _ in range(3)]
+        pages = [context.new_page() for context in contexts]
+        errors = []
+        for page in pages:
+            page.on("pageerror", lambda error: errors.append(str(error)))
+        try:
+            for page, user in zip(pages, ("alice", "bob", "carol"), strict=True):
+                sign_in(page, url, user)
+            alice = pages[0]
+            alice.get_by_role("button", name="Avvia / riprendi").click()
+            expect(alice.get_by_label("Tempo operativo")).to_contain_text("Timer attivo")
+            alice.get_by_role("button", name="Pausa", exact=True).click()
+            expect(alice.get_by_label("Tempo operativo")).to_contain_text("Timer in pausa")
+            alice.get_by_label("Fase del timer").select_option("annotation")
+            alice.get_by_role("button", name="Avvia / riprendi").click()
+            expect(alice.get_by_label("Tempo operativo")).to_contain_text("Timer attivo: annotation")
+            alice.evaluate("Object.defineProperty(document, 'hidden', {value:true, configurable:true}); document.dispatchEvent(new Event('visibilitychange'))")
+            expect(alice.get_by_label("Tempo operativo")).to_contain_text("Timer in pausa")
+            alice.reload()
+            expect(alice.get_by_label("Tempo operativo")).to_contain_text("Timer in pausa")
+            coordinator = contexts[0].new_page()
+            coordinator.goto(url + "/coordinate")
+            coordinator.locator("#open-discussion").click()
+            expect(coordinator.locator("#message")).to_contain_text("non completata")
+            for page in pages:
+                for i in range(4):
+                    page.locator("#tasks").select_option(str(i))
+                    page.locator("#rationale").fill("Da discutere durante la calibrazione.")
+                    page.get_by_role("button", name="Astieniti", exact=True).click()
+                    expect(page.locator("#current-status")).to_have_text("Astensione")
+            coordinator.locator("#open-discussion").click()
+            expect(coordinator.locator("#pilot-originals")).to_contain_text("carol")
+            coordinator.locator("#discussion-minutes").fill("10")
+            coordinator.locator("#discussion-users").fill("alice,bob,carol")
+            coordinator.locator("#discussion-notes").fill("Chiarire rubriche; nessun grado finale.")
+            coordinator.locator("#save-discussion").click()
+            expect(coordinator.locator("#message")).to_contain_text("originali congelati")
+            output = Path("output/playwright/m5c")
+            output.mkdir(parents=True, exist_ok=True)
+            coordinator.screenshot(path=str(output / "discussion.png"), full_page=True)
+            assert not errors
+        finally:
+            for context in contexts:
+                context.close()
+            browser.close()
+    with connect(path) as db:
+        assert db.execute("SELECT count(*) FROM timing WHERE complete=1").fetchone()[0] == 2
+        assert db.execute("SELECT count(*) FROM judgments").fetchone()[0] == 12
+        assert db.execute("SELECT count(*) FROM decisions").fetchone()[0] == 0
+
+
 def test_three_users_assignment_judgment_review_export(server):
     url, _, _ = server
     output = Path("output/playwright/annotation")

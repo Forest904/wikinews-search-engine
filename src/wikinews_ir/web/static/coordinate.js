@@ -25,9 +25,9 @@
     }));
     const packets = data.packets.map((p,i) => ({value:p.id,label:`Pacchetto ${i + 1} · ${p.topics.map(t => t.query).join(', ')} · ${p.id.slice(0,8)}`}));
     options($('packet'),packets); options($('export-packet'),packets); topicOptions();
-    const users = data.users.map(u => ({value:u.id,label:u.id})); options($('primary-user'),users); options($('secondary-user'),users,'Nessuno');
+    const users = data.users.map(u => ({value:u.id,label:u.id})); options($('primary-user'),users); options($('secondary-user'),users,'Nessuno'); options($('third-user'),users,'Nessuno');
     $('blocks').replaceChildren(...data.blocks.map(block => {
-      const card = element('div'); card.append(element('p',`${block.query_id} · ${block.primary_user}${block.secondary_user ? ' + ' + block.secondary_user : ''}`),element('span',block.active ? 'Attivo · assegnazioni congelate' : 'Bozza','status-chip'));
+      const card = element('div'); card.append(element('p',`${block.query_id} · ${block.primary_user}${block.secondary_user ? ' + ' + block.secondary_user : ''}${block.third_user ? ' + ' + block.third_user : ''}`),element('span',block.active ? 'Attivo · assegnazioni congelate' : 'Bozza','status-chip'));
       if (!block.active) {
         const button = element('button','Mostra riepilogo','secondary'); button.onclick = async () => {
           try { showPreview(await api(`blocks/${block.id}`)); } catch(error) { message(error.message,'error'); }
@@ -52,16 +52,52 @@
   }
   function showPreview(result) {
     preview = result; const b = result.block;
-    $('preview-summary').textContent = `${b.query_id} · principale: ${b.primary_user} · secondo: ${b.secondary_user || 'nessuno'} · ${b.overlap} documenti in doppio · seed: ${b.seed}`;
+    $('preview-summary').textContent = `${b.query_id} · principale: ${b.primary_user} · secondo: ${b.secondary_user || 'nessuno'} · terzo: ${b.third_user || 'nessuno'} · ${b.overlap} documenti in doppio · seed: ${b.seed}`;
     $('preview-order').replaceChildren(...(result.assignments || []).map(a => element('li',`${a.user_id}: ${a.document_id}`)));
     $('block-preview').hidden = false; $('block-preview').scrollIntoView({block:'nearest'});
   }
+  async function discussion(save) {
+    try {
+      const body = {packet_id:$('packet').value};
+      if (save) Object.assign(body,{minutes:Number($('discussion-minutes').value),
+        participants:$('discussion-users').value.split(',').map(s => s.trim()).filter(Boolean),notes:$('discussion-notes').value});
+      const result = await api('pilot-discussion',body);
+      await refresh();
+      const groups = new Map();
+      for (const row of result.originals) {
+        const key = `${row.query_id}/${row.document_id}`;
+        if (!groups.has(key)) groups.set(key,[]);
+        groups.get(key).push(row);
+      }
+      $('pilot-originals').replaceChildren(...[...groups.values()].map(rows => {
+        const doc = result.documents.find(d => d.document_id === rows[0].document_id);
+        const topic = result.topics.find(t => t.query_id === rows[0].query_id);
+        const detail = element('details');
+        detail.append(element('summary',`${topic.query} · ${doc.title} · ${rows.map(r => r.grade ?? 'astensione').join(' / ')}`));
+        detail.append(element('p',topic.information_need));
+        for (const row of rows) {
+          const card = element('div',undefined,'original-card');
+          card.append(element('strong',`${row.user_id}: ${row.grade ?? 'Astensione'}`),element('p',row.rationale));
+          JSON.parse(row.evidence).forEach(ev => card.append(element('blockquote',ev.quote)));
+          detail.append(card);
+        }
+        const text = element('details'); text.append(element('summary','Testo completo'),element('p',doc.body,'document-body')); detail.append(text);
+        return detail;
+      }));
+      $('discussion-notes').value = result.discussion.notes;
+      $('discussion-minutes').value = result.discussion.minutes || '';
+      $('discussion-users').value = JSON.parse(result.discussion.participants).join(',') || [...new Set(result.originals.map(r => r.user_id))].join(',');
+      message('Discussione aperta; originali congelati.','success');
+    } catch(error) { message(error.message,'error'); }
+  }
+  $('open-discussion').onclick = () => discussion(false);
+  $('save-discussion').onclick = () => discussion(true);
   $('packet').onchange = topicOptions; $('topic').onchange = topicLimit;
   $('block-form').onsubmit = async event => {
     event.preventDefault(); const button = event.target.querySelector('button'); button.disabled = true;
     try { showPreview(await api('blocks',{packet_id:$('packet').value,query_id:$('topic').value,
       primary_user:$('primary-user').value,secondary_user:$('secondary-user').value || null,
-      overlap:Number($('overlap').value),seed:$('seed').value})); await refresh(); message('Blocco preparato. Controlla il riepilogo prima di attivarlo.'); }
+      third_user:$('third-user').value || null,overlap:Number($('overlap').value),seed:$('seed').value})); await refresh(); message('Blocco preparato. Controlla il riepilogo prima di attivarlo.'); }
     catch(error) { message(error.message,'error'); } finally { button.disabled = false; }
   };
   $('activate-block').onclick = async () => {

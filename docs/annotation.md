@@ -1,5 +1,9 @@
 # Annotazione collaborativa — M5-B
 
+M5-C aggiunge timer, blocchi di calibrazione con tre validatori e discussione
+separata dall'adjudication: [guida pilot](m5c-pilot.md). La migrazione SQLite v2
+preserva i dati v1; effettuare backup prima dell'aggiornamento.
+
 La postazione `/annotate` e la pagina `/coordinate` lavorano su pacchetti M5-A
 importati in SQLite. Ricerca, Elasticsearch, Web e LLM non sono necessari per
 annotare. M5-B è collaudata localmente su fixture; accesso online e raccolta reale

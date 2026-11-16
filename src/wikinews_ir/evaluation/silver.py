@@ -88,7 +88,9 @@ def validate_payload(data):
 
 
 def prepare(packet_dir, output, batch_id):
-    verify_bundle(packet_dir, "packet")
+    source_manifest = verify_bundle(packet_dir, "packet")
+    prompt = ((Path(packet_dir) / "PROMPT.md").read_text("utf-8")
+              if "PROMPT.md" in source_manifest["artifacts"] else PROMPT)
     if not batch_id or any(c.isspace() for c in batch_id):
         raise ValueError("batch_id non valido")
     data = validate_payload(json.loads((Path(packet_dir) / "packet.json").read_text("utf-8")))
@@ -104,12 +106,13 @@ def prepare(packet_dir, output, batch_id):
         "evidence": [{"field": "body", "quote": "Esempio inventato."}],
     }
     return write_bundle(output, "silver-packet", {
-        "packet.json": encoded(data), "PROMPT.md": PROMPT, "README.md": README,
+        "packet.json": encoded(data), "PROMPT.md": prompt, "README.md": README,
         "judgment.schema.json": encoded(Judgment.model_json_schema()),
         "example.synthetic.json": encoded(example),
         "validate.py": Path(portable_validator.__file__).read_text("utf-8"),
     }, {"batch_id": batch_id, "mode": "codex_chat", "prompt_version": "1",
-        "prompt_sha256": sha(PROMPT)})
+        "prompt_sha256": sha(prompt),
+        "declared_model": source_manifest.get("metadata", {}).get("model", "unknown")})
 
 
 def validate_silver(packet_dir, judgments, allow_partial=False):
@@ -129,6 +132,9 @@ def import_silver(packet_dir, judgments, output, operator, execution_id,
     if not report["valid"]:
         raise ValueError("; ".join(report["errors"]))
     packet_manifest = verify_bundle(packet_dir, "silver-packet")
+    declared = packet_manifest.get("metadata", {}).get("declared_model", "unknown")
+    if declared != "unknown" and model != declared:
+        raise ValueError("Modello diverso da quello congelato nel pacchetto")
     files = {"judgments.jsonl": jsonl(report["judgments"]),
              "original.jsonl": Path(judgments).read_text("utf-8"),
              "validation.json": encoded({k: v for k, v in report.items() if k != "judgments"}),

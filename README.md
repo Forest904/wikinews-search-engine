@@ -10,6 +10,11 @@ Wikinotizie, basato su Elasticsearch, con valutazione IR riproducibile.
 > [guida](docs/evaluation.md), [verifica M5-A](docs/m5a-validation.md).
 > UI di annotazione e coordinamento, persistenza e flusso multiutente disponibili:
 > [guida annotazione](docs/annotation.md), [verifica M5-B](docs/m5b-validation.md).
+>
+> **M5-C: preparazione locale pronta.** Pilot reale da 24 coppie, timer e tripla
+> calibrazione, 40 topic in bozza e strumenti di budget/congelamento. Le valutazioni
+> umane e il congelamento effettivo restano pendenti:
+> [guida pilot](docs/m5c-pilot.md), [verifica M5-C](docs/m5c-validation.md).
 > Pubblicazione, pilot, raccolta reale e metriche restano M7-A, M5-C/D e M6;
 > CI remota da verificare dopo il push.
 

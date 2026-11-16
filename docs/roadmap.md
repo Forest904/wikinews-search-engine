@@ -31,7 +31,7 @@ Regole di esecuzione:
 | M4 — Retrieval avanzato | E2/E3/E4 e possibili estensioni | M3 | Completato localmente: E2/E3/E4, highlight e baseline invariate |
 | M5-A — Infrastruttura benchmark | Topic, pooling, schema giudizi, pacchetti silver Codex ed export | M3, M4 | Completata localmente su fixture; 48 coppie esterne riconciliate, nessun gold/silver reale |
 | M5-B — Strumento di annotazione | Pagina condivisa, assegnazioni e revisione | M5-A | Completata localmente su fixture: flusso multiutente, persistenza, revisione ed export verificati |
-| M5-C — Pilot e congelamento | Calibrazione, budget, topic e protocollo congelati | M5-A, M5-B; M7-A per pilot online | Tempi misurati e regole fissate prima della produzione |
+| M5-C — Pilot e congelamento | Calibrazione, budget, topic e protocollo congelati | M5-A, M5-B; M7-A per pilot online | Preparazione locale pronta; tempi umani e congelamento ancora pendenti |
 | M5-D — Raccolta e consolidamento | Gold/silver separati e pool tracciabili | M5-C; M7-A per raccolta condivisa | Copertura prevista raggiunta e qualità annotazione controllata |
 | M6-A — Implementazione valutazione | Metriche, confronti e generazione report | M5-A | Calcoli verificati su fixture con risultati attesi |
 | M6-B — Esperimenti reali | Tuning development, confronto finale, error analysis | M4, M6-A; gold development per tuning, M5-D per finale | Test gold usato una volta secondo protocollo congelato |
@@ -243,7 +243,7 @@ reale raccolto. Guida in [annotation.md](annotation.md), evidenze in
 
 ### M5-C — Pilot, budget e congelamento
 
-- [ ] Costruire **pilot di 4 topic**, uno per tipologia, usando strategia ibrida corpus/user-driven e riconciliando gli spunti esterni con il corpus M2.
+- [x] Costruire **pilot di 4 topic**, uno per tipologia, usando strategia ibrida corpus/user-driven e riconciliando gli spunti esterni con il corpus M2.
 - [ ] Far giudicare indipendentemente un piccolo insieme comune ai tre validatori, poi discutere i disaccordi e correggere la rubrica prima della produzione.
 - [ ] Misurare tempi di lettura, annotazione e revisione; dimensionare coppie distinte e quota doppia nel budget di 12–18 ore, riservando tempo per calibrazione e adjudication.
 - [ ] Portare il benchmark al target di **40 topic**: 10 evento, 10 tema, 10 entità, 10 multi-vincolo. Stratificare temi e periodi; non copiare automaticamente query dai titoli.
@@ -253,6 +253,14 @@ reale raccolto. Guida in [annotation.md](annotation.md), evidenze in
 - [ ] Scegliere il modello nella chat Codex e congelare prompt e pacchetti sulla sola calibrazione/development prima del silver di produzione; registrare modello dichiarato o `unknown`, senza inventare un identificatore.
 
 **Gate M5-C:** ambiguità affrontate, tempi misurati, budget motivato e protocollo congelato. Una modifica successiva richiede nuova versione e analisi d'impatto sui giudizi già raccolti.
+
+**Stato: preparazione locale implementata e verificata (2026-11-16), gate non ancora
+superato.** Pacchetto reale di 24 coppie pronto per 72 annotazioni indipendenti;
+40 topic di produzione in bozza, run E0–E4 del pilot e pool di 151 coppie conservati.
+Timer, discussione tripla, report, budget e congelamento verificati su fixture.
+Nessun giudizio umano reale e nessun protocollo di produzione congelato. Procedura
+in [m5c-pilot.md](m5c-pilot.md), evidenze in [m5c-validation.md](m5c-validation.md),
+decisioni in [ADR 0007](decisions/0007-pilot-calibration.md).
 
 ### M5-D — Raccolta e consolidamento in parallelo
 

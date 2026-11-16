@@ -25,6 +25,7 @@ def ordered(values, seed, salt):
 
 
 def block_preview(db, block):
+    block = dict(block)
     payload = packet_data(db, block["packet_id"])
     documents = sorted(p["document_id"] for p in payload["pairs"]
                        if p["query_id"] == block["query_id"])
@@ -40,8 +41,18 @@ def block_preview(db, block):
         if user and not db.execute("SELECT 1 FROM users WHERE id=?", (user,)).fetchone():
             raise ValueError("Utente inesistente")
     overlap = ordered(documents, block["seed"], "overlap")[:block["overlap"]]
+    third = block.get("third_user")
+    if third:
+        topic = next(t for t in payload["topics"] if t["query_id"] == block["query_id"])
+        if topic["split"] != "calibration" or len({
+            block["primary_user"], block["secondary_user"], third
+        }) != 3 or not block["secondary_user"] or len(overlap) != len(documents):
+            raise ValueError("Tripla lettura solo in calibrazione, completa e con utenti distinti")
+        if not db.execute("SELECT 1 FROM users WHERE id=?", (third,)).fetchone():
+            raise ValueError("Terzo utente inesistente")
     assignments = []
-    for user, docs in ((block["primary_user"], documents), (block["secondary_user"], overlap)):
+    for user, docs in ((block["primary_user"], documents),
+                       (block["secondary_user"], overlap), (third, documents)):
         if user:
             assignments.extend({"user_id": user, "document_id": doc, "position": pos}
                                for pos, doc in enumerate(ordered(docs, block["seed"], user)))
@@ -49,14 +60,18 @@ def block_preview(db, block):
             "double_pairs": len(overlap), "assignments": assignments}
 
 
-def create_block(db, actor, packet_id, query_id, primary_user, secondary_user, overlap, seed):
+def create_block(db, actor, packet_id, query_id, primary_user, secondary_user, overlap, seed,
+                 third_user=None):
     require_coordinator(db, actor)
+    manifest = db.execute("SELECT manifest FROM packet_manifests WHERE packet_id=?", (packet_id,)).fetchone()
+    if manifest and json.loads(manifest[0]).get("metadata", {}).get("freeze_manifest_sha256"):
+        raise ValueError("Usare annotation activate-freeze per le assegnazioni congelate")
     block = dict(id=uuid4().hex, packet_id=packet_id, query_id=query_id,
                  primary_user=primary_user, secondary_user=secondary_user, overlap=overlap,
-                 seed=seed, active=0, created_by=actor)
+                 seed=seed, active=0, created_by=actor, third_user=third_user)
     preview = block_preview(db, block)
     with transaction(db):
-        db.execute("INSERT INTO blocks VALUES(?,?,?,?,?,?,?,?,?)", tuple(block.values()))
+        db.execute("INSERT INTO blocks VALUES(?,?,?,?,?,?,?,?,?,?)", tuple(block.values()))
         audit(db, actor, "block_prepared", packet_id=packet_id, block_id=block["id"])
     return preview
 
@@ -107,6 +122,9 @@ def add_decision(db, key, method, actor, status, grade, rationale, evidence, ori
 def consolidate(db, key):
     """Caller owns the transaction, so a changed original never leaves a stale final."""
     rows = originals(db, key)
+    if db.execute("SELECT 1 FROM blocks WHERE packet_id=? AND query_id=? "
+                  "AND active=1 AND third_user IS NOT NULL", key[:2]).fetchone():
+        return  # Calibration discussion is not independent gold adjudication.
     db.execute("UPDATE decisions SET current=0 WHERE packet_id=? AND query_id=? "
                "AND document_id=? AND current=1", key)
     if not rows or any(not r or r["status"] == "deferred" for r in rows):

@@ -30,9 +30,13 @@
       `${mode === 'annotation' ? labels[t.own_judgment?.status || 'unstarted'] + ' · ' : ''}${t.document.title}`, i)));
   }
   function selectTask(index = 0) {
+    window.dispatchEvent(new Event('annotation-task-changing'));
+    window.annotationTimerTask = null;
     selectedIndex = index; current = list()[index]; pending = null; window.annotationDirty = false;
     $('empty-state').hidden = !!current; $('task-area').hidden = !current;
     if (!current) return;
+    window.annotationTimerTask = {packet_id:current.packet_id,query_id:current.topic.query_id,
+      document_id:current.document.document_id, review:mode === 'review'};
     $('tasks').value = String(index); $('task-position').textContent = `${index + 1} / ${list().length}`;
     $('previous-task').disabled = index === 0; $('next-task').disabled = index === list().length - 1;
     const topic = current.topic, own = mode === 'annotation' ? current.own_judgment : null;
@@ -143,6 +147,7 @@
     data.request_id = pending.id; lock(true); $('save-state').textContent = 'Salvataggio in corso…';
     const previousKey = key(current), nextKey = list()[selectedIndex + 1] && key(list()[selectedIndex + 1]);
     try {
+      if (window.pauseAnnotationTimer) await window.pauseAnnotationTimer();
       await api(mode === 'annotation' ? 'judgments' : 'decisions',data);
       window.annotationDirty = false; pending = null;
       // The response confirms persistence. A refresh failure must not imply that saving failed.

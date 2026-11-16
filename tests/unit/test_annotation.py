@@ -65,6 +65,76 @@ def key(packet_id):
     return packet_id, "demo-energia", "demo-1"
 
 
+def test_pilot_triple_discussion_locks_independent_originals(setup):
+    from wikinews_ir.pilot import discussion
+    path, packet_id, _ = setup
+    with connect(path) as db:
+        with pytest.raises(ValueError):
+            create_block(db, "alice", packet_id, "demo-energia", "alice", "bob", 2, "42", "carol")
+        result = create_block(db, "alice", packet_id, "demo-energia", "alice", "bob", 4, "42", "carol")
+        assert len(result["assignments"]) == 12
+        activate_block(db, "alice", result["block"]["id"])
+        with pytest.raises(RuntimeError):
+            discussion(db, "alice", packet_id)
+        for user in ("alice", "bob", "carol"):
+            for i in range(1, 5):
+                submission(db, packet_id, user_id=user, document_id=f"demo-{i}",
+                           status="needs_review", grade=None, evidence=[], rationale="Da discutere")
+        assert not db.execute("SELECT * FROM decisions").fetchall()
+        assert not db.execute("SELECT * FROM reviews").fetchall()
+        with pytest.raises(PermissionError):
+            discussion(db, "bob", packet_id)
+        result = discussion(db, "alice", packet_id, 12, ["alice", "bob", "carol"],
+                            "Rubrica da chiarire; nessun gold prodotto.")
+        assert len(result["originals"]) == 12
+        with pytest.raises(RuntimeError):
+            submission(db, packet_id, expected_version=1)
+        snapshot = export_snapshot(db, "alice", packet_id, "calibration")
+        assert snapshot["judgments"] == []
+        assert len(snapshot["history"]) == 12
+        assert snapshot["discussions"][0]["minutes"] == 12
+
+
+def test_timer_checkpoints_concurrency_stale_and_backup(setup, monkeypatch, tmp_path):
+    from wikinews_ir.pilot import timer
+    path, packet_id, _ = setup
+    with connect(path) as db:
+        block(db, packet_id)
+        monkeypatch.setattr("wikinews_ir.pilot.now", lambda: "2026-11-16T12:00:00+00:00")
+        timer(db, "alice", "t1", key(packet_id), "reading")
+        with pytest.raises(RuntimeError):
+            timer(db, "alice", "t2", key(packet_id), "reading")
+        with pytest.raises(PermissionError):
+            timer(db, "carol", "t3", key(packet_id), "reading")
+        with pytest.raises(ValueError):
+            timer(db, "alice", "t1", key(packet_id), "reading", 60)
+        monkeypatch.setattr("wikinews_ir.pilot.now", lambda: "2026-11-16T12:00:15+00:00")
+        assert timer(db, "alice", "t1", key(packet_id), "reading", 15)["seconds"] == 15
+        assert timer(db, "alice", "t1", key(packet_id), "reading", 15)["seconds"] == 15
+        monkeypatch.setattr("wikinews_ir.pilot.now", lambda: "2026-11-16T12:01:15+00:00")
+        timer(db, "alice", "t2", key(packet_id), "annotation")
+        assert db.execute("SELECT complete FROM timing WHERE id='t1'").fetchone()[0] == 0
+        timer(db, "alice", "t2", key(packet_id), "annotation", 0, True)
+        assert timer(db, "alice", "t2", key(packet_id), "annotation", 0, True)["complete"] == 1
+    backup(path.resolve(), (tmp_path / "backup.sqlite3").resolve())
+    with connect(tmp_path / "backup.sqlite3") as db:
+        assert db.execute("SELECT count(*) FROM timing").fetchone()[0] == 2
+        assert db.execute("SELECT count(*) FROM assignments").fetchone()[0] == 8
+
+
+def test_upgrade_v1_preserves_judgments(setup):
+    path, packet_id, _ = setup
+    with connect(path) as db:
+        block(db, packet_id)
+        submission(db, packet_id)
+        db.executescript("DROP TABLE timing; DROP TABLE pilot_discussions; "
+                         "ALTER TABLE blocks DROP COLUMN third_user; PRAGMA user_version=1;")
+    with connect(path) as db:
+        assert db.execute("PRAGMA user_version").fetchone()[0] == 2
+        assert db.execute("SELECT count(*) FROM judgments").fetchone()[0] == 1
+        assert db.execute("SELECT count(*) FROM assignments").fetchone()[0] == 8
+
+
 def test_password_revision_and_idempotency(setup):
     path, packet_id, _ = setup
     with connect(path) as db:
@@ -299,7 +369,7 @@ def test_schema_upgrade_preserves_old_accounts(tmp_path):
     old.commit()
     old.close()
     with connect(path) as db:
-        assert db.execute("PRAGMA user_version").fetchone()[0] == 1
+        assert db.execute("PRAGMA user_version").fetchone()[0] == 2
         assert db.execute("SELECT id FROM users").fetchone()[0] == "legacy"
 
 
@@ -333,7 +403,7 @@ def test_cli_init_import_user_backup_restore(tmp_path, monkeypatch, capsys):
         main()
         return json.loads(capsys.readouterr().out)
 
-    assert cli("init")["schema_version"] == 1
+    assert cli("init")["schema_version"] == 2
     monkeypatch.setenv("M5B_TEST_PASSWORD", "private-fixture-password")
     assert cli("create-user", "operator", "--coordinator", "--password-env", "M5B_TEST_PASSWORD")["user_id"] == "operator"
     packet = tmp_path / "demo"

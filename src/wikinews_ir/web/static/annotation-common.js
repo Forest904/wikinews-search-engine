@@ -33,7 +33,7 @@ window.Annotation = (() => {
     };
     $('logout').onclick = async () => {
       if (window.annotationDirty && !confirm('Ci sono modifiche non salvate. Vuoi uscire?')) return;
-      try { await api('logout', {}); window.annotationDirty = false; location.reload(); }
+      try { if (window.pauseAnnotationTimer) await window.pauseAnnotationTimer(); await api('logout', {}); window.annotationDirty = false; location.reload(); }
       catch(error) { message(error.message, 'error'); }
     };
     try { await ready(await api('session')); }

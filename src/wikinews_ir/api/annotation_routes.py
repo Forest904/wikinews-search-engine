@@ -75,6 +75,7 @@ class Block(Input):
     query_id: str
     primary_user: str
     secondary_user: str | None = None
+    third_user: str | None = None
     overlap: StrictInt = Field(ge=0)
     seed: str = Field(min_length=1, max_length=100)
 
@@ -96,6 +97,35 @@ class Export(Input):
     packet_id: str
     split: Literal["calibration", "development", "test"] = "development"
     release_test: bool = False
+
+
+class Timer(Pair):
+    timer_id: str = Field(min_length=1, max_length=128)
+    phase: Literal["reading", "annotation", "review"]
+    seconds: float = Field(default=0, ge=0, le=86400, allow_inf_nan=False)
+    stop: bool = False
+
+
+class Discussion(Input):
+    packet_id: str
+    minutes: float | None = Field(default=None, gt=0, le=1440, allow_inf_nan=False)
+    participants: list[str] | None = None
+    notes: str | None = Field(default=None, max_length=30000)
+
+
+@router.post("/timing")
+def timing_checkpoint(body: Timer, request: Request):
+    from wikinews_ir.pilot import timer
+    with access(request, True) as (db, user):
+        return timer(db, user["user_id"], body.timer_id, body.key(), body.phase,
+                     body.seconds, body.stop)
+
+
+@router.post("/pilot-discussion")
+def pilot_discussion(body: Discussion, request: Request):
+    from wikinews_ir.pilot import discussion
+    with access(request, True) as (db, user):
+        return discussion(db, user["user_id"], **body.model_dump())
 
 
 def check_origin(request):

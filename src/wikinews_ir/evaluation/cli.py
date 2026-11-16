@@ -15,6 +15,9 @@ def configure(subparsers):
         return p
 
     command("validate", ("topics", "protocol"))
+    command("pilot-report", ("source", "output"))
+    command("budget", ("report", "plan", "output"))
+    command("freeze", ("plan", "output"))
     command("reconcile-pilot", ("pilot", "corpus", "output"))
     command("queries", ("topics", "protocol", "output"))
     p = command("external-run", ("topics", "corpus", "output"))
@@ -56,6 +59,13 @@ def dispatch(args):
     from wikinews_ir.evaluation import silver as s
 
     cmd = args.benchmark_command
+    if cmd in {"pilot-report", "budget", "freeze"}:
+        from wikinews_ir.evaluation import pilot
+        if cmd == "pilot-report":
+            return pilot.pilot_report(args.source, args.output)
+        if cmd == "budget":
+            return pilot.budget(args.report, args.plan, args.output)
+        return pilot.freeze(args.plan, args.output)
     if cmd == "validate":
         topics, protocol = b.load_topics(args.topics), b.load_protocol(args.protocol)
         return {"valid": True, "topics": len(topics), "protocol": protocol}

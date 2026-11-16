@@ -1,5 +1,9 @@
 # Benchmark M5-A — preparazione offline e silver Codex
 
+La preparazione locale M5-C è ora disponibile: [pilot e congelamento](m5c-pilot.md),
+[evidenze](m5c-validation.md). I comandi `pilot-report`, `budget` e `freeze`
+aggiungono misurazione e gate; il protocollo reale rimane draft fino al pilot umano.
+
 M5-A implementa contratti, pooling e pacchetti di giudizio. Il protocollo è **draft**:
 non esistono ancora gold o silver reali prodotti da questa pipeline. M5-B aggiunge
 la [UI di annotazione](annotation.md), verificata localmente; M5-C calibrazione e

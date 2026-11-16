@@ -57,6 +57,9 @@ def configure(sub):
     parser.add_argument("--db", type=Path, default=Path(database_path()))
     commands = parser.add_subparsers(dest="annotation_command", required=True)
     commands.add_parser("init")
+    command = commands.add_parser("activate-freeze")
+    command.add_argument("--freeze", required=True, type=Path)
+    command.add_argument("--actor", required=True)
     for name in ("create-user", "reset-password"):
         command = commands.add_parser(name)
         command.add_argument("user_id")
@@ -106,12 +109,15 @@ def dispatch(args):
         if not source.is_file():
             raise ValueError("Backup inesistente")
         with closing(sqlite3.connect(source.as_uri() + "?mode=ro", uri=True)) as check:
-            if check.execute("PRAGMA user_version").fetchone()[0] != 1:
+            if check.execute("PRAGMA user_version").fetchone()[0] not in (1, 2):
                 raise ValueError("Versione del backup incompatibile")
         return backup(source, args.db.resolve())
     with connect(args.db) as db:
+        if command == "activate-freeze":
+            from wikinews_ir.pilot import activate_freeze
+            return activate_freeze(db, args.actor, args.freeze)
         if command == "init":
-            return {"database": str(args.db), "schema_version": 1}
+            return {"database": str(args.db), "schema_version": 2}
         if command in {"create-user", "reset-password"}:
             password = (os.environ[args.password_env] if args.password_env
                         else getpass.getpass("Password (minimo 10 caratteri): "))

@@ -36,7 +36,7 @@ def connect(path):
     db.execute("PRAGMA foreign_keys=ON")
     db.execute("PRAGMA journal_mode=WAL")
     version = db.execute("PRAGMA user_version").fetchone()[0]
-    if version > 1:
+    if version > 2:
         db.close()
         raise ValueError("Database creato da una versione più recente")
     if version == 0:
@@ -84,6 +84,21 @@ def connect(path):
         CREATE TABLE IF NOT EXISTS requests(id TEXT PRIMARY KEY, actor TEXT NOT NULL,
           fingerprint TEXT NOT NULL, result TEXT NOT NULL);
         PRAGMA user_version=1;
+        COMMIT;
+        """)
+    if version < 2:
+        db.executescript("""
+        BEGIN IMMEDIATE;
+        ALTER TABLE blocks ADD COLUMN third_user TEXT REFERENCES users(id);
+        CREATE TABLE pilot_discussions(packet_id TEXT PRIMARY KEY REFERENCES packets(id),
+          opened_at TEXT NOT NULL, opened_by TEXT NOT NULL, minutes REAL NOT NULL DEFAULT 0,
+          participants TEXT NOT NULL DEFAULT '[]', notes TEXT NOT NULL DEFAULT '');
+        CREATE TABLE timing(id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id),
+          packet_id TEXT NOT NULL, query_id TEXT NOT NULL, document_id TEXT NOT NULL,
+          phase TEXT NOT NULL, seconds REAL NOT NULL DEFAULT 0, updated_at TEXT NOT NULL,
+          active INTEGER NOT NULL DEFAULT 1, complete INTEGER NOT NULL DEFAULT 0);
+        CREATE UNIQUE INDEX active_timer ON timing(user_id) WHERE active=1;
+        PRAGMA user_version=2;
         COMMIT;
         """)
     return db
@@ -255,6 +270,8 @@ def save(db, user_id, packet_id, query_id, document_id, expected_version, reques
         if not db.execute("SELECT 1 FROM assignments WHERE packet_id=? AND query_id=? "
                           "AND document_id=? AND user_id=?", (*key, user_id)).fetchone():
             raise PermissionError("Attività non assegnata")
+        if db.execute("SELECT 1 FROM pilot_discussions WHERE packet_id=?", (packet_id,)).fetchone():
+            raise RuntimeError("Discussione aperta: gli originali indipendenti sono congelati")
         _, _, document = pair_data(db, *key)
         evidence = validate_decision(document["body"], status, grade, rationale, evidence)
         fingerprint, previous = replay(db, request_id, user_id, {
