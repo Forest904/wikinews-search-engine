@@ -3,11 +3,11 @@
 Monorepo sperimentale per un motore di ricerca **lessicale** delle notizie italiane
 Wikinotizie, basato su Elasticsearch, con valutazione IR riproducibile.
 
-> **Stato attuale:** **M1 completata e verificata localmente**, con ricerca e dettaglio
-> su fixture, API condivisa con Python e test browser automatici. Prossimo passo: M2.
+> **Stato attuale:** **M2 completata e verificata localmente**: 11.032 articoli
+> puliti, deduplicati e riproducibili. Ricerca Web
+> ancora sulle fixture M1. Indicizzazione del corpus reale prevista in M3.
 > Il nuovo job CI di integrazione/browser è configurato; l'esito remoto è da verificare.
-> L'ingestion del dump reale, la ground truth multi-sorgente e il ranking avanzato
-> sono **pianificati ma non ancora implementati**. Leggi [la roadmap](docs/roadmap.md).
+> Ground truth e ranking avanzato restano pianificati. Leggi [la roadmap](docs/roadmap.md).
 
 ## Documentazione di progetto
 
@@ -76,7 +76,7 @@ Remove-Item Env:RUN_INTEGRATION
 
 - `src/wikinews_ir/api/`: endpoint FastAPI e Web UI
 - `src/wikinews_ir/retrieval/`: query builder e client Elasticsearch condivisi
-- `src/wikinews_ir/ingestion/`: spazio per la pipeline sul dump
+- `src/wikinews_ir/ingestion/`: pipeline offline, audit e manifest del corpus
 - `src/wikinews_ir/evaluation/`: spazio per metriche, run e pooling
 - `src/wikinews_ir/adapters/`: integrazioni offline LLM/Wikinotizie
 - `configs/`: mapping indice, profili di ricerca, protocollo di valutazione
@@ -91,9 +91,38 @@ Dump richiesto dal corso:
 
 <https://dumps.wikimedia.org/other/enterprise_html/runs/20250320/itwikinews-NS0-20250320-ENTERPRISE-HTML.json.tar.gz>
 
-Il file non è incluso nello ZIP né va inserito in Git. La pipeline di download,
-normalizzazione, deduplicazione e indicizzazione del corpus reale è prevista in **M2**.
-Le fixture sono sintetiche, non un campione reale.
+Il file non va inserito in Git. Dalla radice del repository, dopo `uv sync --locked`,
+acquisizione, verifica SHA-256 e preparazione si eseguono con un unico comando:
+
+```bash
+uv run --locked wikinews-ir corpus prepare
+```
+
+Il comando usa `data/raw/` e `data/processed/m2-v1/`; percorsi alternativi con
+`--raw-dir` e `--output`. Scarica lo snapshot con User-Agent esplicito e verifica
+dimensione e checksum attesi prima di avviare la build. Un archivio locale valido
+viene riusato senza rete. Un corpus esistente viene riusato solo dopo verifica
+di manifest, versioni, dipendenze e hash degli artefatti. File locali diversi dal
+riferimento non vengono sovrascritti: per output incompatibili scegliere una
+nuova directory. La disponibilità del download dipende dal server Wikimedia.
+
+I comandi offline restano disponibili per input espliciti; le fixture dei test
+sono sintetiche:
+
+```bash
+uv run --locked wikinews-ir corpus audit --input data/raw/itwikinews-NS0-20250320-ENTERPRISE-HTML.json.tar.gz --output data/processed/audit-v1
+uv run --locked wikinews-ir corpus build --input data/raw/itwikinews-NS0-20250320-ENTERPRISE-HTML.json.tar.gz --output data/processed/m2-v1
+```
+
+È supportato anche il NDJSON estratto come `--input`. Le destinazioni devono
+essere assenti o vuote: usare una nuova directory per ogni verifica. La build
+produce `articles.ndjson`, `manifest.json`, `audit.json` e `decisions.ndjson`.
+L'audit produce solo diagnostica e manifest; con errori restituisce exit code 1.
+Gli errori strutturali impediscono la pubblicazione della build. I comandi sono
+offline e non richiedono Docker o Elasticsearch. L'indicizzazione è prevista in M3.
+
+Policy, schema, checksum e verifiche: [dataset](docs/dataset.md) e
+[ADR 0003](docs/decisions/0003-corpus-pipeline.md).
 
 ## Scelte e limiti dopo M1
 

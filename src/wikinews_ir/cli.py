@@ -1,4 +1,4 @@
-"""Offline commands (only synthetic demo fixture loading is implemented)."""
+"""Offline demo and corpus preparation commands."""
 
 import argparse
 import json
@@ -19,7 +19,9 @@ def seed_demo(settings: Settings | None = None) -> None:
         settings = engine.settings
         if not engine.check_ready():
             raise RuntimeError("Elasticsearch non disponibile; controlla docker compose ps")
-        mapping = json.loads((ROOT / "configs" / "indices" / "standard.json").read_text(encoding="utf-8"))
+        mapping = json.loads(
+            (ROOT / "configs" / "indices" / "standard.json").read_text(encoding="utf-8")
+        )
         with (ROOT / "tests" / "fixtures" / "articles.json").open(encoding="utf-8") as stream:
             articles = [Article.model_validate(item).model_dump() for item in json.load(stream)]
         ids = [item["document_id"] for item in articles]
@@ -43,9 +45,37 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Wikinews IR CLI")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("seed-demo", help="Carica solo le fixture sintetiche")
+    corpus = sub.add_parser("corpus", help="Audit e preprocessing offline del dump")
+    commands = corpus.add_subparsers(dest="corpus_command", required=True)
+    prepare = commands.add_parser(
+        "prepare", help="Scarica, verifica e prepara lo snapshot assegnato"
+    )
+    prepare.add_argument("--raw-dir", type=Path, default=Path("data/raw"))
+    prepare.add_argument("--output", type=Path, default=Path("data/processed/m2-v1"))
+    for name in ("audit", "build"):
+        command = commands.add_parser(name)
+        command.add_argument("--input", type=Path, required=True)
+        command.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "seed-demo":
         seed_demo()
+    elif args.command == "corpus":
+        from wikinews_ir.ingestion.corpus import run_corpus
+
+        try:
+            if args.corpus_command == "prepare":
+                from wikinews_ir.ingestion.acquisition import prepare
+
+                manifest = prepare(args.raw_dir, args.output)
+            else:
+                manifest = run_corpus(
+                    args.input, args.output, audit_only=args.corpus_command == "audit"
+                )
+        except (ValueError, OSError) as exc:
+            parser.exit(1, f"Corpus: {exc}\n")
+        print(json.dumps(manifest["counts"], ensure_ascii=False, indent=2))
+        if not manifest["valid"]:
+            parser.exit(1, "Audit completato con errori; consultare decisions.ndjson\n")
 
 
 if __name__ == "__main__":

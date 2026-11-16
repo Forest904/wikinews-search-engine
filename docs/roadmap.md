@@ -24,7 +24,7 @@ Regole di esecuzione:
 |---|---|---|---|
 | M0 — Repo e tecnologia | Progetto Python, Compose, lint, test | Nessuna | Completato: avvio ambiente e CI base verificati |
 | M1 — Vertical slice | UI → API → Elasticsearch → risultati su fixture | M0 | Completato localmente: ricerca browser e Python su fixture |
-| M2 — Corpus pipeline | Dump letto, ripulito, deduplicato e manifestato | M0 | Corpus processed deterministico e verificato |
+| M2 — Corpus pipeline | Dump letto, ripulito, deduplicato e manifestato | M0 | Completato localmente: 11.032 articoli e build riproducibili |
 | M3 — Baseline completa | E0/E1 con corpus reale, API/UI stabile | M1, M2 | Risultati navigabili e run riproducibili |
 | M4 — Retrieval avanzato | E2/E3/E4 e possibili estensioni | M3 | Profili distinti e testati, senza regressioni critiche |
 | M5 — Benchmark | Topic, rubriche, split, pooling, gold/silver | M3, M4 parziale | Qrels e pool tracciabili; qualità annotazione controllata |
@@ -94,21 +94,31 @@ Decisioni ed evidenze in [ADR 0002](decisions/0002-vertical-slice.md).
 
 ### Attività
 
-- [ ] Acquisire il file del 20/03/2025 nella cartella ignorata `data/raw/`; verificare il checksum SHA-256.
-- [ ] Implementare reader streaming archivio/JSON con validazione dello schema osservato.
-- [ ] Riprodurre e verificare i conteggi dell'audit preliminare: 12.261 record, 12.213 identificativi distinti, categoria `Pubblicati` da verificare.
-- [ ] Definire policy di ammissibilità: namespace, lingua, categoria `Pubblicati`, pagine speciali/redirect e casi incerti.
-- [ ] Definire policy deterministica di deduplicazione e selezione revisione (`identifier`, `version.identifier`).
-- [ ] Analizzare campioni di HTML prima/dopo cleaning: navigazione, template, fonti, tabelle e testo giornalistico.
-- [ ] Implementare cleaner testato su casi rappresentativi e casi limite.
-- [ ] Validare l'estrazione di date e distinguere pubblicazione, evento e metadati editoriali; mantenere `null` quando incerta.
-- [ ] Produrre `processed` e manifest con righe lette, tenute, scartate per causa, checksum e versione pipeline.
-- [ ] Eseguire audit post-processing: ID univoci, testi vuoti/corti, lunghezze anomale, sample review e conteggi.
-- [ ] Documentare scelte e limiti in `docs/dataset.md` (da creare in questa fase).
+- [x] Acquisire il file del 20/03/2025 nella cartella ignorata `data/raw/`; verificare il checksum SHA-256.
+- [x] Implementare reader streaming archivio/JSON con validazione dello schema osservato.
+- [x] Riprodurre e verificare i conteggi dell'audit preliminare: 12.261 record, 12.213 identificativi distinti, categoria `Pubblicati` da verificare.
+- [x] Definire policy di ammissibilità: namespace, lingua, categoria `Pubblicati`, pagine speciali/redirect e casi incerti.
+- [x] Definire policy deterministica di deduplicazione e selezione revisione (`identifier`, `version.identifier`).
+- [x] Analizzare campioni di HTML prima/dopo cleaning: navigazione, template, fonti, tabelle e testo giornalistico.
+- [x] Implementare cleaner testato su casi rappresentativi e casi limite.
+- [x] Validare l'estrazione di date e distinguere pubblicazione, evento e metadati editoriali; mantenere `null` quando incerta.
+- [x] Produrre `processed` e manifest con righe lette, tenute, scartate per causa, checksum e versione pipeline.
+- [x] Eseguire audit post-processing: ID univoci, testi vuoti/corti, lunghezze anomale, sample review e conteggi.
+- [x] Documentare scelte e limiti in `docs/dataset.md` (da creare in questa fase).
 
 ### Exit criteria
 
 Ogni documento processed ha ID stabile, revisione, titolo, testo, URL e provenienza. Il numero finale di documenti è giustificato dagli scarti. La stessa versione della pipeline sullo stesso dump produce contenuti equivalenti e identificabili.
+
+**Stato: M2 completata e verificata localmente (2026-11-16).**
+Il percorso autonomo è disponibile con `uv run --locked wikinews-ir corpus prepare`:
+download con checksum atteso, preparazione e riuso verificato degli artefatti.
+12.261 record riconciliati in 48 revisioni superate, 1.181 esclusi e 11.032 articoli.
+Due build indipendenti producono gli stessi hash; campione di 40 pagine revisionato.
+Ruff superato, 72 test superati e 6 integration/E2E saltati nella verifica offline.
+CI remota da verificare dopo il push. Policy, checksum e limiti in
+[dataset.md](dataset.md), [revisione campione](dataset-review.md) e
+[ADR 0003](decisions/0003-corpus-pipeline.md). Indicizzazione del corpus reale in M3.
 
 ## 6. Fase M3 — Baseline sul corpus reale
 

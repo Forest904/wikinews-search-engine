@@ -2,3 +2,5 @@
 
 - [0001 — Bootstrap M0](0001-bootstrap.md): stack, lockfile, sicurezza locale e health.
 - [0002 — Vertical slice M1](0002-vertical-slice.md): contratti condivisi, dettaglio, UI e test browser.
+
+- [0003 — Corpus M2](0003-corpus-pipeline.md): ammissibilità, revisioni, cleaning, date e riproducibilità.
