@@ -1,0 +1,22 @@
+{
+    auto_https off
+    servers {
+        trusted_proxies static {$CLOUDFLARE_CIDRS}
+        trusted_proxies_strict
+        client_ip_headers CF-Connecting-IP
+    }
+}
+
+https://newsfinder.win {
+    tls /certs/origin.pem /certs/origin.key
+    @untrusted not remote_ip {$CLOUDFLARE_CIDRS}
+    respond @untrusted 403
+    @private path /api/* /annotate /coordinate
+    header @private Cache-Control "no-store"
+    header X-Content-Type-Options nosniff
+    reverse_proxy app:8000 {
+        header_up X-Forwarded-For {client_ip}
+        header_up X-Forwarded-Proto https
+        header_up -CF-Connecting-IP
+    }
+}

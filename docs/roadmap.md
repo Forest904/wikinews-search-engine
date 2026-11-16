@@ -35,7 +35,7 @@ Regole di esecuzione:
 | M5-D — Raccolta e consolidamento | Gold/silver separati e pool tracciabili | M5-C; M7-A per raccolta condivisa | Copertura prevista raggiunta e qualità annotazione controllata |
 | M6-A — Implementazione valutazione | Metriche, confronti e generazione report | M5-A | Calcoli verificati su fixture con risultati attesi |
 | M6-B — Esperimenti reali | Tuning development, confronto finale, error analysis | M4, M6-A; gold development per tuning, M5-D per finale | Test gold usato una volta secondo protocollo congelato |
-| M7-A — Pubblicazione operativa | Sito condivisibile con i validatori | M5-B | Accessi, persistenza, backup e ripristino verificati online |
+| M7-A — Pubblicazione operativa | Sito condivisibile con i validatori | M5-B | Accessi e persistenza online; copia PC e ripristino locale verificati |
 | M7-B — Consegna accademica | GitHub, README, slide, demo live | M6-B | Installazione pulita e presentazione provate |
 
 **Parallelismo consentito:** dopo M1, la preparazione dei topic e delle linee guida può avanzare insieme al preprocessing. Il pooling definitivo, invece, dipende dalle run candidate disponibili e dall'identità stabile dei documenti.
@@ -316,15 +316,15 @@ Risultati riproducibili e interpretati correttamente: miglioramenti/regressioni 
 
 Questa fase dipende da M5-B, non dagli esperimenti finali. Il sito può essere condiviso per il pilot e per raccogliere le validazioni mentre il resto del progetto prosegue.
 
-- [ ] Scegliere e documentare provider, costi e configurazione del deployment prima della pubblicazione; la revisione della roadmap non implica una scelta di hosting o un acquisto.
+- [x] Definire deployment Hetzner + Cloudflare per `newsfinder.win`, SQLite e budget indicativo di 10 euro/mese per circa due mesi: [ADR 0008](decisions/0008-operational-deployment.md). Procedura operativa fornita in chat; modello disponibile e costo finale da verificare prima dell'acquisto.
 - [ ] Pubblicare il sito con HTTPS e accessi individuali per i tre validatori, verificando i permessi di annotatore e coordinatore.
-- [ ] Configurare archivio persistente per assegnazioni e giudizi, segreti tramite configurazione e backup; mantenere Elasticsearch non esposto pubblicamente.
+- [ ] Configurare archivio persistente per assegnazioni e giudizi, segreti tramite configurazione e copia manuale sul PC, senza backup sul server o S3; mantenere Elasticsearch non esposto pubblicamente.
 - [ ] Verificare accesso da computer distinti, salvataggi concorrenti e ripresa delle sessioni; l'annotazione deve funzionare anche quando i servizi di ricerca o LLM non sono disponibili.
-- [ ] Eseguire una prova di backup e ripristino e verificare che aggiornamento o riavvio dell'app non cancellino giudizi e cronologia.
+- [ ] Eseguire una copia manuale sul PC e una prova di ripristino locale; verificare online che aggiornamento o riavvio non cancellino giudizi e cronologia.
 - [ ] Documentare avvio, monitoraggio degli errori di salvataggio, recupero dei dati e procedura di aggiornamento, preservando i pacchetti congelati delle sessioni in corso.
 - [ ] Condividere istruzioni per accesso, rubrica, scorciatoie, astensioni e segnalazione dei problemi; verificare il percorso prima di iniziare la raccolta reale.
 
-**Gate M7-A:** sito raggiungibile dai colleghi, autorizzazioni corrette, persistenza e ripristino verificati. La pubblicazione operativa non certifica il completamento del benchmark o della consegna accademica.
+**Gate M7-A:** sito raggiungibile dai colleghi, autorizzazioni e persistenza verificate online, copia manuale sul PC e ripristino locale verificati. Nessun backup persistente sul server o S3; nessuna frequenza automatica garantita. Esportare gli artefatti finali prima della dismissione. La pubblicazione operativa non certifica il completamento del benchmark o della consegna accademica.
 
 ### M7-B — Consegna accademica
 
@@ -377,7 +377,7 @@ Il progetto è **done** soltanto quando tutti i requisiti HW-01..HW-06 del [PRD]
 | Stesso engine per Web ed evaluation | M3 | Blocca validità delle metriche rispetto alla demo |
 | Topic/rubrica, pool e quote congelati prima dei giudizi di produzione | M5-C | Blocca produzione massiva gold/silver, non sviluppo su fixture |
 | Isolamento dei giudizi e salvataggi multiutente affidabili | M5-B, M7-A | Blocca raccolta condivisa |
-| Accessi, persistenza, backup e ripristino verificati | M7-A | Blocca apertura del sito ai validatori |
+| Accessi/persistenza online, copia PC e ripristino locale verificati | M7-A | Blocca apertura del sito ai validatori |
 | Test set segregato dal tuning | M5–M6 | Blocca credibilità della comparazione finale |
 | Gold in raccolta o copertura non ancora raggiunta | M5-D | Blocca esperimenti finali M6-B, non M6-A o pubblicazione M7-A |
 | Manifest completi e qrels versionati; profilo e analisi congelati | M6-B | Blocca valutazione finale e riproducibilità delle conclusioni |

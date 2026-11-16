@@ -276,3 +276,10 @@ Su Linux/macOS: `uv run --locked playwright install --with-deps chromium`, poi
 I test creano coppie di indici temporanei `test-m3-*` e le eliminano al termine.
 Screenshot e trace in `output/playwright/`; la CI li pubblica in caso di fallimento.
 Le verifiche automatiche non richiedono il dump reale.
+
+## Pubblicazione M7-A
+
+Configurazione Hetzner/Cloudflare per `newsfinder.win`:
+[decisioni](docs/decisions/0008-operational-deployment.md) e [verifiche](docs/m7a-validation.md).
+Usare `compose.production.yaml` separatamente dal Compose locale. Copie manuali
+sul PC, nessun backup conservato sulla VPS. Il gate online resta da collaudare.

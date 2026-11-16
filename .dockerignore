@@ -11,4 +11,8 @@ data/processed
 experiments
 output
 *.zip
+deploy
+*.sqlite3*
+*.pem
+*.key
 .venv-*

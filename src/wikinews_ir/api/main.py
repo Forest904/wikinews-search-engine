@@ -1,5 +1,6 @@
 """ASGI entrypoint and application-owned backend lifecycle."""
 
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -33,6 +34,12 @@ def create_app() -> FastAPI:
     @app.middleware("http")
     async def annotation_headers(request, call_next):
         response = await call_next(request)
+        if (request.url.path.startswith("/api/annotation")
+                and request.method in {"POST", "PUT", "PATCH", "DELETE"}
+                and response.status_code >= 500):
+            logging.getLogger("wikinews_ir.operations").error(
+                "annotation_write_failed status=%s", response.status_code
+            )
         if request.url.path.startswith("/api/annotation") or request.url.path in {
             "/annotate", "/coordinate"
         }:

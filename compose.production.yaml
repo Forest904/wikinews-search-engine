@@ -1,0 +1,84 @@
+name: newsfinder
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  proxy:
+    image: caddy:2.10.2-alpine
+    environment:
+      CLOUDFLARE_CIDRS: ${CLOUDFLARE_CIDRS:?Set Cloudflare CIDRs}
+    ports: ["443:443"]
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - /opt/newsfinder/secrets:/certs:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      frontend:
+        ipv4_address: 172.30.71.2
+    mem_limit: 128m
+    restart: unless-stopped
+    logging: *logging
+
+  app:
+    image: ${APP_IMAGE:-newsfinder-app:local}
+    build: .
+    command: ["uvicorn", "wikinews_ir.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--proxy-headers", "--forwarded-allow-ips", "172.30.71.2", "--no-access-log"]
+    environment:
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?Set Elasticsearch password}
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ANNOTATION_DB: ${ANNOTATION_DB:-/app/data/annotation/annotation.sqlite3}
+      ANNOTATION_COOKIE_SECURE: "1"
+    volumes:
+      - annotation-data:/app/data/annotation
+      - /opt/newsfinder/imports:/imports:ro
+      - /opt/newsfinder/reports:/reports
+    networks: [frontend, backend]
+    mem_limit: 768m
+    restart: unless-stopped
+    logging: *logging
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/live', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.6
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "true"
+      xpack.security.http.ssl.enabled: "false"
+      xpack.security.transport.ssl.enabled: "false"
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?Set Elasticsearch password}
+      ES_JAVA_OPTS: -Xms1g -Xmx1g
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks: [backend]
+    mem_limit: 2g
+    restart: unless-stopped
+    logging: *logging
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -u \"elastic:$$ELASTIC_PASSWORD\" 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s' >/dev/null"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 45s
+
+networks:
+  frontend:
+    ipam:
+      config:
+        - subnet: 172.30.71.0/24
+  backend:
+    internal: true
+
+volumes:
+  annotation-data:
+  elasticsearch-data:
+  caddy-data:
+  caddy-config:

@@ -1,5 +1,6 @@
 """HTTP endpoints for the initial demo. No dump ingestion in API requests."""
 
+import sqlite3
 from pathlib import Path
 from urllib.parse import urlencode, urlsplit
 
@@ -8,7 +9,9 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
 
+from wikinews_ir.annotation import database_path
 from wikinews_ir.models import Article, SearchRequest, SearchResponse
+from wikinews_ir.operations import check_annotation
 from wikinews_ir.retrieval.engine import (
     ArticleNotFound,
     RetrievalEngine,
@@ -40,6 +43,20 @@ def annotate(request: Request):
 @router.get("/coordinate", response_class=HTMLResponse)
 def coordinate(request: Request):
     return templates.TemplateResponse(request, "coordinate.html")
+
+
+@router.get("/api/health/live")
+def live():
+    return {"app": "ok"}
+
+
+@router.get("/api/health/annotation")
+def annotation_health():
+    try:
+        check_annotation(database_path())
+    except (sqlite3.Error, OSError, ValueError):
+        raise HTTPException(status_code=503, detail={"annotation": "unavailable"}) from None
+    return {"annotation": "ready"}
 
 
 @router.get("/api/health")
