@@ -3,18 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>{{ article.title if article else 'Articolo non disponibile' }} — Demo</title>
+  <title>{{ article.title if article else 'Articolo non disponibile' }} — Wikinotizie</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body><main class="container">
   <a href="{{ back_url }}">Torna ai risultati</a>
   {% if error %}<h1>Articolo non disponibile</h1><p role="alert">{{ error }}</p>
   {% else %}
-  <p class="eyebrow">Fixture sintetica · {{ article.document_id }}</p>
+  <p class="eyebrow">Articolo · {{ article.document_id }}</p>
   <h1>{{ article.title }}</h1>
   <article class="article-body">{{ article.body }}</article>
-  {% if source_url %}<p><a href="{{ source_url }}" rel="noopener noreferrer">Homepage Wikinotizie</a></p>{% endif %}
-  <p class="muted">Testo creato per la demo, non un articolo reale di Wikinotizie.</p>
+  {% if source_url %}<p><a href="{{ source_url }}" rel="noopener noreferrer">Leggi la fonte su Wikinotizie</a></p>{% endif %}
+
   {% endif %}
 </main></body>
 </html>

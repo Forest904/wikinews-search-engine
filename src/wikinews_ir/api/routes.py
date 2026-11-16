@@ -44,11 +44,15 @@ def health(backend: RetrievalEngine = Depends(engine)):
 def search(
     backend: RetrievalEngine = Depends(engine),
     q: str = Query(),
-    profile: str = "bm25",
-    limit: int = Query(default=10, ge=1, le=100),
+    profile: str = "E0",
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100),
+    limit: str | None = Query(default=None, include_in_schema=False),
 ):
     try:
-        search_request = SearchRequest(query=q, profile=profile, limit=limit)
+        if limit is not None:
+            raise HTTPException(status_code=422, detail="Usare page_size al posto di limit")
+        search_request = SearchRequest(query=q, profile=profile, page=page, page_size=page_size)
     except ValidationError as exc:
         raise HTTPException(status_code=422, detail="Parametri di ricerca non validi") from exc
     try:
@@ -60,9 +64,10 @@ def search(
 
 
 @router.get("/api/articles/{document_id}", response_model=Article)
-def article(document_id: str, backend: RetrievalEngine = Depends(engine)):
+def article(document_id: str, profile: str = Query(default="E0", pattern="^(E0|E1)$"),
+            backend: RetrievalEngine = Depends(engine)):
     try:
-        return backend.get_article(document_id)
+        return backend.get_article(document_id, profile)
     except (ArticleNotFound, SearchIndexMissing) as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except RetrievalUnavailable as exc:
@@ -71,12 +76,14 @@ def article(document_id: str, backend: RetrievalEngine = Depends(engine)):
 
 @router.get("/articles/{document_id}", response_class=HTMLResponse)
 def article_page(
-    request: Request, document_id: str, q: str = "", profile: str = "bm25",
+    request: Request, document_id: str, q: str = "",
+    profile: str = Query(default="E0", pattern="^(E0|E1)$"),
+    page: int = Query(default=1, ge=1), page_size: int = Query(default=10, ge=1, le=100),
     backend: RetrievalEngine = Depends(engine),
 ):
-    context = {"back_url": "/?" + urlencode({"q": q, "profile": profile})}
+    context = {"back_url": "/?" + urlencode({"q": q, "profile": profile, "page": page, "page_size": page_size})}
     try:
-        item = backend.get_article(document_id)
+        item = backend.get_article(document_id, profile)
     except (ArticleNotFound, SearchIndexMissing, RetrievalUnavailable) as exc:
         status = 503 if isinstance(exc, RetrievalUnavailable) else 404
         return templates.TemplateResponse(
@@ -87,3 +94,11 @@ def article_page(
         "source_url": item.url if urlsplit(item.url).scheme in {"http", "https"} else None,
     })
     return templates.TemplateResponse(request, "article.html", context)
+
+
+@router.get("/api/ready")
+def ready(backend: RetrievalEngine = Depends(engine)):
+    try:
+        return {"ready": True, "profiles": backend.readiness()}
+    except RetrievalUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc

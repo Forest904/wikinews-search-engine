@@ -3,11 +3,10 @@
 Monorepo sperimentale per un motore di ricerca **lessicale** delle notizie italiane
 Wikinotizie, basato su Elasticsearch, con valutazione IR riproducibile.
 
-> **Stato attuale:** **M2 completata e verificata localmente**: 11.032 articoli
-> puliti, deduplicati e riproducibili. Ricerca Web
-> ancora sulle fixture M1. Indicizzazione del corpus reale prevista in M3.
-> Il nuovo job CI di integrazione/browser è configurato; l'esito remoto è da verificare.
-> Ground truth e ranking avanzato restano pianificati. Leggi [la roadmap](docs/roadmap.md).
+> **Stato attuale:** **M3 completata e verificata localmente**: 11.032 articoli
+> ricercabili con E0/E1, paginazione, dettaglio ed export TREC riproducibile.
+> Vedi [report M3](docs/m3-validation.md) e [roadmap](docs/roadmap.md).
+> Ranking avanzato e benchmark restano pianificati; CI remota da verificare dopo il push.
 
 ## Documentazione di progetto
 
@@ -30,6 +29,8 @@ cp .env.example .env
 uv sync --locked
 
 docker compose up -d --wait elasticsearch
+uv run --locked wikinews-ir corpus prepare
+uv run --locked wikinews-ir index build
 # Verifica che Elasticsearch sia diventato healthy: docker compose ps
 uv run --locked uvicorn wikinews_ir.api.main:app --reload
 ```
@@ -38,10 +39,9 @@ Apri <http://127.0.0.1:8000/> per la pagina iniziale, <http://127.0.0.1:8000/doc
 per OpenAPI, <http://127.0.0.1:8000/api/health> per lo stato dei servizi.
 La homepage funziona anche senza backend; health restituisce 200 con backend
 raggiungibile e autenticato, 503 altrimenti. Non richiede un indice.
-Per abilitare la demo opzionale, dalla checkout locale esegui
-`uv run --locked wikinews-ir seed-demo`, poi cerca una parola nei cinque articoli
-sintetici. Il comando seed usa i file `configs/` e `tests/` della checkout;
-non è previsto nel container applicativo o nell'installazione del solo wheel.
+`/api/ready` verifica anche che entrambi gli indici siano pronti e contengano lo stesso
+corpus. La preparazione e l'indicizzazione sono job separati dall'avvio Web.
+Una seconda esecuzione di `index build` verifica e riusa gli indici già pronti.
 
 **Avvio opzionale full Docker:** dopo aver creato `.env`,
 `docker compose --profile full up -d --build --wait` avvia anche il servizio Web.
@@ -119,22 +119,53 @@ essere assenti o vuote: usare una nuova directory per ogni verifica. La build
 produce `articles.ndjson`, `manifest.json`, `audit.json` e `decisions.ndjson`.
 L'audit produce solo diagnostica e manifest; con errori restituisce exit code 1.
 Gli errori strutturali impediscono la pubblicazione della build. I comandi sono
-offline e non richiedono Docker o Elasticsearch. L'indicizzazione è prevista in M3.
+offline e non richiedono Docker o Elasticsearch. Indicizzare poi con `uv run --locked wikinews-ir index build`.
 
 Policy, schema, checksum e verifiche: [dataset](docs/dataset.md) e
 [ADR 0003](docs/decisions/0003-corpus-pipeline.md).
 
-## Scelte e limiti dopo M1
+## Baseline M3 e API
 
-- Immagine Elasticsearch **9.5.6**, client Python **9.5.1** bloccato nel lockfile.
-- Trasporto HTTP con basic auth **solo su loopback**, per sviluppo locale.
-  Non esporre questo setup su Internet: configurare TLS e hardening per altri ambienti.
-- `GET /api/search` supporta inizialmente il solo profilo `bm25`; gli altri file
-  in `configs/retrieval/` documentano profili pianificati, non feature già disponibili.
-- L'app restituisce **503** quando Elasticsearch non è raggiungibile e **404**
-  quando l'indice delle fixture non esiste.
-- I qrels umani (gold) e LLM (silver) saranno separati; Wikinotizie sarà
-  una baseline esterna, non una fonte di etichette gold.
+- E0: BM25 standard; E1: BM25 italiano. Titolo e corpo hanno lo stesso peso;
+  query OR, nessun fuzzy/phrase/boost. Default E0, senza selezione di qualità.
+- `GET /api/search?q=terremoto&profile=E1&page=1&page_size=10`.
+  Query 1–250 caratteri, page_size 1–100, pagina positiva, finestra di 10.000 risultati.
+  Il contratto M1 `bm25`/`limit` è stato rimosso.
+- Risposta: query, profile, index, hits, total, elapsed_ms, page, page_size, metadata.
+  I metadata identificano corpus, indice fisico/UUID, mapping e profilo tramite hash.
+  `elapsed_ms` è il tempo del backend; i rank sono assoluti fra pagine.
+- `GET /api/articles/{document_id}?profile=E1` e `/articles/{document_id}?profile=E1`
+  leggono il dettaglio dallo stesso indice della ricerca. La UI conserva query e pagina.
+- Parametri errati: 422; articolo/indice assente: 404; backend indisponibile,
+  indice incompleto/incompatibile o ricerca parziale: 503.
+- Indici configurabili con `ELASTICSEARCH_INDEX` (E0) e `ELASTICSEARCH_ITALIAN_INDEX`
+  (E1). Default `wikinews_standard_v1` e `wikinews_italian_v1`.
+- Ricostruzione esplicita: `uv run --locked wikinews-ir index build --rebuild`.
+  Ricrea **entrambi** gli indici configurati; durante il rebuild la ricerca non è garantita.
+  Necessaria anche per migrare il vecchio indice M1 contenente cinque fixture.
+  Non usare gli indici versionati per scritture esterne: sono bloccati in scrittura.
+- Il corpus viene validato prima del bulk; un indice incompleto non viene dichiarato pronto.
+  Manifest e diagnostica in `experiments/reports/index-build/` (ignorati da Git).
+- Le risorse runtime sono incluse nel wheel e nel container; `configs/` contiene le copie
+  leggibili dalla checkout, con test di identità per evitare divergenze.
+
+## Export TREC e verifica riproducibile
+
+```bash
+uv run --locked wikinews-ir runs export --queries configs/smoke/queries.jsonl --output experiments/runs/m3-first --top-k 100
+uv run --locked python scripts/verify_m3.py --output output/m3-check --rebuild
+```
+
+Usare directory di output nuove. Le query JSONL hanno forma
+`{"query_id":"q1","query":"terremoto"}`: ID univoco, non vuoto e senza spazi.
+L'export produce E0.trec, E1.trec e manifest.json; top-k ammesso 1–1.000.
+Il manifest registra anche query senza risultati. I punteggi non vengono alterati:
+rispettare rank e tiebreak `document_id` crescente quando si leggono le run.
+
+Lo script locale verifica riuso, run ripetute e, con `--rebuild`, ricostruzione degli
+indici; misura 50 ricerche per profilo dopo warmup e salva i campioni per la review.
+Le dieci query smoke non sono topic del benchmark e non alimentano il tuning.
+Limiti di cleaning e misure: [report M3](docs/m3-validation.md).
 
 ## Licenze
 
@@ -161,23 +192,7 @@ se cambia, aggiornare anche `ELASTICSEARCH_URL` per l'app eseguita sull'host.
 Le decisioni M0 e le evidenze di verifica sono in
 [ADR 0001](docs/decisions/0001-bootstrap.md).
 
-## Vertical slice M1
-
-Eseguire `uv run --locked wikinews-ir seed-demo`, poi aprire la homepage e cercare
-`terremoto`: il risultato atteso è **Terremoto in Abruzzo** (`demo-01`). Il titolo
-apre il dettaglio locale; il link di ritorno ripristina la query. Anche `soccorsi`
-trova lo stesso articolo cercando nel corpo. `zzzznonpresente` mostra lo stato vuoto.
-Le [fixture](tests/fixtures/README.md) sono sintetiche; il link esterno nel dettaglio
-porta alla homepage Wikinotizie, non a un articolo reale.
-
-- `GET /api/search?q=terremoto&profile=bm25&limit=10`: query normalizzata con trim,
-  1–250 caratteri, unico profilo `bm25`, limite 1–100 (default 10).
-- `GET /api/articles/demo-01`: ID, titolo, corpo completo e URL.
-- `GET /articles/demo-01`: dettaglio HTML; `q` e `profile` conservano la ricerca di ritorno.
-- Parametri non validi: 422; articolo/indice assente: 404 con messaggi distinti;
-  backend indisponibile: 503. Health verifica la connessione, non l'esistenza dell'indice.
-
-Lo stesso motore è utilizzabile da Python:
+## Uso Python e fixture isolate
 
 ```python
 from wikinews_ir.models import SearchRequest
@@ -185,14 +200,21 @@ from wikinews_ir.retrieval.engine import RetrievalEngine
 
 engine = RetrievalEngine()
 try:
-    results = engine.search(SearchRequest(query="terremoto"))
+    results = engine.search(SearchRequest(query="terremoto", profile="E1", page=1, page_size=10))
     print(results.model_dump())
-    print(engine.get_article("demo-01").body)
+    if results.hits:
+        print(engine.get_article(results.hits[0].document_id, "E1").body)
 finally:
     engine.close()
 ```
 
-Per la verifica completa, con Elasticsearch avviato:
+`uv run --locked wikinews-ir seed-demo` prepara soltanto `wikinews_demo_standard_v1`
+e `wikinews_demo_italian_v1`. Per usarli nella UI impostare entrambi i nomi nelle
+variabili di ambiente dell'app. Il seed richiede la checkout (`tests/fixtures/`);
+non è un comando per importare il corpus. Le fixture sono sintetiche e i loro link
+esterni puntano alla homepage Wikinotizie.
+
+Per il collaudo completo con Elasticsearch avviato, in PowerShell:
 
 ```powershell
 uv run --locked playwright install chromium
@@ -205,9 +227,6 @@ Remove-Item Env:RUN_E2E
 
 Su Linux/macOS: `uv run --locked playwright install --with-deps chromium`, poi
 `RUN_INTEGRATION=1 RUN_E2E=1 uv run --locked pytest -q`.
-I test creano indici temporanei `test-m1-*` e li eliminano al termine; i server
-browser usano porte libere. Non occorre caricare prima le fixture nell'indice demo.
-Screenshot e trace sono salvati in `output/playwright/` (ignorato da Git);
-la CI li pubblica come artefatti in caso di fallimento.
-
-Evidenze e confini della milestone: [ADR 0002](docs/decisions/0002-vertical-slice.md).
+I test creano coppie di indici temporanei `test-m3-*` e le eliminano al termine.
+Screenshot e trace in `output/playwright/`; la CI li pubblica in caso di fallimento.
+Le verifiche automatiche non richiedono il dump reale.

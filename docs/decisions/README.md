@@ -4,3 +4,5 @@
 - [0002 — Vertical slice M1](0002-vertical-slice.md): contratti condivisi, dettaglio, UI e test browser.
 
 - [0003 — Corpus M2](0003-corpus-pipeline.md): ammissibilità, revisioni, cleaning, date e riproducibilità.
+
+- [0004 — Baseline M3](0004-baseline-corpus.md): indici immutabili, profili E0/E1, API e run riproducibili.

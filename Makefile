@@ -15,3 +15,8 @@ test:
 lint:
 	uv run --locked ruff check .
 check: lint test
+
+index:
+	uv run --locked wikinews-ir index build
+demo-check:
+	uv run --locked python scripts/verify_m3.py --output output/m3-check

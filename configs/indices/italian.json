@@ -1,12 +1,64 @@
 {
-  "settings": {"number_of_shards": 1, "number_of_replicas": 0},
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "similarity": {
+      "default": {
+        "type": "BM25",
+        "k1": 1.2,
+        "b": 0.75
+      }
+    }
+  },
   "mappings": {
     "dynamic": "strict",
     "properties": {
-      "document_id": {"type": "keyword"},
-      "title": {"type": "text", "analyzer": "italian"},
-      "body": {"type": "text", "analyzer": "italian"},
-      "url": {"type": "keyword", "index": false}
+      "document_id": {
+        "type": "keyword"
+      },
+      "revision_id": {
+        "type": "keyword"
+      },
+      "categories": {
+        "type": "keyword"
+      },
+      "publication_date_status": {
+        "type": "keyword"
+      },
+      "title": {
+        "type": "text",
+        "analyzer": "italian"
+      },
+      "body": {
+        "type": "text",
+        "analyzer": "italian"
+      },
+      "publication_date": {
+        "type": "date",
+        "format": "strict_date"
+      },
+      "url": {
+        "type": "keyword",
+        "index": false,
+        "doc_values": false
+      },
+      "publication_date_evidence": {
+        "type": "keyword",
+        "index": false,
+        "doc_values": false
+      },
+      "sources": {
+        "type": "object",
+        "enabled": false
+      },
+      "license": {
+        "type": "object",
+        "enabled": false
+      },
+      "provenance": {
+        "type": "object",
+        "enabled": false
+      }
     }
   }
 }

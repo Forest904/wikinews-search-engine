@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Wikinotizie — Ricerca (demo)</title>
+  <title>Wikinotizie — Ricerca</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -11,7 +11,7 @@
     <header>
       <p class="eyebrow">Ingegneria dei Dati · Homework 4</p>
       <h1>Ricerca Wikinotizie</h1>
-      <p class="muted">Demo su cinque notizie sintetiche: i contenuti non provengono dal dump Wikinotizie.</p>
+      <p class="muted">Ricerca lessicale nel corpus Wikinotizie. E0: analyzer standard; E1: analyzer italiano.</p>
     </header>
     <form id="search-form">
       <label for="q">Cerca nelle notizie</label>
@@ -24,8 +24,13 @@
         {% for profile in profiles %}<option value="{{ profile }}">{{ profile }}</option>{% endfor %}
       </select>
     </form>
-    <div id="status" class="muted" role="status">Inserisci una parola per cercare nelle fixture.</div>
+    <div id="status" class="muted" role="status">Inserisci una parola per cercare nelle notizie.</div>
     <ol id="results" aria-live="polite"></ol>
+    <nav aria-label="Paginazione">
+      <button id="previous" type="button" disabled>Precedente</button>
+      <span id="page-status"></span>
+      <button id="next" type="button" disabled>Successiva</button>
+    </nav>
   </main>
   <script src="/static/app.js" defer></script>
 </body>

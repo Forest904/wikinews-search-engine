@@ -416,3 +416,20 @@ La UI usa il form Jinja2 esistente e JavaScript per chiamare `/api/search`;
 
 Paginazione, metadati del corpus, profili E0/E1 e stabilità dei ranking sperimentali
 restano previsti in M2/M3. Evidenze: [ADR 0002](decisions/0002-vertical-slice.md).
+
+## 16. Stato implementato dopo M3 (2026-11-16)
+
+Questa sezione sostituisce i contratti M1 della sezione 15. E0/E1 e page/page_size
+sostituiscono bm25/limit. Ricerca condivisa API/Python/export TREC, sort score
+ decrescente e document_id crescente, metadati versionati nelle risposte.
+
+Gli indici standard/italian contengono lo stesso corpus M2 e sono bloccati in
+scrittura dopo verifica dell'intero contenuto. `index build` valida e riusa;
+`--rebuild` ricrea le destinazioni fisiche. Mapping/profili sono inclusi nel wheel.
+`/api/ready` controlla indici, conteggi e identità del corpus; `/api/health` resta
+un controllo di connessione. La UI continua a usare JavaScript e `/api/search`,
+con paginazione e contesto conservato nel dettaglio; `/search` non è introdotto.
+
+`runs export` salva TREC e manifest da query JSONL, senza qrels; pooling e metriche
+restano M5/M6. Specifiche operative nel README, decisioni in
+[ADR 0004](decisions/0004-baseline-corpus.md), evidenze nel [report M3](m3-validation.md).

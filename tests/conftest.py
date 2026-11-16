@@ -18,7 +18,9 @@ def pytest_collection_modifyitems(items):
 
 @pytest.fixture
 def seeded_backend():
-    settings = replace(get_settings(), elasticsearch_index="test-m1-" + uuid4().hex)
+    suffix = uuid4().hex
+    settings = replace(get_settings(), elasticsearch_index="test-m3-standard-" + suffix,
+                       elasticsearch_italian_index="test-m3-italian-" + suffix)
     backend = RetrievalEngine(settings)
     try:
         assert backend.check_ready(), "Authenticated Elasticsearch is required"
@@ -27,7 +29,7 @@ def seeded_backend():
     finally:
         try:
             backend.client.options(ignore_status=404).indices.delete(
-                index=settings.elasticsearch_index
+                index=f"{settings.elasticsearch_index},{settings.elasticsearch_italian_index}"
             )
         finally:
             backend.close()

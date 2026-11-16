@@ -1,0 +1,7 @@
+id: E1
+version: "1"
+index_family: italian
+query_type: multi_match
+type: best_fields
+operator: or
+fields: [title, body]

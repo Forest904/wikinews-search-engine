@@ -25,7 +25,7 @@ Regole di esecuzione:
 | M0 — Repo e tecnologia | Progetto Python, Compose, lint, test | Nessuna | Completato: avvio ambiente e CI base verificati |
 | M1 — Vertical slice | UI → API → Elasticsearch → risultati su fixture | M0 | Completato localmente: ricerca browser e Python su fixture |
 | M2 — Corpus pipeline | Dump letto, ripulito, deduplicato e manifestato | M0 | Completato localmente: 11.032 articoli e build riproducibili |
-| M3 — Baseline completa | E0/E1 con corpus reale, API/UI stabile | M1, M2 | Risultati navigabili e run riproducibili |
+| M3 — Baseline completa | E0/E1 con corpus reale, API/UI stabile | M1, M2 | Completato localmente: 11.032 articoli per indice e run identiche dopo rebuild |
 | M4 — Retrieval avanzato | E2/E3/E4 e possibili estensioni | M3 | Profili distinti e testati, senza regressioni critiche |
 | M5 — Benchmark | Topic, rubriche, split, pooling, gold/silver | M3, M4 parziale | Qrels e pool tracciabili; qualità annotazione controllata |
 | M6 — Esperimenti finali | Metriche, confronti, error analysis | M4, M5 | Test gold usato una volta secondo protocollo congelato |
@@ -126,17 +126,24 @@ CI remota da verificare dopo il push. Policy, checksum e limiti in
 
 ### Attività
 
-- [ ] Creare mapping e configurazioni versionate per `wikinews_standard_v1` e `wikinews_italian_v1`.
-- [ ] Implementare indicizzazione bulk idempotente, controllo di conteggio ed esito.
-- [ ] Introdurre profili `E0` (standard BM25) e `E1` (italian BM25).
-- [ ] Realizzare ricerca su titolo/corpo, paginazione e dettaglio articolo.
-- [ ] Aggiungere tiebreak deterministico per ranking sperimentali e metadata indice/profilo nelle risposte.
-- [ ] Misurare tempi indicizzazione, conteggi e latenza orientativa sul target di demo.
-- [ ] Verificare qualità di alcuni risultati manualmente e documentare errori di ingestion distinguendoli da problemi di ranking.
+- [x] Creare mapping e configurazioni versionate per `wikinews_standard_v1` e `wikinews_italian_v1`.
+- [x] Implementare indicizzazione bulk idempotente, controllo di conteggio ed esito.
+- [x] Introdurre profili `E0` (standard BM25) e `E1` (italian BM25).
+- [x] Realizzare ricerca su titolo/corpo, paginazione e dettaglio articolo.
+- [x] Aggiungere tiebreak deterministico per ranking sperimentali e metadata indice/profilo nelle risposte.
+- [x] Misurare tempi indicizzazione, conteggi e latenza orientativa sul target di demo.
+- [x] Verificare qualità di alcuni risultati manualmente e documentare errori di ingestion distinguendoli da problemi di ranking.
 
 ### Exit criteria
 
 Il dump assegnato è cercabile dalla Web UI. E0 ed E1 interrogano lo stesso corpus logico; esiste una procedura ripetibile per ricostruire gli indici. Nessuna modifica al ranking viene spacciata per miglioramento senza benchmark.
+
+**Stato: M3 completata e verificata localmente (2026-11-16).**
+Entrambi gli indici contengono gli stessi 11.032 articoli M2. UI E0/E1, paginazione,
+dettaglio, export TREC e ricostruzione sono verificati. Hash delle run identici
+prima e dopo rebuild. Limiti del cleaning distinti dal ranking nel
+[report M3](m3-validation.md); decisioni in [ADR 0004](decisions/0004-baseline-corpus.md).
+CI remota da verificare dopo il push.
 
 ## 7. Fase M4 — Ricerca classica avanzata
 

@@ -1,0 +1,7 @@
+id: E0
+version: "1"
+index_family: standard
+query_type: multi_match
+type: best_fields
+operator: or
+fields: [title, body]

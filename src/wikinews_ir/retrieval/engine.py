@@ -10,7 +10,9 @@ from elasticsearch.exceptions import (
 )
 
 from wikinews_ir.config import Settings, get_settings
+from wikinews_ir.ingestion.indexer import inspect_index
 from wikinews_ir.models import Article, SearchHit, SearchRequest, SearchResponse
+from wikinews_ir.retrieval.profiles import digest, index_name, profile_config
 from wikinews_ir.retrieval.query_builder import build_query
 
 
@@ -44,21 +46,50 @@ class RetrievalEngine:
         except (ElasticsearchConnectionError, ConnectionTimeout, ApiError, OSError):
             return False
 
+    def metadata(self, profile):
+        name = index_name(self.settings, profile)
+        try:
+            meta = inspect_index(self.client, name, profile)
+        except ValueError as exc:
+            raise RetrievalUnavailable(str(exc)) from exc
+        config = profile_config(profile)
+        return {**meta, "profile_version": config["version"], "profile_sha256": digest(config)}
+
+    def readiness(self):
+        try:
+            metadata = {p: self.metadata(p) for p in ("E0", "E1")}
+            for profile, meta in metadata.items():
+                if self.client.count(index=meta["index"])["count"] != meta["document_count"]:
+                    raise RetrievalUnavailable(f"Conteggio errato: {profile}")
+            if any(metadata["E0"][key] != metadata["E1"][key] for key in (
+                "corpus_sha256", "content_sha256", "document_count", "snapshot_id",
+            )):
+                raise RetrievalUnavailable("I profili usano corpus diversi")
+            return metadata
+        except (ElasticsearchConnectionError, ConnectionTimeout, ApiError, ValueError) as exc:
+            raise RetrievalUnavailable("Indici non pronti: esegui index build") from exc
+
     def search(self, request: SearchRequest) -> SearchResponse:
         request = SearchRequest.model_validate(request.model_dump())
         body = build_query(request.query, request.profile)
         try:
+            metadata = self.metadata(request.profile)
             result = self.client.search(
-                index=self.settings.elasticsearch_index,
+                index=index_name(self.settings, request.profile),
                 query=body,
-                size=request.limit,
+                size=request.page_size,
+                from_=(request.page - 1) * request.page_size,
+                sort=[{"_score": "desc"}, {"document_id": "asc"}],
                 track_total_hits=True,
+                allow_partial_search_results=False,
             )
+            if result.get("timed_out") or result.get("_shards", {}).get("failed", 0):
+                raise RetrievalUnavailable("Ricerca incompleta: riprovare")
         except (ElasticsearchConnectionError, ConnectionTimeout) as exc:
             raise RetrievalUnavailable("Elasticsearch non raggiungibile") from exc
         except ApiError as exc:
             if exc.status_code == 404:
-                raise SearchIndexMissing("Indice mancante: esegui seed-demo") from exc
+                raise SearchIndexMissing("Indice mancante: esegui index build") from exc
             raise RetrievalUnavailable("Elasticsearch ha restituito un errore") from exc
 
         hits = [
@@ -70,27 +101,29 @@ class RetrievalEngine:
                 url=item.get("_source", {}).get("url", ""),
                 snippet=item.get("_source", {}).get("body", "")[:240],
             )
-            for i, item in enumerate(result["hits"]["hits"], start=1)
+            for i, item in enumerate(result["hits"]["hits"], start=(request.page - 1) * request.page_size + 1)
         ]
         return SearchResponse(
             query=request.query,
             profile=request.profile,
-            index=self.settings.elasticsearch_index,
+            index=index_name(self.settings, request.profile),
+            page=request.page, page_size=request.page_size, metadata=metadata,
             hits=hits,
             total=int(result["hits"]["total"]["value"]),
             elapsed_ms=int(result.get("took", 0)),
         )
 
-    def get_article(self, document_id: str) -> Article:
+    def get_article(self, document_id: str, profile: str = "E0") -> Article:
         try:
-            result = self.client.get(index=self.settings.elasticsearch_index, id=document_id)
+            self.metadata(profile)
+            result = self.client.get(index=index_name(self.settings, profile), id=document_id)
         except (ElasticsearchConnectionError, ConnectionTimeout) as exc:
             raise RetrievalUnavailable("Elasticsearch non raggiungibile") from exc
         except ApiError as exc:
             if exc.status_code == 404:
                 error = exc.body.get("error", {}) if isinstance(exc.body, dict) else {}
                 if isinstance(error, dict) and error.get("type") == "index_not_found_exception":
-                    raise SearchIndexMissing("Indice mancante: esegui seed-demo") from exc
+                    raise SearchIndexMissing("Indice mancante: esegui index build") from exc
                 raise ArticleNotFound("Articolo non trovato") from exc
             raise RetrievalUnavailable("Elasticsearch ha restituito un errore") from exc
         return Article.model_validate({**result["_source"], "document_id": str(result["_id"])})

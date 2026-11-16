@@ -76,7 +76,7 @@ def test_search_uses_shared_backend(client, failure, status):
     else:
         backend.search.return_value = {
             "query": "calcio",
-            "profile": "bm25",
+            "profile": "E0",
             "index": "test",
             "hits": [],
             "total": 0,
@@ -92,8 +92,9 @@ def test_search_uses_shared_backend(client, failure, status):
 
 
 @pytest.mark.parametrize("params", [
-    {"q": " "}, {"q": "x" * 251}, {"q": "x", "limit": 0},
-    {"q": "x", "limit": 101}, {"q": "x", "profile": "fuzzy"}, {},
+    {"q": " "}, {"q": "x" * 251}, {"q": "x", "page_size": 0},
+    {"q": "x", "page_size": 101}, {"q": "x", "profile": "fuzzy"}, {},
+    {"q": "x", "limit": 10}, {"q": "x", "page": 101, "page_size": 100},
 ])
 def test_invalid_search_never_calls_backend(client, params):
     backend = Mock()
@@ -101,6 +102,22 @@ def test_invalid_search_never_calls_backend(client, params):
     try:
         assert client.get("/api/search", params=params).status_code == 422
         backend.search.assert_not_called()
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.parametrize("available", [True, False])
+def test_readiness(client, available):
+    from wikinews_ir.retrieval.engine import RetrievalUnavailable
+
+    backend = Mock()
+    backend.readiness.return_value = {"E0": {}, "E1": {}}
+    if not available:
+        backend.readiness.side_effect = RetrievalUnavailable("Indici non pronti")
+    app.dependency_overrides[engine] = lambda: backend
+    try:
+        response = client.get("/api/ready")
+        assert response.status_code == (200 if available else 503)
     finally:
         app.dependency_overrides.clear()
 

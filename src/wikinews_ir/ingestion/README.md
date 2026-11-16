@@ -1,4 +1,4 @@
-# Ingestion — M2
+# Ingestion — M2/M3
 
 `acquisition.py` aggiunge `wikinews-ir corpus prepare`: download dello snapshot
 fissato, controllo SHA-256 e preparazione. Archivio e corpus già validi sono
@@ -13,7 +13,12 @@ uv run --locked wikinews-ir corpus build --input data/raw/itwikinews-NS0-2025032
 ```
 
 Output già popolati sono rifiutati. L'audit non pubblica `articles.ndjson` e
-restituisce exit code 1 se rileva errori strutturali. Nessun comando richiede ES.
-Il bulk indexing del corpus reale appartiene a M3; `seed-demo` resta separato.
+restituisce exit code 1 se rileva errori strutturali. Questi comandi non richiedono ES.
+
+`indexer.py` implementa M3: `wikinews-ir index build` valida gli artefatti processed,
+costruisce entrambi gli indici E0/E1 con bulk streaming e verifica l'intero contenuto.
+Il riuso è verificato; `--rebuild` ricrea esplicitamente le destinazioni configurate.
+Indici completi bloccati in scrittura, manifest separati dal corpus; `seed-demo`
+utilizza lo stesso indexer ma solo indici demo e fixture sintetiche.
 
 Policy e schema: [dataset.md](../../../docs/dataset.md).

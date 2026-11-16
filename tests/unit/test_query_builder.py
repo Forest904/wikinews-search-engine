@@ -5,7 +5,7 @@ from wikinews_ir.retrieval.query_builder import build_query
 
 def test_valid_bm25_query():
     assert build_query("  terremoto  ") == {
-        "multi_match": {"query": "terremoto", "fields": ["title", "body"]}
+        "multi_match": {"query": "terremoto", "fields": ["title", "body"], "type": "best_fields", "operator": "or"}
     }
 
 

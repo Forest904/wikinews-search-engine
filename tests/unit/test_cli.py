@@ -8,7 +8,7 @@ from wikinews_ir.cli import seed_demo
 def test_seed_closes_backend_on_failure(monkeypatch):
     backend = Mock()
     backend.check_ready.return_value = False
-    monkeypatch.setattr("wikinews_ir.cli.RetrievalEngine", lambda: backend)
+    monkeypatch.setattr("wikinews_ir.cli.RetrievalEngine", lambda *args: backend)
     with pytest.raises(RuntimeError, match="non disponibile"):
         seed_demo()
     backend.close.assert_called_once_with()
@@ -19,7 +19,7 @@ def test_invalid_fixture_rejected_before_writes(monkeypatch, tmp_path, invalid):
 
     backend = Mock()
     backend.check_ready.return_value = True
-    monkeypatch.setattr("wikinews_ir.cli.RetrievalEngine", lambda: backend)
+    monkeypatch.setattr("wikinews_ir.cli.RetrievalEngine", lambda *args: backend)
     monkeypatch.setattr("wikinews_ir.cli.ROOT", tmp_path)
     mapping = tmp_path / "configs/indices/standard.json"
     mapping.parent.mkdir(parents=True)

@@ -92,3 +92,20 @@ def test_backend_unavailable(browser_page):
                 expect(browser_page.get_by_role("status")).to_contain_text("non è disponibile")
         finally:
             backend.close()
+
+
+def test_profile_pagination_and_restored_url(seeded_backend, browser_page):
+    page = browser_page
+    with serve(seeded_backend) as url:
+        page.goto(url + "/?q=italiana&profile=E1&page_size=1")
+        expect(page.locator("#results li")).to_have_count(1)
+        page.get_by_label("Profilo di retrieval").select_option("E0")
+        expect(page).to_have_url(__import__("re").compile("profile=E0"))
+        expect(page.get_by_role("button", name="Successiva")).to_be_enabled()
+        page.get_by_role("button", name="Successiva").click()
+        expect(page.locator("#page-status")).to_contain_text("Pagina 2")
+        page.locator("#results a").click()
+        page.get_by_role("link", name="Torna ai risultati").click()
+        expect(page.locator("#page-status")).to_contain_text("Pagina 2")
+        page.reload()
+        expect(page.locator("#page-status")).to_contain_text("Pagina 2")
