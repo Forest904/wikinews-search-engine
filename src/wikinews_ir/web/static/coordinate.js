@@ -1,7 +1,26 @@
 "use strict";
 (() => {
   const {$,api,message,element,start} = Annotation;
-  let data = null, preview = null;
+  let data = null, preview = null, newestBlock = null;
+  function navigate(focus = false) {
+    const id = ['panoramica','assegnazioni','revisioni','esportazione'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'panoramica';
+    document.querySelectorAll('.coord-section').forEach(section => section.hidden = section.id !== id);
+    document.querySelectorAll('.coord-nav a').forEach(link => {
+      if (link.hash === `#${id}`) link.setAttribute('aria-current','page'); else link.removeAttribute('aria-current');
+    });
+    if (focus) $(id).focus({preventScroll:true});
+  }
+  window.addEventListener('hashchange', () => navigate(true));
+  navigate();
+  function exportSummary() {
+    const packet = $('export-packet').selectedOptions[0]?.textContent;
+    const split = $('export-split').selectedOptions[0].textContent;
+    $('export-summary').textContent = packet ? `${packet} · ${split}. Scaricherai un archivio ZIP con giudizi consolidati, cronologia e manifest.` : 'Nessun pacchetto disponibile per l’esportazione.';
+    $('export-form').querySelector('[type=submit]').disabled = !packet;
+  }
+  function step(name) {
+    for (const item of ['configure','preview','activate']) $(`step-${item}`).classList.toggle('active', item === name);
+  }
   function options(select,values,empty) {
     const selected = select.value;
     select.replaceChildren(...(empty ? [new Option(empty,'')] : []),...values.map(v => new Option(v.label,v.value)));
@@ -26,11 +45,12 @@
     const packets = data.packets.map((p,i) => ({value:p.id,label:`Pacchetto ${i + 1} · ${p.topics.map(t => t.query).join(', ')} · ${p.id.slice(0,8)}`}));
     options($('packet'),packets); options($('export-packet'),packets); topicOptions();
     const users = data.users.map(u => ({value:u.id,label:u.id})); options($('primary-user'),users); options($('secondary-user'),users,'Nessuno'); options($('third-user'),users,'Nessuno');
+    $('blocks-count').textContent = `${data.blocks.length} totali · ${data.blocks.filter(b => !b.active).length} bozze`;
     $('blocks').replaceChildren(...data.blocks.map(block => {
-      const card = element('div'); card.append(element('p',`${block.query_id} · ${block.primary_user}${block.secondary_user ? ' + ' + block.secondary_user : ''}${block.third_user ? ' + ' + block.third_user : ''}`),element('span',block.active ? 'Attivo · assegnazioni congelate' : 'Bozza','status-chip'));
+      const card = element('div'); card.dataset.blockId = block.id; card.classList.toggle('new-block',block.id === newestBlock); card.append(element('p',`${block.query_id} · ${block.primary_user}${block.secondary_user ? ' + ' + block.secondary_user : ''}${block.third_user ? ' + ' + block.third_user : ''}`),element('span',block.active ? 'Attivo · assegnazioni congelate' : 'Bozza','status-chip'));
       if (!block.active) {
         const button = element('button','Mostra riepilogo','secondary'); button.onclick = async () => {
-          try { showPreview(await api(`blocks/${block.id}`)); } catch(error) { message(error.message,'error'); }
+          button.disabled = true; try { showPreview(await api(`blocks/${block.id}`)); } catch(error) { message(error.message,'error'); } finally { button.disabled = false; }
         }; card.append(button);
       } return card;
     }));
@@ -41,80 +61,52 @@
       options(select,review.eligible.map(u => ({value:u,label:u})), 'Scegli un revisore'); select.value = review.reviewer || '';
       label.append(select); card.append(label);
       const button = element('button','Assegna revisione','secondary'); button.disabled = !review.eligible.length;
+      if (!review.eligible.length) card.append(element('p','Nessun revisore indipendente disponibile per questa coppia.','small muted'));
       button.onclick = async () => { button.disabled = true; try {
         if (!select.value) throw new Error('Scegli un revisore.');
         await api('review-assignments',{packet_id:review.packet_id,query_id:review.query_id,document_id:review.document_id,reviewer:select.value});
         await refresh(); message('Revisione assegnata.','success');
-      } catch(error) { message(error.message,'error'); } finally { button.disabled = false; } };
+      } catch(error) { message(error.message,'error'); } finally { button.disabled = !review.eligible.length; } };
       card.append(button); return card;
     }));
     if (!data.pending_reviews.length) $('reviews').append(element('p','Nessuna revisione pendente.','muted'));
+    exportSummary();
+    $('block-form').querySelector('[type=submit]').disabled = !data.packets.length || !data.users.length;
   }
   function showPreview(result) {
-    preview = result; const b = result.block;
+    preview = result; const b = result.block; step('preview');
     $('preview-summary').textContent = `${b.query_id} · principale: ${b.primary_user} · secondo: ${b.secondary_user || 'nessuno'} · terzo: ${b.third_user || 'nessuno'} · ${b.overlap} documenti in doppio · seed: ${b.seed}`;
     $('preview-order').replaceChildren(...(result.assignments || []).map(a => element('li',`${a.user_id}: ${a.document_id}`)));
     $('block-preview').hidden = false; $('block-preview').scrollIntoView({block:'nearest'});
   }
-  async function discussion(save) {
-    try {
-      const body = {packet_id:$('packet').value};
-      if (save) Object.assign(body,{minutes:Number($('discussion-minutes').value),
-        participants:$('discussion-users').value.split(',').map(s => s.trim()).filter(Boolean),notes:$('discussion-notes').value});
-      const result = await api('pilot-discussion',body);
-      await refresh();
-      const groups = new Map();
-      for (const row of result.originals) {
-        const key = `${row.query_id}/${row.document_id}`;
-        if (!groups.has(key)) groups.set(key,[]);
-        groups.get(key).push(row);
-      }
-      $('pilot-originals').replaceChildren(...[...groups.values()].map(rows => {
-        const doc = result.documents.find(d => d.document_id === rows[0].document_id);
-        const topic = result.topics.find(t => t.query_id === rows[0].query_id);
-        const detail = element('details');
-        detail.append(element('summary',`${topic.query} · ${doc.title} · ${rows.map(r => r.grade ?? 'astensione').join(' / ')}`));
-        detail.append(element('p',topic.information_need));
-        for (const row of rows) {
-          const card = element('div',undefined,'original-card');
-          card.append(element('strong',`${row.user_id}: ${row.grade ?? 'Astensione'}`),element('p',row.rationale));
-          JSON.parse(row.evidence).forEach(ev => card.append(element('blockquote',ev.quote)));
-          detail.append(card);
-        }
-        const text = element('details'); text.append(element('summary','Testo completo'),element('p',doc.body,'document-body')); detail.append(text);
-        return detail;
-      }));
-      $('discussion-notes').value = result.discussion.notes;
-      $('discussion-minutes').value = result.discussion.minutes || '';
-      $('discussion-users').value = JSON.parse(result.discussion.participants).join(',') || [...new Set(result.originals.map(r => r.user_id))].join(',');
-      message('Discussione aperta; originali congelati.','success');
-    } catch(error) { message(error.message,'error'); }
-  }
-  $('open-discussion').onclick = () => discussion(false);
-  $('save-discussion').onclick = () => discussion(true);
   $('packet').onchange = topicOptions; $('topic').onchange = topicLimit;
+  $('block-form').addEventListener('input', () => { preview = null; $('block-preview').hidden = true; step('configure'); window.annotationDirty = true; });
+  $('block-form').addEventListener('invalid', event => { const detail = event.target.closest('details'); if (detail) detail.open = true; }, true);
+  window.addEventListener('beforeunload', event => { if (window.annotationDirty) { event.preventDefault(); event.returnValue = ''; } });
   $('block-form').onsubmit = async event => {
-    event.preventDefault(); const button = event.target.querySelector('button'); button.disabled = true;
+    event.preventDefault(); const button = event.target.querySelector('[type=submit]'); button.disabled = true;
     try { showPreview(await api('blocks',{packet_id:$('packet').value,query_id:$('topic').value,
       primary_user:$('primary-user').value,secondary_user:$('secondary-user').value || null,
-      third_user:$('third-user').value || null,overlap:Number($('overlap').value),seed:$('seed').value})); await refresh(); message('Blocco preparato. Controlla il riepilogo prima di attivarlo.'); }
+      third_user:$('third-user').value || null,overlap:Number($('overlap').value),seed:$('seed').value})); newestBlock = preview.block.id; window.annotationDirty = false; await refresh(); $('prepared-blocks').open = true; message('Blocco preparato. Controlla il riepilogo prima di attivarlo.'); }
     catch(error) { message(error.message,'error'); } finally { button.disabled = false; }
   };
   $('activate-block').onclick = async () => {
     if (!preview) return; $('activate-block').disabled = true;
-    try { await api(`blocks/${preview.block.id}/activate`,{}); $('block-preview').hidden = true; await refresh(); message('Blocco attivato. I valutatori possono iniziare.','success'); }
+    try { await api(`blocks/${preview.block.id}/activate`,{}); $('block-preview').hidden = true; step('activate'); await refresh(); message('Blocco attivato. I valutatori possono iniziare.','success'); }
     catch(error) { message(error.message,'error'); } finally { $('activate-block').disabled = false; }
   };
   $('refresh').onclick = async () => { try { await refresh(); message('Avanzamento aggiornato.'); } catch(error) { message(error.message,'error'); } };
-  $('export-split').onchange = () => { $('release-test-label').hidden = $('export-split').value !== 'test'; $('release-test').checked = false; };
+  $('export-split').onchange = () => { $('release-test-label').hidden = $('export-split').value !== 'test'; $('release-test').checked = false; exportSummary(); };
+  $('export-packet').onchange = () => { $('release-test').checked = false; exportSummary(); };
   $('export-form').onsubmit = async event => {
-    event.preventDefault(); const button = event.target.querySelector('button'); button.disabled = true;
+    event.preventDefault(); const button = event.target.querySelector('[type=submit]'); button.disabled = true;
     try {
+      if ($('export-split').value === 'test' && !$('release-test').checked) { $('release-test').focus(); throw new Error('Conferma il rilascio esplicito del test prima di scaricare.'); }
       const blob = await api('exports',{packet_id:$('export-packet').value,split:$('export-split').value,release_test:$('release-test').checked},true);
       const url = URL.createObjectURL(blob), link = element('a'); link.href = url; link.download = `gold-${$('export-split').value}.zip`;
       document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url),1000);
       message('Archivio gold preparato. Il download include cronologia e manifest.','success');
     } catch(error) { message(error.message,'error'); } finally { button.disabled = false; }
   };
-  start(async user => { if (!user.coordinator) throw new Error('Questa pagina è riservata al coordinatore. Usa la pagina Annotazione per le tue attività.'); await refresh(); $('workspace').hidden = false; });
+  start(async user => { if (!user.coordinator) { $('access-denied').hidden = false; return; } await refresh(); $('workspace').hidden = false; });
 })();

@@ -66,6 +66,13 @@ dal database host. `docker compose down` conserva il volume; `down -v` lo elimin
 
 ## Lavoro del coordinatore
 
+La pagina è divisa in **Panoramica**, **Assegnazioni**, **Revisioni** ed
+**Esportazione**, raggiungibili anche tramite il frammento dell'URL. Cambiare
+sezione conserva i moduli in memoria. **Blocchi preparati** è richiudibile sotto
+il modulo di preparazione: si apre dopo aver creato un blocco, evidenziando la
+nuova bozza. La discussione pilot non è più esposta nella UI; dati storici e API
+restano disponibili per gli strumenti del protocollo M5-C.
+
 1. Scegliere pacchetto e topic, valutatore principale e secondo valutatore facoltativo.
 2. Specificare il numero di documenti in doppio e un seed. Il principale riceve
    tutte le coppie del topic; il secondo un sottoinsieme deterministico. Anche
@@ -83,13 +90,18 @@ osservato giudizi; errori nel disegno richiedono un nuovo pacchetto di raccolta.
 
 ## Lavoro del valutatore
 
-La pagina presenta criteri a sinistra, documento al centro e modulo di giudizio
-a destra. I pannelli laterali seguono lo scorrimento su desktop. Su mobile le
-sezioni sono impilate, con collegamenti rapidi Criteri / Documento / Giudizio.
+La pagina presenta il bisogno informativo in una fascia superiore orizzontale,
+con criteri e rubrica richiudibili e timer accanto. Il timer parte chiuso: il suo
+riepilogo indica sempre stato e fase; richiuderlo non mette in pausa il conteggio.
+Sotto, il documento occupa la colonna principale e il giudizio quella destra,
+che segue lo scorrimento su desktop. Su mobile le sezioni sono impilate, con
+collegamenti rapidi Criteri / Documento / Giudizio. I criteri si riaprono al
+cambio di topic.
 
 - Leggere bisogno informativo, inclusioni, esclusioni e rubrica specifica.
-- Usare la ricerca facoltativa per evidenziare parole o frasi: non suggerisce gradi.
-- Selezionare passaggi nel corpo e premere **Aggiungi citazione**. Le citazioni
+- Usare la ricerca facoltativa e le frecce per navigare tra le occorrenze: non suggerisce gradi.
+- Selezionare passaggi nel corpo e premere **Cita il passaggio** vicino al testo
+  oppure **Aggiungi citazione** nel modulo. Le citazioni
   conservano offset Unicode e sono verificate sul testo congelato anche al salvataggio.
 - Scegliere `0`, `1` o `2`, aggiungere una motivazione. Ogni grado richiede almeno
   una citazione. Le scorciatoie numeriche funzionano fuori dai campi di inserimento.

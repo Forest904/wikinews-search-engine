@@ -99,7 +99,8 @@ def test_profile_pagination_and_restored_url(seeded_backend, browser_page):
     with serve(seeded_backend) as url:
         page.goto(url + "/?q=italiana&profile=E1&page_size=1")
         expect(page.locator("#results li")).to_have_count(1)
-        page.get_by_label("Profilo di retrieval").select_option("E0")
+        page.get_by_text("Opzioni di ricerca", exact=False).click()
+        page.get_by_label("Modalità di ricerca").select_option("E0")
         expect(page).to_have_url(__import__("re").compile("profile=E0"))
         expect(page.get_by_role("button", name="Successiva")).to_be_enabled()
         page.get_by_role("button", name="Successiva").click()
@@ -116,7 +117,7 @@ def test_advanced_profiles_navigation(seeded_backend, browser_page, profile):
     page = browser_page
     with serve(seeded_backend) as url:
         page.goto(url + f"/?q=italiana&profile={profile}&page_size=1")
-        expect(page.get_by_label("Profilo di retrieval")).to_have_value(profile)
+        expect(page.get_by_label("Modalità di ricerca")).to_have_value(profile)
         expect(page.locator("#results li")).to_have_count(1)
         expect(page.locator("#results mark").first).to_be_visible()
         page.get_by_role("button", name="Successiva").click()
@@ -124,7 +125,7 @@ def test_advanced_profiles_navigation(seeded_backend, browser_page, profile):
         page.locator("#results a").click()
         page.get_by_role("link", name="Torna ai risultati").click()
         expect(page.locator("#page-status")).to_contain_text("Pagina 2")
-        expect(page.get_by_label("Profilo di retrieval")).to_have_value(profile)
+        expect(page.get_by_label("Modalità di ricerca")).to_have_value(profile)
 
 
 def test_phrase_error_and_safe_highlighting(seeded_backend, browser_page):
@@ -150,3 +151,50 @@ def test_phrase_error_and_safe_highlighting(seeded_backend, browser_page):
         expect(page.locator("#results mark")).to_have_text(hostile)
         expect(page.locator("#results img")).to_have_count(0)
         assert page.evaluate("window.injected") is None
+
+
+def test_search_history_recovery_and_responsive_layout(seeded_backend, browser_page):
+    page = browser_page
+    output = Path("output/playwright/polish")
+    output.mkdir(parents=True, exist_ok=True)
+    with serve(seeded_backend) as url:
+        page.set_viewport_size({"width": 1280, "height": 720})
+        page.goto(url)
+        expect(page.locator("#pagination")).to_be_hidden()
+        page.screenshot(path=str(output / "search-home.png"))
+        page.get_by_label("Cerca nelle notizie").fill("terremoto")
+        page.get_by_role("button", name="Cerca", exact=True).click()
+        expect(page.locator("#results a")).to_have_count(1)
+        expect(page.locator("#results a").first).to_be_in_viewport()
+        expect(page.locator("#status")).to_have_text("1 risultato")
+        page.screenshot(path=str(output / "search-results.png"))
+        page.get_by_label("Cerca nelle notizie").fill("zzzznonpresente")
+        page.get_by_role("button", name="Cerca", exact=True).click()
+        expect(page.locator("#status")).to_contain_text("Nessun risultato")
+        page.go_back()
+        expect(page.get_by_label("Cerca nelle notizie")).to_have_value("terremoto")
+        expect(page.locator("#results a")).to_have_count(1)
+        page.go_forward()
+        expect(page.locator("#status")).to_contain_text("Nessun risultato")
+        page.go_back()
+        expect(page.locator("#results a")).to_have_count(1)
+        page.locator("#results a").click()
+        expect(page.locator(".article-body")).to_contain_text("soccorsi")
+        page.screenshot(path=str(output / "article.png"))
+        page.get_by_role("link", name="Torna ai risultati").click()
+        expect(page.locator("#results a")).to_have_count(1)
+        for width, height in [(1440, 900), (1024, 768), (390, 844), (640, 450)]:
+            page.set_viewport_size({"width": width, "height": height})
+            assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+            page.screenshot(path=str(output / f"search-{width}.png"))
+        page.route("**/api/search?*", lambda route: route.abort())
+        page.get_by_role("button", name="Cerca", exact=True).click()
+        expect(page.locator("#retry")).to_be_visible()
+        expect(page.get_by_label("Cerca nelle notizie")).to_have_value("terremoto")
+        page.unroute("**/api/search?*")
+        page.get_by_role("button", name="Riprova", exact=True).click()
+        expect(page.locator("#results a")).to_have_count(1)
+        page.get_by_text("Opzioni di ricerca", exact=False).click()
+        page.get_by_label("Modalità di ricerca").select_option("E4")
+        expect(page.locator("#profile-help")).to_contain_text("virgolette")
+        expect(page.locator("#profile-summary")).to_have_text("Frasi · E4")

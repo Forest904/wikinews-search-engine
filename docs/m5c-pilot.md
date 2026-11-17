@@ -56,10 +56,11 @@ diagnostici sono scelti esplicitamente, non estratti a sorte.
    uv run --locked wikinews-ir annotation import --packet output/m5c-pilot-v2/packet
    ```
 
-3. In `/coordinate`, per ogni topic scegliere i tre utenti distinti, impostare
+3. In `/coordinate#assegnazioni`, per ogni topic scegliere i tre utenti distinti, impostare
    **Documenti in doppio = 6**, scegliere il terzo valutatore e il seed, controllare
    l'anteprima e attivare. Sono 24 coppie distinte e 72 annotazioni.
-4. Ogni validatore lavora indipendentemente. Prima di leggere avviare il timer
+4. Ogni validatore lavora indipendentemente. Espandere **Tempo operativo** accanto
+   al bisogno informativo. Prima di leggere avviare il timer
    **Lettura**; quando si passa a motivazione, citazioni e grado, selezionare
    **Compilazione** e premere nuovamente **Avvia / riprendi**. Il cambio fase mette
    in pausa, non avvia automaticamente la fase successiva.
@@ -72,10 +73,13 @@ diagnostici sono scelti esplicitamente, non estratti a sorte.
    incompleto. Il timer non certifica attenzione o identità personale.
 7. Astensione e rinvio restano distinti. La discussione si apre soltanto dopo tutte
    le 72 risposte graduate o astensioni; un rinvio blocca l'apertura.
-8. Il coordinatore apre **Discussione del pilot** sul pacchetto selezionato. Questo
-   congela gli originali e rende disponibili gradi, motivazioni, citazioni e testi
-   per una discussione condivisa. Nessuna adjudication indipendente è simulata:
-   tutti e tre hanno già letto le coppie. Non viene prodotto gold automatico.
+8. La discussione del pilot non è più presente nella pagina coordinatore.
+   L'API autenticata `POST /api/annotation/pilot-discussion` resta disponibile
+   agli strumenti del protocollo, con i controlli di ruolo e CSRF esistenti.
+   L'apertura tramite API congela gli originali e rende disponibili gradi,
+   motivazioni, citazioni e testi per una discussione condivisa. Nessuna
+   adjudication indipendente è simulata: tutti e tre hanno già letto le coppie.
+   Non viene prodotto gold automatico.
 9. Registrare minuti effettivi, i tre ID partecipanti e verbale: dubbi, accordi,
    modifiche alla rubrica e casi irrisolti. I minuti della riunione sono moltiplicati
    per i partecipanti nel costo umano. I verbali precedenti restano nell'audit.

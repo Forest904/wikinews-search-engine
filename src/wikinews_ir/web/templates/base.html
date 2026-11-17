@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}Ricerca{% endblock %} · Wikinotizie</title>
+  <link rel="icon" type="image/svg+xml" href="/static/annotation-mark.svg">
+  <link rel="stylesheet" href="/static/common.css">
+  {% block styles %}<link rel="stylesheet" href="/static/style.css">{% endblock %}
+</head>
+<body>
+  <a class="skip" href="#main">Vai al contenuto</a>
+  <header class="topbar">
+    <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">W</span><span>Wikinotizie<small>Archivio di notizie italiane</small></span></a>
+    <nav aria-label="Navigazione principale">
+      <a href="/" {% block search_active %}{% endblock %}>Ricerca</a>
+      <a href="/annotate" {% block annotate_active %}{% endblock %}>Valutazione</a>
+      {% block coordinator_nav %}{% endblock %}
+    </nav>
+    {% block account %}{% endblock %}
+  </header>
+  {% block main %}{% endblock %}
+  <footer class="app-footer"><span>Wikinotizie · Archivio di ricerca</span><span>Un progetto di Ingegneria dei Dati</span></footer>
+  {% block scripts %}{% endblock %}
+</body></html>

@@ -4,9 +4,14 @@
   const labels = {judged:'Giudicato', needs_review:'Astensione', deferred:'Rinviato', unstarted:'Da iniziare'};
   let annotations = [], reviews = [], current = null, evidence = [], mode = 'annotation', user = null;
   let pending = null, saving = false, selectedIndex = 0;
+  let topicKey = null, selectedQuote = null, matches = [], matchIndex = -1;
   const list = () => mode === 'annotation' ? annotations : reviews;
   const key = task => [task.packet_id, task.topic.query_id, task.document.document_id].join('/');
-  function dirty() { window.annotationDirty = true; $('save-state').textContent = 'Modifiche non salvate'; $('save-state').className = 'small dirty'; }
+  function clearValidation() {
+    for (const id of ['grade-error','evidence-error','rationale-error']) { $(id).hidden = true; $(id).textContent = ''; }
+    $('rationale').removeAttribute('aria-invalid');
+  }
+  function dirty() { window.annotationDirty = true; $('save-state').textContent = 'Modifiche non salvate'; $('save-state').className = 'small dirty'; clearValidation(); }
   function mayLeave() { return !window.annotationDirty || confirm('Ci sono modifiche non salvate. Vuoi abbandonarle?'); }
   function progress() {
     const done = annotations.filter(t => ['judged','needs_review'].includes(t.own_judgment?.status)).length;
@@ -33,6 +38,9 @@
     window.dispatchEvent(new Event('annotation-task-changing'));
     window.annotationTimerTask = null;
     selectedIndex = index; current = list()[index]; pending = null; window.annotationDirty = false;
+    selectedQuote = null; matches = []; matchIndex = -1; clearValidation();
+    $('find-previous').disabled = $('find-next').disabled = true;
+    $('quote-feedback').textContent = '';
     $('empty-state').hidden = !!current; $('task-area').hidden = !current;
     if (!current) return;
     window.annotationTimerTask = {packet_id:current.packet_id,query_id:current.topic.query_id,
@@ -40,6 +48,9 @@
     $('tasks').value = String(index); $('task-position').textContent = `${index + 1} / ${list().length}`;
     $('previous-task').disabled = index === 0; $('next-task').disabled = index === list().length - 1;
     const topic = current.topic, own = mode === 'annotation' ? current.own_judgment : null;
+    const nextTopicKey = `${current.packet_id}/${topic.query_id}`;
+    if (topicKey !== nextTopicKey) $('topic-details').open = true;
+    topicKey = nextTopicKey;
     $('topic-query').textContent = topic.query; $('topic-need').textContent = topic.information_need;
     $('topic-narrative').textContent = topic.narrative;
     $('topic-inclusions').replaceChildren(...(topic.inclusion_criteria.length ? topic.inclusion_criteria : ['Segui il bisogno informativo.']).map(t => element('li',t)));
@@ -91,23 +102,56 @@
     const last = annotations.filter(t => t.own_judgment).sort((a,b) => b.own_judgment.saved_at.localeCompare(a.own_judgment.saved_at))[0];
     if (last) selectTask(annotations.indexOf(last)); else message('Non hai ancora salvato giudizi.');
   };
+  $('refresh-tasks').onclick = () => $('reload-task').click();
   $('reload-task').onclick = async () => {
     if (!mayLeave()) return;
     try { await refresh(current && key(current)); message('Dati aggiornati.'); }
     catch(error) { message(error.message,'error'); }
   };
-  $('quote').onclick = () => {
+  function captureQuote() {
     const selection = window.getSelection();
-    if (!selection.rangeCount || selection.isCollapsed) { message('Seleziona prima un passaggio nel testo del documento.'); return; }
+    if (!selection.rangeCount || selection.isCollapsed) return null;
     const range = selection.getRangeAt(0), body = $('body');
-    if (!body.contains(range.startContainer) || !body.contains(range.endContainer)) { message('La citazione deve provenire dal testo del documento.'); return; }
+    if (!body.contains(range.startContainer) || !body.contains(range.endContainer)) return null;
     const prefix = range.cloneRange(); prefix.selectNodeContents(body); prefix.setEnd(range.startContainer,range.startOffset);
     const quote = range.toString(), begin = Array.from(prefix.toString()).length;
-    evidence.push({field:'body',quote,start:begin,end:begin + Array.from(quote).length}); renderEvidence(); dirty(); message('Citazione aggiunta.');
+    return {field:'body',quote,start:begin,end:begin + Array.from(quote).length};
+  }
+  // Capture before button focus collapses the range, including keyboard activation.
+  document.addEventListener('selectionchange', () => {
+    const quote = captureQuote();
+    if (quote) selectedQuote = quote;
+    else if (!['quote','quote-document'].includes(document.activeElement?.id)) selectedQuote = null;
+  });
+  function addQuote() {
+    if (saving || !current) return;
+    const quote = captureQuote() || selectedQuote;
+    if (!quote) { $('quote-feedback').textContent = 'Seleziona prima un passaggio nel testo del documento.'; return; }
+    if (evidence.some(item => item.start === quote.start && item.end === quote.end)) {
+      $('quote-feedback').textContent = 'Questo passaggio è già presente nelle evidenze.'; return;
+    }
+    evidence.push(quote); renderEvidence(); dirty(); selectedQuote = null;
+    $('quote-feedback').textContent = 'Citazione aggiunta alle evidenze.';
+    message('Citazione aggiunta.');
+  }
+  for (const id of ['quote','quote-document']) {
+    $(id).addEventListener('pointerdown', () => { selectedQuote = captureQuote(); });
+    $(id).onclick = addQuote;
+  }
+  function focusMatch(delta) {
+    if (!matches.length) return;
+    matchIndex = matchIndex < 0 ? (delta > 0 ? 0 : matches.length - 1) : (matchIndex + delta + matches.length) % matches.length;
+    matches.forEach((mark,index) => mark.classList.toggle('current-match',index === matchIndex));
+    matches[matchIndex].scrollIntoView({block:'center'});
+    $('find-count').textContent = `${matchIndex + 1} di ${matches.length} occorrenze`;
   };
+  $('find-previous').onclick = () => focusMatch(-1);
+  $('find-next').onclick = () => focusMatch(1);
   $('find').oninput = () => {
     if (!current) return;
     const body = $('body'), text = current.document.body, query = $('find').value;
+    selectedQuote = null; matches = []; matchIndex = -1;
+    $('find-previous').disabled = $('find-next').disabled = true;
     body.replaceChildren(); let offset = 0, found, count = 0;
     if (!query) { body.textContent = text; $('find-count').textContent = ''; return; }
     // Regex matches preserve original UTF-16 indices, even when case folding changes length.
@@ -117,6 +161,8 @@
       body.append(element('mark',found[0])); offset = found.index + found[0].length; count++;
     }
     body.append(document.createTextNode(text.slice(offset))); $('find-count').textContent = `${count} occorrenze`;
+    matches = [...body.querySelectorAll('mark')];
+    $('find-previous').disabled = $('find-next').disabled = !matches.length;
   };
   $('reason').onchange = () => { if ($('reason').value) { $('rationale').value = [$('rationale').value,$('reason').value].filter(Boolean).join('\n'); dirty(); } };
   $('judgment').oninput = dirty;
@@ -133,12 +179,25 @@
   };
   function lock(value) {
     saving = value;
-    document.querySelectorAll('#judgment button,#judgment input,#judgment select,#judgment textarea,#tasks,#previous-task,#next-task,#last-judgment').forEach(el => el.disabled = value);
+    document.querySelectorAll('#judgment button,#judgment input,#judgment select,#judgment textarea,#tasks,#previous-task,#next-task,#last-judgment,#quote-document,#reload-task,#logout').forEach(el => el.disabled = value);
     if (!value) { $('previous-task').disabled = selectedIndex === 0; $('next-task').disabled = selectedIndex >= list().length - 1; }
   }
   document.querySelectorAll('[data-state]').forEach(button => button.onclick = async () => {
     if (!current || saving) return;
     const status = button.dataset.state, selected = document.querySelector('[name=grade]:checked');
+    clearValidation();
+    let firstInvalid = null;
+    function invalid(id, text, target) { $(id).textContent = text; $(id).hidden = false; firstInvalid ||= target; }
+    if (status === 'judged' && !selected) invalid('grade-error','Scegli un grado di rilevanza.','grade-field');
+    if (status === 'judged' && !evidence.length) invalid('evidence-error','Aggiungi almeno una citazione dal documento.','quote');
+    if (status !== 'deferred' && !$('rationale').value.trim()) {
+      invalid('rationale-error','Scrivi una motivazione per questo giudizio.','rationale');
+      $('rationale').setAttribute('aria-invalid','true');
+    }
+    if (firstInvalid) {
+      const target = firstInvalid === 'grade-field' ? document.querySelector('[name=grade]') : $(firstInvalid);
+      target.focus(); target.scrollIntoView({block:'nearest'}); return;
+    }
     const data = {packet_id:current.packet_id,query_id:current.topic.query_id,document_id:current.document.document_id,
       status,grade:status === 'judged' && selected ? Number(selected.value) : null,rationale:$('rationale').value,evidence:structuredClone(evidence)};
     if (mode === 'annotation') data.expected_version = current.own_judgment?.version || 0; else data.basis = current.basis;
@@ -155,7 +214,11 @@
       try { await refresh(button.dataset.advance && nextKey ? nextKey : previousKey); }
       catch(error) { $('save-state').textContent = 'Salvato. Aggiorna la pagina per ricaricare la coda.'; message(`Salvato, ma aggiornamento della coda non riuscito: ${error.message}`,'error'); }
     } catch(error) {
-      $('save-state').textContent = 'Salvataggio non confermato. Il contenuto del modulo è conservato.';
+      $('save-state').textContent = error.status === 409
+        ? 'Conflitto: il giudizio è cambiato. Conserva le tue modifiche prima di ricaricare il giudizio salvato in Altre azioni.'
+        : error.status === 401
+          ? 'Sessione scaduta. Accedi in un’altra scheda, poi riprova qui: il modulo è conservato.'
+          : 'Salvataggio non confermato. Il contenuto del modulo è conservato: puoi riprovare.';
       $('save-state').className = 'small dirty'; message(error.message,'error');
     } finally { lock(false); }
   });
@@ -164,5 +227,9 @@
     if (['0','1','2'].includes(event.key)) { document.querySelector(`[name=grade][value="${event.key}"]`).checked = true; dirty(); }
   });
   window.addEventListener('beforeunload',event => { if (window.annotationDirty) { event.preventDefault(); event.returnValue = ''; } });
+  document.querySelectorAll('.topbar a').forEach(link => link.addEventListener('click', event => {
+    if (saving || !mayLeave()) event.preventDefault();
+    else window.annotationDirty = false;
+  }));
   start(async session => { user = session; await refresh(); $('workspace').hidden = false; });
 })();

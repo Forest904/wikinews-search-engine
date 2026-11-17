@@ -1,41 +1,22 @@
-<!doctype html>
-<html lang="it">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Wikinotizie — Ricerca</title>
-  <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
-  <main class="container">
-    <header>
-      <p class="eyebrow">Ingegneria dei Dati · Homework 4</p>
-      <h1>Ricerca Wikinotizie</h1>
-      <p><a href="/annotate">Area valutatori</a></p>
-      <p class="muted">Ricerca lessicale nel corpus Wikinotizie. E0: analyzer standard; E1: analyzer italiano; E2: titolo pesato; E3: tolleranza ai refusi; E4: frasi.</p>
-    </header>
-    <form id="search-form">
-      <label for="q">Cerca nelle notizie</label>
-      <div class="search-row">
-        <input id="q" name="q" placeholder="Es. terremoto" minlength="1" maxlength="250" required>
-        <button type="submit">Cerca</button>
-      </div>
-      <label for="profile">Profilo di retrieval</label>
-      <select id="profile" name="profile">
-        {% for profile in profiles %}<option value="{{ profile }}">{{ profile }}</option>{% endfor %}
-      </select>
-      <p class="muted">E4 premia la frase completa. Usa "energia solare" Italia per richiedere
-      la frase e almeno un termine esterno. Ogni frase tra virgolette è obbligatoria;
-      il confronto usa l’analisi linguistica italiana. Le virgolette valgono solo in E4.</p>
-    </form>
-    <div id="status" class="muted" role="status">Inserisci una parola per cercare nelle notizie.</div>
-    <ol id="results" aria-live="polite"></ol>
-    <nav aria-label="Paginazione">
-      <button id="previous" type="button" disabled>Precedente</button>
-      <span id="page-status"></span>
-      <button id="next" type="button" disabled>Successiva</button>
-    </nav>
-  </main>
-  <script src="/static/app.js" defer></script>
-</body>
-</html>
+{% extends "base.html" %}
+{% block search_active %}aria-current="page"{% endblock %}
+{% block main %}
+<main id="main" class="search-shell">
+  <header class="search-heading"><p class="eyebrow">Esplora l'archivio</p><h1>Ricerca Wikinotizie</h1><p class="muted">Una parola, un luogo, un avvenimento. Ritrova le notizie che cerchi.</p></header>
+  <form id="search-form" role="search">
+    <label for="q">Cerca nelle notizie</label>
+    <div class="search-row"><input id="q" name="q" type="search" placeholder="Es. terremoto in Abruzzo" minlength="1" maxlength="250" required><button class="primary" type="submit">Cerca</button></div>
+    <details id="search-options" class="search-options"><summary>Opzioni di ricerca <span id="profile-summary" class="muted">Standard · E0</span></summary>
+      <label for="profile">Modalità di ricerca</label>
+      {% set names = {'E0':'Standard','E1':'Analisi italiana','E2':'Priorità al titolo','E3':'Tolleranza ai refusi','E4':'Frasi'} %}
+      <select id="profile" name="profile" aria-describedby="profile-help">{% for profile in profiles %}<option value="{{ profile }}">{{ names.get(profile, profile) }} · {{ profile }}</option>{% endfor %}</select>
+      <p id="profile-help" class="small muted"></p>
+    </details>
+  </form>
+  <div class="result-toolbar"><p id="status" role="status" aria-live="polite">Inserisci una parola per cercare nelle notizie.</p><button id="retry" class="secondary" hidden>Riprova</button></div>
+  <div id="search-empty" class="empty-state"><h2>Da dove vuoi iniziare?</h2><p>Prova un argomento o il nome di una città.</p><div class="suggestions"><button type="button" data-query="energia solare" class="secondary">Energia solare</button><button type="button" data-query="Roma" class="secondary">Roma</button><button type="button" data-query="esplorazione spaziale" class="secondary">Esplorazione spaziale</button></div></div>
+  <ol id="results" aria-label="Risultati della ricerca"></ol>
+  <nav id="pagination" class="pagination" aria-label="Paginazione" hidden><button id="previous" class="secondary" type="button" disabled>Precedente</button><span id="page-status"></span><button id="next" class="secondary" type="button" disabled>Successiva</button></nav>
+</main>
+{% endblock %}
+{% block scripts %}<script src="/static/app.js" defer></script>{% endblock %}
