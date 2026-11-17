@@ -43,8 +43,9 @@ rollback() {
 trap rollback ERR
 trap 'false' HUP INT TERM
 dc up -d --no-deps --no-build --wait --wait-timeout 120 app
-dc exec -T app python -m wikinews_ir.operations check
-dc exec -T app python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health', timeout=10)"
+# bash reads this script from SSH stdin; do not let Compose consume its tail.
+dc exec -T app python -m wikinews_ir.operations check </dev/null
+dc exec -T app python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health', timeout=10)" </dev/null
 printf '%s\n' "$revision" > /opt/newsfinder/deployed-revision.tmp
 mv /opt/newsfinder/deployed-revision.tmp /opt/newsfinder/deployed-revision
 trap - ERR HUP INT TERM
