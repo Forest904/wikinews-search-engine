@@ -1,0 +1,20 @@
+{% extends "public.html" %}
+{% block title %}{{ folder.label }} · NewsFinder{% endblock %}
+{% block crumbs %}{% for parent in crumbs %}<a href="{{ parent.url }}">{{ parent.label }}</a><span>›</span>{% endfor %}<span>{{ folder.label }}</span>{% endblock %}
+{% block main %}
+<main id="main" class="content archive">
+{% include "search_form.html" %}
+<h1>{{ folder.label }}</h1>
+<p>{{ folder.count }} {{ 'articolo' if folder.count == 1 else 'articoli' }}</p>
+{% if folder.children %}<div class="folders">{% include "folder_links.html" %}</div>{% endif %}
+{% if articles %}
+<ol class="result-list" start="{{ (page-1)*30+1 }}">
+{% for date, title, doc_id in articles %}
+<li><div class="result-copy"><a href="/articles/{{ doc_id|urlencode }}?folder={{ folder.path|urlencode }}&amp;page={{ page }}">{{ title }}</a>{% if date %}<p><time datetime="{{ date }}">{{ date[8:] }}/{{ date[5:7] }}/{{ date[:4] }}</time></p>{% endif %}</div></li>
+{% endfor %}</ol>
+{% if pages > 1 %}<nav class="pagination" aria-label="Paginazione">
+{% if page > 1 %}<a href="?page={{ page-1 }}">Precedente</a>{% endif %}
+Pagina {{ page }} di {{ pages }}
+{% if page < pages %}<a href="?page={{ page+1 }}">Successiva</a>{% endif %}
+</nav>{% endif %}{% endif %}
+</main>{% endblock %}

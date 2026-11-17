@@ -1,0 +1,12 @@
+{% macro render(nodes, image) -%}
+{% for node in nodes -%}
+{% if node is string %}{{ node }}{% elif node.tag == 'figure' %}
+{% if node.selected and image %}<figure><img src="{{ image.url }}" width="{{ image.width }}" height="{{ image.height }}" alt="{{ node.alt }}" loading="lazy"><figcaption>{{ node.caption }}
+<small>{{ image.artist }} · {% if image.license_url %}<a href="{{ image.license_url }}">{{ image.license }}</a>{% else %}{{ image.license }}{% endif %} · <a href="{{ image.source }}">Scheda del file</a></small></figcaption></figure>{% endif %}
+{% elif node.tag == 'br' %}<br>{% else %}
+{%- if node.tag == 'table' %}<div class="reader-table" tabindex="0" role="region" aria-label="Tabella dell’articolo">{% endif -%}
+<{{ node.tag }}{{ node.attrs|xmlattr }}>{{ render(node.children, image) }}</{{ node.tag }}>
+{%- if node.tag == 'table' %}</div>{% endif -%}
+{% endif -%}
+{% endfor -%}
+{% endmacro %}

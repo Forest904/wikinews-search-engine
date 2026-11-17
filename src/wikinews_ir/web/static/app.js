@@ -5,22 +5,6 @@ const form = document.querySelector("#search-form"),
   pagination = document.querySelector("#pagination");
 let page = 1,
   controller = null;
-const help = {
-  E0: "Cerca nel titolo e nel testo.",
-  E1: "Riconosce varianti delle parole italiane.",
-  E2: "Dà più importanza al titolo.",
-  E3: "Include parole simili per piccoli refusi.",
-  E4: "Premia le parole vicine e riconosce le frasi tra virgolette.",
-};
-function profileHelp() {
-  document.querySelector("#profile-summary").textContent =
-    form.elements.profile.selectedOptions[0].textContent;
-  document.querySelector("#profile-help").textContent =
-    help[form.elements.profile.value] +
-    " Profilo " +
-    form.elements.profile.value +
-    ".";
-}
 function segments(el, parts, fallback) {
   if (!parts?.length) {
     el.textContent = fallback;
@@ -89,14 +73,17 @@ function restore() {
   form.elements.q.value = p.get("q") || "";
   form.elements.profile.value = p.get("profile") || "E0";
   if (!form.elements.profile.value) form.elements.profile.value = "E0";
+  for (const name of ["year_from", "year_to"]) form.elements[name].value = p.get(name) || "";
+  form.elements.year_to.setCustomValidity("");
   page = Math.max(1, Number(p.get("page")) || 1);
   profileHelp();
   if (p.get("view") === "saved") savedView();
   else if (form.elements.q.value.trim()) search(false);
   else show("home");
 }
-async function search(push = true) {
-  const q = form.elements.q.value.trim();
+async function search(push = true, applied = null) {
+  const q = applied?.get("q") || form.elements.q.value.trim();
+  const profile = applied?.get("profile") || form.elements.profile.value;
   if (!q) {
     show("home");
     if (push) history.pushState(null, "", "/");
@@ -108,10 +95,14 @@ async function search(push = true) {
   controller = request;
   const params = new URLSearchParams({
     q,
-    profile: form.elements.profile.value,
+    profile,
     page: String(page),
     page_size: new URLSearchParams(location.search).get("page_size") || "10",
   });
+  for (const name of ["year_from", "year_to"]) {
+    const value = applied ? applied.get(name) : form.elements[name].value;
+    if (value) params.set(name, value);
+  }
   if (push) history.pushState(null, "", `/?${params}`);
   document.querySelector("#results-title").textContent = `Risultati per “${q}”`;
   document.querySelector("#foot-status").textContent = "";
@@ -137,7 +128,7 @@ async function search(push = true) {
       throw Error(messages[response.status] || "Ricerca non riuscita.");
     }
     const data = await response.json();
-    document.querySelector("#standard-search").hidden = form.elements.profile.value === "E0";
+    document.querySelector("#standard-search").hidden = profile === "E0";
     if (controller !== request) return;
     status.textContent = data.total
       ? `${data.total.toLocaleString("it-IT")} ${data.total === 1 ? "risultato" : "risultati"}`
@@ -193,11 +184,6 @@ form.addEventListener("submit", (e) => {
   page = 1;
   search();
 });
-form.elements.profile.addEventListener("change", () => {
-  profileHelp();
-  page = 1;
-  if (form.elements.q.value.trim()) search();
-});
 document.querySelectorAll("[data-query]").forEach((b) =>
   b.addEventListener("click", () => {
     form.elements.q.value = b.dataset.query;
@@ -205,17 +191,22 @@ document.querySelectorAll("[data-query]").forEach((b) =>
     search();
   }),
 );
+fetch("/archivio/cartelle-home")
+  .then(async response => {
+    if (response.ok) document.querySelector("#home-folders").innerHTML = await response.text();
+  })
+  .catch(() => {}); // Keep the ordinary archive link when offline.
 document.querySelector("#previous").onclick = () => {
   page--;
-  search();
+  search(true, new URLSearchParams(location.search));
   window.scrollTo(0, 0);
 };
 document.querySelector("#next").onclick = () => {
   page++;
-  search();
+  search(true, new URLSearchParams(location.search));
   window.scrollTo(0, 0);
 };
-document.querySelector("#retry").onclick = () => search(false);
+document.querySelector("#retry").onclick = () => search(false, new URLSearchParams(location.search));
 document.querySelector("#edit-search").onclick = () => form.elements.q.focus();
 document.querySelector("#standard-search").onclick = () => {
   form.elements.profile.value = "E0";

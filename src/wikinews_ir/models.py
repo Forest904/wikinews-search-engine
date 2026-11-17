@@ -1,6 +1,6 @@
 """Stable public schemas shared between Web API and retrieval engine."""
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator, model_validator
 
 from wikinews_ir.retrieval.profiles import ProfileId
 
@@ -9,11 +9,15 @@ class SearchRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     query: str = Field(min_length=1, max_length=250)
     profile: ProfileId = "E0"
+    year_from: int | None = Field(default=None, ge=1, le=9999)
+    year_to: int | None = Field(default=None, ge=1, le=9999)
     page: int = Field(default=1, ge=1)
     page_size: int = Field(default=10, ge=1, le=100)
 
     @model_validator(mode="after")
     def window(self):
+        if self.year_from and self.year_to and self.year_from > self.year_to:
+            raise ValueError("L’anno iniziale supera quello finale")
         if self.page * self.page_size > 10_000:
             raise ValueError("Paginazione limitata ai primi 10.000 risultati")
         if self.profile == "E4":
@@ -28,6 +32,8 @@ class SearchRequest(BaseModel):
 
 
 class Article(BaseModel):
+    _revision: str = PrivateAttr(default="")
+    _checksum: str = PrivateAttr(default="")
     document_id: str = Field(min_length=1)
     title: str = Field(min_length=1)
     body: str = Field(min_length=1)

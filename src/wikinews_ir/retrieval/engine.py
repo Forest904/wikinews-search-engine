@@ -1,5 +1,10 @@
 """The same retrieval service will be reused by the API and experiments."""
 
+from threading import Lock
+
+from elasticsearch.helpers import ScanError, scan
+from wikinews_ir.archive import build_catalog
+
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import (
     ApiError,
@@ -31,12 +36,33 @@ class ArticleNotFound(RuntimeError):
 
 class RetrievalEngine:
     def __init__(self, settings: Settings | None = None):
+        self._archive_lock = Lock()
+        self._archive_uuid = None
+        self._archive = {}
         self.settings = settings or get_settings()
         self.client = Elasticsearch(
             self.settings.elasticsearch_url,
             basic_auth=("elastic", self.settings.elastic_password),
             request_timeout=self.settings.elasticsearch_timeout,
         )
+
+    def archive(self):
+        try:
+            with self._archive_lock:
+                meta = self.metadata("E0")
+                if meta["index_uuid"] != self._archive_uuid:
+                    hits = scan(self.client, index=meta["index"], query={
+                        "_source": ["document_id", "title", "categories", "publication_date"],
+                    })
+                    catalog = build_catalog(hit["_source"] for hit in hits)
+                    if (catalog[""].count != meta["document_count"]
+                            or self.metadata("E0")["index_uuid"] != meta["index_uuid"]):
+                        raise RetrievalUnavailable("Archivio in aggiornamento")
+                    self._archive = catalog
+                    self._archive_uuid = meta["index_uuid"]
+                return self._archive
+        except (ElasticsearchConnectionError, ConnectionTimeout, ApiError, ScanError) as exc:
+            raise RetrievalUnavailable("Archivio non disponibile") from exc
 
     def close(self) -> None:
         self.client.close()
@@ -77,6 +103,13 @@ class RetrievalEngine:
     def search(self, request: SearchRequest) -> SearchResponse:
         request = SearchRequest.model_validate(request.model_dump())
         body = build_query(request.query, request.profile)
+        bounds = {}
+        if request.year_from:
+            bounds["gte"] = f"{request.year_from:04d}-01-01"
+        if request.year_to:
+            bounds["lte"] = f"{request.year_to:04d}-12-31"
+        if bounds:
+            body = {"bool": {"must": [body], "filter": [{"range": {"publication_date": bounds}}]}}
         try:
             metadata = self.metadata(request.profile)
             result = self.client.search(
@@ -123,7 +156,7 @@ class RetrievalEngine:
 
     def get_article(self, document_id: str, profile: str = "E0") -> Article:
         try:
-            self.metadata(profile)
+            meta = self.metadata(profile)
             result = self.client.get(index=index_name(self.settings, profile), id=document_id)
         except (ElasticsearchConnectionError, ConnectionTimeout) as exc:
             raise RetrievalUnavailable("Elasticsearch non raggiungibile") from exc
@@ -134,4 +167,7 @@ class RetrievalEngine:
                     raise SearchIndexMissing("Indice mancante: esegui index build") from exc
                 raise ArticleNotFound("Articolo non trovato") from exc
             raise RetrievalUnavailable("Elasticsearch ha restituito un errore") from exc
-        return Article.model_validate({**result["_source"], "document_id": str(result["_id"])})
+        article = Article.model_validate({**result["_source"], "document_id": str(result["_id"])})
+        article._revision = result["_source"].get("revision_id", "")
+        article._checksum = meta.get("corpus_sha256", "")
+        return article

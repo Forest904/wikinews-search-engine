@@ -14,7 +14,7 @@ function setNavigation(mode) {
   const target =
     mode === "saved"
       ? "/?view=saved"
-      : location.hash === "#folders"
+      : (location.hash === "#folders" || location.pathname.startsWith("/archivio"))
         ? "/#folders"
         : "/";
   for (const link of document.querySelectorAll(".ribbon-item,#sidebar a")) {
@@ -61,7 +61,7 @@ function updateCollection() {
 }
 function restoreListPosition() {
   try {
-    const key = "newsfinder.scroll." + location.search;
+    const key = "newsfinder.scroll." + location.pathname + location.search;
     const offset = sessionStorage.getItem(key);
     if (offset !== null) {
       window.scrollTo(0, Number(offset));
@@ -73,7 +73,7 @@ document.addEventListener("click", (event) => {
   if (event.target.closest(".result-copy a")) {
     try {
       sessionStorage.setItem(
-        "newsfinder.scroll." + location.search,
+        "newsfinder.scroll." + location.pathname + location.search,
         String(window.scrollY),
       );
     } catch {}
@@ -115,3 +115,47 @@ window.addEventListener("hashchange", () =>
 );
 setNavigation(new URLSearchParams(location.search).get("view"));
 refreshSaved();
+
+if (document.querySelector(".archive")) restoreListPosition();
+
+const recentKey = "newsfinder.recent.v1";
+function recentItems() {
+  try {
+    return JSON.parse(localStorage.getItem(recentKey) || "[]").filter(
+      item => typeof item?.id === "string" && typeof item.title === "string"
+    ).slice(0, 10);
+  } catch { return []; }
+}
+function refreshRecent() {
+  const section = document.querySelector("#recent");
+  if (!section) return;
+  const items = recentItems();
+  section.hidden = !items.length;
+  const list = section.querySelector("ol");
+  list.replaceChildren();
+  for (const item of items) {
+    const li = document.createElement("li"), link = document.createElement("a");
+    link.href = "/articles/" + encodeURIComponent(item.id);
+    link.textContent = item.title;
+    li.append(link);
+    list.append(li);
+  }
+}
+const opened = document.querySelector(".article-tools button[data-id]");
+if (opened) {
+  const {id, title} = opened.dataset;
+  try {
+    localStorage.setItem(recentKey, JSON.stringify(
+      [{id, title}, ...recentItems().filter(item => item.id !== id)].slice(0, 10)
+    ));
+  } catch {}
+}
+document.querySelector("#recent button")?.addEventListener("click", () => {
+  try { localStorage.removeItem(recentKey); } catch {}
+  refreshRecent();
+});
+window.addEventListener("pageshow", refreshRecent);
+window.addEventListener("storage", event => {
+  if (!event.key || event.key === recentKey) refreshRecent();
+});
+refreshRecent();

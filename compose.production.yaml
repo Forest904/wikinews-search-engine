@@ -32,6 +32,7 @@ services:
       ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?Set Elasticsearch password}
       ELASTICSEARCH_URL: http://elasticsearch:9200
       ANNOTATION_DB: ${ANNOTATION_DB:-/app/data/annotation/annotation.sqlite3}
+      READER_CATALOG: /imports/reader/catalog.sqlite3
       ANNOTATION_COOKIE_SECURE: "1"
     volumes:
       - annotation-data:/app/data/annotation

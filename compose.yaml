@@ -30,6 +30,7 @@ services:
       - ANNOTATION_DB=/app/data/annotation/annotation.sqlite3
       - ANNOTATION_COOKIE_SECURE=${ANNOTATION_COOKIE_SECURE:-0}
     volumes:
+      - ./data/reader:/app/data/reader:ro
       - annotation-data:/app/data/annotation
     ports:
       - "127.0.0.1:8000:8000"

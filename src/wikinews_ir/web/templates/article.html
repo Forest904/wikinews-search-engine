@@ -1,6 +1,7 @@
 {% extends "public.html" %}
 {% block title %}{{ article.title if article else 'Articolo non disponibile' }} · NewsFinder{% endblock %}
 {% block crumbs %}
+{% for parent in crumbs %}<a href="{{ back_url if loop.last else parent.url }}">{{ parent.label }}</a><span>›</span>{% endfor %}
 {% if saved_origin or query %}<a href="{{ back_url }}">{{ 'Salvati' if saved_origin else 'Risultati' }}</a>
 <span>›</span>{% endif %}<span>Articolo</span>{% endblock %}
 {% block main %}<main id="main" class="content article-content">
@@ -17,7 +18,14 @@
 <article class="document">
 <div id="article-start" class="document-label">DOCUMENTO · WIKINOTIZIE</div>
 <h1>{{ article.title }}</h1>
-<div class="article-body">{{ article.body }}</div>
+{% if rich %}
+{% from "reader_blocks.html" import render %}
+<div class="article-body rich-body">{{ render(rich.blocks, rich.image) }}</div>
+{% for label, links in [('Fonti',rich.sources),('Articoli correlati',rich.related)] %}
+{% if links %}<section><h2>{{ label }}</h2><ul>{% for link in links %}<li>{% if link.href %}<a href="{{ link.href }}">{{ link.label }}</a>{% else %}{{ link.label }}{% endif %}</li>{% endfor %}</ul></section>{% endif %}
+{% endfor %}
+{% else %}<div class="article-body">{{ article.body }}</div>{% endif %}
+{% if peers %}<section><h2>Continua nella stessa cartella</h2><ul>{% for date,title,id in peers %}<li><a href="/articles/{{ id|urlencode }}">{{ title }}</a></li>{% endfor %}</ul></section>{% endif %}
 <nav class="reading-actions" aria-label="Navigazione articolo">
 <a href="{{ back_url }}">{{ back_label }}</a> <a href="#article-start">↑ Torna all'inizio</a>
 </nav>

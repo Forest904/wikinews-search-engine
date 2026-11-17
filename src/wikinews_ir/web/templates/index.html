@@ -6,36 +6,15 @@
 <h1>News<span>Finder</span>
 </h1>
 </section>
-<form id="search-form" role="search">
-<label for="q" class="sr-only">Cerca nelle notizie</label>
-<div class="search-row">
-<svg class="icon" aria-hidden="true">
-<use href="/static/explorer-icons.svg#search">
-</use>
-</svg>
-<input id="q" name="q" type="search" placeholder="Cerca notizie, luoghi, argomenti…" maxlength="250" required>
-<button type="submit">Cerca</button>
-</div>
-<details id="search-options">
-<summary>Opzioni di ricerca <span id="profile-summary">Standard</span>
-</summary>
-<label for="profile">Modalità di ricerca</label>
-<select id="profile" name="profile">{% set names = {'E0':'Standard','E1':'Analisi italiana','E2':'Priorità al titolo','E3':'Tolleranza ai refusi','E4':'Frasi'} %}
-{% for profile in profiles %}<option value="{{ profile }}">{{ names.get(profile,profile) }}</option>{% endfor %}</select>
-<p id="profile-help">
-</p>
-</details>
-</form>
+{% include 'search_form.html' %}
 <section id="home-content">
 <h2 id="folders">Cartelle da esplorare</h2>
-<div class="folders">{% for name in ['politica','tecnologia','economia','sport'] %}<button type="button" data-query="{{ name }}">
-<img src="/static/images/newsfinder/{{ name }}.webp" srcset="/static/images/newsfinder/{{ name }}@2x.webp 2x" alt="" width="96" height="96">
-<span>{{ name|capitalize }}</span>
-</button>{% endfor %}</div>
+<div class="folders" id="home-folders"><a href="/archivio">Apri archivio</a></div>
 <p class="popular">Ricerche suggerite: <button data-query="energia solare">Energia solare</button>
 <button data-query="Roma">Roma</button>
 <button data-query="esplorazione spaziale">Esplorazione spaziale</button>
 </p>
+<section id="recent" hidden><h2>Letti di recente</h2><ol></ol><button type="button">Svuota cronologia</button></section>
 </section>
 <section id="saved-view" hidden>
 <h1>Documenti salvati</h1>

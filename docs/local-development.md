@@ -97,3 +97,19 @@ configurati in `.env`; il pacchetto MOCK rimane nel database locale.
 
 La preparazione è ripetibile e non sovrascrive i giudizi già presenti. Prima di
 popolare il database crea una copia in `output/local/before-mock-*.sqlite3`.
+
+### Catalogo delle pagine articolo
+
+Dalla radice del repository, passare a questo comando il percorso del dump originale e la directory del corpus corrispondente:
+
+```sh
+python -m wikinews_ir.reader_build --dump <dump.tar.gz> --corpus data/processed/m2-v1
+```
+
+Il catalogo viene pubblicato in `data/reader/catalog.sqlite3`. Usare `--pilot --output output/reader/pilot.sqlite3` per provare un campione di 100 revisioni. Per aggiornare i crediti in un catalogo già costruito, eseguire:
+
+```sh
+python -m wikinews_ir.reader_build --enrich-only --user-agent "NewsFinder/1.0 (contatto del gestore)"
+```
+
+La preparazione riporta il numero di pagine strutturate, figure candidate e immagini con crediti. Le richieste Wikimedia fallite restano da recuperare. Il lettore mostra una figura solo quando dispone dei suoi crediti. Il browser recupera la miniatura da Wikimedia. In produzione collocare il catalogo in `/opt/newsfinder/imports/reader/catalog.sqlite3`; per altre installazioni configurare `READER_CATALOG`. Il lettore usa il testo indicizzato se il catalogo manca o appartiene a un’altra revisione del corpus.

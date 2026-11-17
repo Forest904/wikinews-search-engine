@@ -1,0 +1,9 @@
+{% for child in folder.children.values() %}
+<a href="{{ child.url }}">
+{% set image = child.path.split('/')[0] %}
+{% if image in ['politica','tecnologia','economia','sport'] %}
+<img src="/static/images/newsfinder/{{ image }}.webp" alt="" width="80" height="80">
+{% else %}<svg class="icon" aria-hidden="true"><use href="/static/explorer-icons.svg#topics"></use></svg>{% endif %}
+<strong>{{ child.label }}</strong><small>{{ child.count }} {{ 'articolo' if child.count == 1 else 'articoli' }}</small>
+</a>
+{% endfor %}

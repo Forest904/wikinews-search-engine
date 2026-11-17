@@ -1,5 +1,6 @@
 """HTTP endpoints for the initial demo. No dump ingestion in API requests."""
 
+from datetime import date
 import hashlib
 import sqlite3
 from pathlib import Path
@@ -12,6 +13,7 @@ from pydantic import ValidationError
 
 from wikinews_ir.annotation import database_path
 from wikinews_ir.models import Article, SearchRequest, SearchResponse
+from wikinews_ir.reader import read_page
 from wikinews_ir.operations import check_annotation
 from wikinews_ir.retrieval.engine import (
     ArticleNotFound,
@@ -44,6 +46,40 @@ def engine(request: Request) -> RetrievalEngine:
 @router.get("/", response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse(request, "index.html", {"profiles": SUPPORTED_PROFILES})
+
+
+def archive_catalog(backend):
+    try:
+        return backend.archive()
+    except RetrievalUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+def ancestors(catalog, path):
+    parts = path.split("/")
+    return [catalog["/".join(parts[:i])] for i in range(len(parts))] if path else []
+
+
+@router.get("/archivio/cartelle-home", response_class=HTMLResponse)
+def home_folders(request: Request, backend: RetrievalEngine = Depends(engine)):
+    root = archive_catalog(backend)[""]
+    return templates.TemplateResponse(request, "folder_links.html", {"folder": root})
+
+
+@router.get("/archivio", response_class=HTMLResponse)
+@router.get("/archivio/{path:path}", response_class=HTMLResponse)
+def archive_page(request: Request, path: str = "", page: int = Query(1, ge=1),
+                 backend: RetrievalEngine = Depends(engine)):
+    catalog = archive_catalog(backend)
+    folder = catalog.get(path)
+    if folder is None or page > max(1, (len(folder.articles) + 29) // 30):
+        raise HTTPException(404, "Cartella o pagina non trovata")
+    crumbs = ancestors(catalog, path)
+    return templates.TemplateResponse(request, "archive.html", dict(
+        folder=folder, crumbs=crumbs, back_url=crumbs[-1].url if crumbs else "/",
+        profiles=SUPPORTED_PROFILES, page=page, pages=(len(folder.articles) + 29) // 30,
+        articles=folder.articles[(page - 1) * 30:page * 30],
+    ))
 
 
 @router.get("/annotate", response_class=HTMLResponse)
@@ -85,12 +121,15 @@ def search(
     profile: ProfileId = "E0",
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1, le=100),
+    year_from: int | None = Query(None, ge=1, le=9999),
+    year_to: int | None = Query(None, ge=1, le=9999),
     limit: str | None = Query(default=None, include_in_schema=False),
 ):
     try:
         if limit is not None:
             raise HTTPException(status_code=422, detail="Usare page_size al posto di limit")
-        search_request = SearchRequest(query=q, profile=profile, page=page, page_size=page_size)
+        search_request = SearchRequest(query=q, profile=profile, page=page, page_size=page_size,
+                                       year_from=year_from, year_to=year_to)
     except ValidationError as exc:
         raise HTTPException(status_code=422, detail="; ".join(error["msg"] for error in exc.errors())) from exc
     try:
@@ -125,7 +164,8 @@ def article_page(
     if saved_origin:
         back_url, back_label = "/?view=saved", "Torna ai salvati"
     elif q:
-        back_url = "/?" + urlencode(dict(q=q, profile=profile, page=page, page_size=page_size))
+        years = {k: request.query_params[k] for k in ("year_from", "year_to") if request.query_params.get(k)}
+        back_url = "/?" + urlencode(dict(q=q, profile=profile, page=page, page_size=page_size, **years))
         back_label = "Torna ai risultati"
     context = dict(back_url=back_url, back_label=back_label, query=q,
                    profile=profile, saved_origin=saved_origin)
@@ -136,6 +176,31 @@ def article_page(
         return templates.TemplateResponse(
             request, "article.html", {**context, "error": str(exc)}, status_code=status
         )
+    origin = request.query_params.get("folder")
+    rich = read_page(document_id, item._revision, item._checksum)
+    context["rich"] = rich
+    try:
+        catalog = backend.archive()
+    except RetrievalUnavailable:
+        catalog = {}
+    folder = None
+    for candidate in catalog.values() if isinstance(catalog, dict) else ():
+        current = next((row for row in candidate.articles if row[2] == document_id), None)
+        if current:
+            folder = candidate
+            break
+    if folder:
+        excluded = {"/articles/" + document_id}
+        excluded.update(link["href"] for link in (rich or {}).get("related", []))
+        peers = [row for row in folder.articles if "/articles/" + row[2] not in excluded]
+        if current[0]:
+            today = date.fromisoformat(current[0])
+            peers.sort(key=lambda row: abs((date.fromisoformat(row[0]) - today).days) if row[0] else float("inf"))
+        context["peers"] = peers[:3]
+        if origin == folder.path and not (q or saved_origin):
+            context.update(crumbs=ancestors(catalog, origin) + [folder],
+                           back_url=folder.url + "?" + urlencode({"page": page}),
+                           back_label="Torna a " + folder.label)
     context.update({
         "article": item,
         "source_url": item.url if urlsplit(item.url).scheme in {"http", "https"} else None,
