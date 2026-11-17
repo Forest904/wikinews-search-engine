@@ -97,6 +97,11 @@ def test_collapsible_timer_and_coordinator_without_discussion(server):
                 sign_in(page, url, user)
             alice = pages[0]
             alice.locator("#timer-panel > summary").click()
+            timer_items = alice.locator("#timer-panel summary, #timer-panel select, #timer-panel button").evaluate_all("els => els.map(el => { const r = el.getBoundingClientRect(); return {top:r.top,bottom:r.bottom}; })")
+            assert max(item["top"] for item in timer_items) < min(item["bottom"] for item in timer_items)
+            output = Path("output/playwright/polish")
+            output.mkdir(parents=True, exist_ok=True)
+            alice.screenshot(path=str(output / "timer-inline.png"))
             alice.get_by_role("button", name="Avvia / riprendi").click()
             expect(alice.get_by_label("Tempo operativo")).to_contain_text("Timer attivo")
             alice.get_by_role("button", name="Pausa", exact=True).click()
@@ -288,10 +293,12 @@ def test_desktop_context_citation_validation_and_responsive_surfaces(server):
                     article = page.locator("#article-panel").bounding_box()
                     judgment = page.locator("#judgment-panel").bounding_box()
                     assert topic["y"] < article["y"]
-                    assert article["width"] > judgment["width"] * 1.7
+                    assert 2.9 < article["width"] / judgment["width"] < 3.1
                 page.screenshot(path=str(output / f"annotation-{width}.png"))
             page.set_viewport_size({"width": 1440, "height": 900})
-            # Closing the criteria must not discard the topic or alter the task.
+            # Criteria start collapsed; toggling them does not alter the task.
+            expect(page.locator("#topic-details")).not_to_have_attribute("open", "")
+            page.locator("#topic-details > summary").click()
             page.locator("#topic-details > summary").click()
             expect(page.locator("#topic-need")).to_be_visible()
             page.get_by_role("button", name="Salva", exact=True).click()

@@ -49,7 +49,7 @@
     $('previous-task').disabled = index === 0; $('next-task').disabled = index === list().length - 1;
     const topic = current.topic, own = mode === 'annotation' ? current.own_judgment : null;
     const nextTopicKey = `${current.packet_id}/${topic.query_id}`;
-    if (topicKey !== nextTopicKey) $('topic-details').open = true;
+    if (topicKey !== nextTopicKey) $('topic-details').open = false;
     topicKey = nextTopicKey;
     $('topic-query').textContent = topic.query; $('topic-need').textContent = topic.information_need;
     $('topic-narrative').textContent = topic.narrative;

@@ -4,23 +4,25 @@
   const panel = element('details',undefined,'timer-panel');
   panel.id = 'timer-panel';
   panel.setAttribute('aria-label','Tempo operativo');
-  const summary = element('summary','Tempo operativo');
-  const label = element('label','Fase del timer'), phase = element('select');
+  const summary = element('summary','');
+  const label = element('label',undefined,'timer-phase'), phase = element('select');
+  phase.setAttribute('aria-label','Fase del timer');
   for (const [value,text] of [['reading','Lettura'],['annotation','Compilazione'],['review','Revisione']]) phase.append(new Option(text,value));
   label.append(phase);
   const start = element('button','Avvia / riprendi','secondary'), pause = element('button','Pausa','secondary');
   const status = element('span','Timer in pausa.','timer-state');
   status.setAttribute('aria-live','polite');
   summary.append(status);
-  const actions = element('div',undefined,'action-row'); actions.append(start,pause);
-  panel.append(summary,label,actions,element('p','Avvio manuale. Cambiare attività o scheda mette il timer in pausa.','small muted'));
+  const actions = element('span',undefined,'timer-controls'); actions.append(label,start,pause);
+  panel.append(summary,actions);
+  panel.title = 'Avvio manuale. Cambiare attività o scheda mette il timer in pausa.';
   document.getElementById('timer-slot').append(panel);
   pause.disabled = true;
   const phaseNames = {reading:'Lettura',annotation:'Compilazione',review:'Revisione'};
   let active = null, chain = Promise.resolve();
   function enqueue(body) {
     chain = chain.then(() => api('timing',body)).catch(error => {
-      active = null; status.textContent = 'Tempo non confermato: segmento incompleto. Riprendi esplicitamente.';
+      active = null; status.textContent = 'Timer non confermato';
       start.disabled = false; pause.disabled = true;
       message(error.message,'error');
     });

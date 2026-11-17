@@ -91,11 +91,11 @@ osservato giudizi; errori nel disegno richiedono un nuovo pacchetto di raccolta.
 ## Lavoro del valutatore
 
 La pagina presenta il bisogno informativo in una fascia superiore orizzontale,
-con criteri e rubrica richiudibili e timer accanto. Il timer parte chiuso: il suo
+con criteri e rubrica chiusi di default e un piccolo badge timer inline accanto. Il timer parte chiuso: il suo
 riepilogo indica sempre stato e fase; richiuderlo non mette in pausa il conteggio.
-Sotto, il documento occupa la colonna principale e il giudizio quella destra,
+Sotto, il documento occupa il 75% dello spazio desktop e il giudizio il 25%,
 che segue lo scorrimento su desktop. Su mobile le sezioni sono impilate, con
-collegamenti rapidi Criteri / Documento / Giudizio. I criteri si riaprono al
+collegamenti rapidi Criteri / Documento / Giudizio. I criteri tornano chiusi al
 cambio di topic.
 
 - Leggere bisogno informativo, inclusioni, esclusioni e rubrica specifica.

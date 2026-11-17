@@ -240,3 +240,23 @@ tbody tr:last-child td{border:0}
   .judgment-panel{padding:16px}
 
 }
+
+/* Compact context: the timer is an inline disclosure, never a separate card. */
+.context-row{display:block}
+.context-heading{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.context-heading h2{margin:0}
+#timer-slot{margin-left:auto;max-width:100%;overflow-x:auto}
+.timer-panel{display:block;width:max-content;max-width:none;margin:0;padding:4px 10px;background:#edf3f3;border:1px solid var(--border);border-radius:20px;white-space:nowrap}
+.timer-panel summary{display:inline-flex;align-items:center;gap:6px;font-size:12px;vertical-align:middle;min-height:26px}
+.timer-panel summary::before{content:'▸'}
+.timer-panel[open] summary::before{content:'▾'}
+.timer-state{display:inline;font-size:12px;margin:0;line-height:1.4}
+.timer-controls{display:inline-flex;align-items:center;gap:6px;margin-left:10px;vertical-align:middle;white-space:nowrap}
+.timer-panel:not([open]) .timer-controls{display:none}
+.timer-phase{display:inline-flex;margin:0}
+.timer-phase select{width:auto;max-width:145px;padding:5px 8px;font-size:12px;height:32px}
+.timer-controls button{min-height:32px;padding:5px 9px;font-size:12px;white-space:nowrap}
+@media(min-width:1000px){.annotation-grid{grid-template-columns:minmax(0,3fr) minmax(0,1fr)}.judgment-panel{min-width:0}.judgment-panel .action-row{flex-wrap:wrap}.grade span{overflow-wrap:anywhere}}
+@media(max-width:999px){.timer-panel{margin:0}.context-heading{margin-bottom:10px}}
+.grade input{inset:0;width:100%;height:100%;margin:0;z-index:1;cursor:pointer}
+.timer-panel::details-content{display:inline}
