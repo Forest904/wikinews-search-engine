@@ -1,4 +1,5 @@
 import json
+import subprocess
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -6,9 +7,39 @@ import pytest
 
 from wikinews_ir.evaluation.runs import export_runs, load_queries
 from wikinews_ir.ingestion.corpus import checksum
-from wikinews_ir.ingestion.indexer import build_indices, content_signature, validate_corpus
+from wikinews_ir.ingestion.indexer import (
+    build_indices,
+    content_signature,
+    execution,
+    validate_corpus,
+)
 from wikinews_ir.models import SearchHit, SearchRequest, SearchResponse
 from wikinews_ir.retrieval.profiles import CONFIGS, index_config, profile_config
+
+
+@pytest.mark.parametrize("error", [FileNotFoundError("git"),
+                                  subprocess.CalledProcessError(128, "git")])
+def test_execution_without_git_or_checkout(monkeypatch, error):
+    def unavailable(*args, **kwargs):
+        raise error
+
+    monkeypatch.setattr("wikinews_ir.ingestion.corpus.subprocess.check_output", unavailable)
+    report = execution()
+    assert report["git_commit"] is None
+    assert report["git_dirty"] is None
+    assert report["client_version"]
+    assert report["timestamp"]
+
+
+@pytest.mark.parametrize("status, dirty", [("", False), (" M file.py\n", True)])
+def test_execution_with_git_provenance(monkeypatch, status, dirty):
+    def available(command, **kwargs):
+        return status if command[1] == "status" else "abc123\n"
+
+    monkeypatch.setattr("wikinews_ir.ingestion.corpus.subprocess.check_output", available)
+    report = execution()
+    assert report["git_commit"] == "abc123"
+    assert report["git_dirty"] is dirty
 
 
 @pytest.fixture

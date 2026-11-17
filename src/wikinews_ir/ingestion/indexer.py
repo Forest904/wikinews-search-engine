@@ -3,7 +3,6 @@
 import json
 import platform
 import re
-import subprocess
 from datetime import UTC, datetime
 from importlib.metadata import version
 from pathlib import Path
@@ -11,19 +10,16 @@ from time import perf_counter
 
 from elasticsearch.helpers import scan, streaming_bulk
 
-from wikinews_ir.ingestion.corpus import ProcessedArticle, checksum
+from wikinews_ir.ingestion.corpus import ProcessedArticle, checksum, git_info
 from wikinews_ir.retrieval.profiles import digest, index_config, index_name, profile_config
 
 
 def execution():
-    def git(*args):
-        result = subprocess.run(["git", *args], capture_output=True, text=True, check=False)
-        return result.stdout.strip() if result.returncode == 0 else None
-
+    provenance = git_info()
     return {
         "timestamp": datetime.now(UTC).isoformat(), "python": platform.python_version(),
         "client_version": version("elasticsearch"),
-        "git_commit": git("rev-parse", "HEAD"), "git_dirty": bool(git("status", "--porcelain")),
+        "git_commit": provenance["commit"], "git_dirty": provenance["dirty"],
     }
 
 
