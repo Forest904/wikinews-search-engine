@@ -32,6 +32,12 @@ Wikinotizie, basato su Elasticsearch, con valutazione IR riproducibile.
 - Docker Engine / Docker Desktop con Docker Compose v2
 - Idealmente almeno 4 GB disponibili per Docker in locale
 
+## Avvio locale su Windows
+
+Doppio clic su **Avvia-locale.cmd**, oppure task VS Code **Locale: avvia/riavvia**.
+Il sito si apre su `http://127.0.0.1:8000/`; una precedente istanza di questa
+checkout viene riavviata. [Comandi, prerequisiti e primo accesso](docs/local-development.md).
+
 ## Avvio rapido in ambiente locale
 
 ```bash
