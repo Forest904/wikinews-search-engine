@@ -1,0 +1,56 @@
+name: Deploy production
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: newsfinder-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_HOST"
+          test -n "$DEPLOY_USER"
+          test -n "$DEPLOY_SSH_KEY"
+          test -n "$DEPLOY_KNOWN_HOSTS"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<'EOF'
+          Host *
+            BatchMode yes
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            ConnectTimeout 15
+            ServerAliveInterval 15
+            ServerAliveCountMax 4
+          EOF
+      - name: Build application on runner
+        run: docker build --tag "newsfinder-app:$GITHUB_SHA" .
+      - name: Transfer image
+        run: |
+          set -euo pipefail
+          docker save "newsfinder-app:$GITHUB_SHA" | gzip | ssh "$DEPLOY_USER@$DEPLOY_HOST" 'gunzip | docker load'
+      - name: Deploy and verify application
+        run: ssh "$DEPLOY_USER@$DEPLOY_HOST" "bash -s -- '$GITHUB_SHA'" < scripts/deploy-ci.sh
+      - name: Remove SSH credentials
+        if: always()
+        run: rm -f ~/.ssh/id_ed25519

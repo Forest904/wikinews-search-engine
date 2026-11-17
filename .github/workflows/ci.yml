@@ -68,3 +68,11 @@ jobs:
           path: output/playwright/
       - run: docker compose down
         if: always()
+
+  deploy:
+    needs: [lint-and-test, annotation-browser, retrieval-and-browser]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/deploy.yml
+    permissions:
+      contents: read
+    secrets: inherit
