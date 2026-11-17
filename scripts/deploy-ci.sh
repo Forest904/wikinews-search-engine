@@ -23,7 +23,12 @@ export APP_IMAGE="newsfinder-app:$revision"
 docker image inspect "$APP_IMAGE" >/dev/null
 dc config --quiet
 # Fail before replacement if the existing database requires a manual migration.
-dc run --rm --no-deps app python -m wikinews_ir.operations check
+# Compose run inherits app's static IP, which the live container already owns.
+# The database check only needs the existing volumes, not a network connection.
+annotation_db=$(dc config --format json | python3 -c 'import json, sys; print(json.load(sys.stdin)["services"]["app"]["environment"]["ANNOTATION_DB"])')
+docker run --rm --network none --memory 384m --volumes-from "$container" \
+  --env "ANNOTATION_DB=$annotation_db" --entrypoint python "$APP_IMAGE" \
+  -m wikinews_ir.operations check
 
 rollback() {
   result=$?
