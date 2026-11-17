@@ -55,7 +55,8 @@ def browser_page(request):
         browser.close()
 
 
-def test_search_detail_and_empty_state(seeded_backend, browser_page):
+@pytest.mark.parametrize("return_link", [".back-link", ".reading-actions"])
+def test_search_detail_and_empty_state(seeded_backend, browser_page, return_link):
     page = browser_page
     with serve(seeded_backend) as url:
         page.goto(url)
@@ -64,7 +65,12 @@ def test_search_detail_and_empty_state(seeded_backend, browser_page):
         expect(page.locator("#results li")).to_have_count(1)
         page.get_by_role("link", name="Terremoto in Abruzzo").click()
         expect(page.locator("article")).to_contain_text("soccorsi")
-        page.get_by_role("link", name="Torna ai risultati").click()
+        if return_link == ".back-link":
+            page.locator("a.back-link").click()
+        else:
+            page.get_by_role("navigation", name="Navigazione articolo").get_by_role(
+                "link", name="Torna ai risultati", exact=True
+            ).click()
         expect(page.get_by_label("Cerca nelle notizie")).to_have_value("terremoto")
         expect(page.locator("#results li")).to_have_count(1)
         page.get_by_label("Cerca nelle notizie").fill("zzzznonpresente")
@@ -106,7 +112,7 @@ def test_profile_pagination_and_restored_url(seeded_backend, browser_page):
         page.get_by_role("button", name="Successiva").click()
         expect(page.locator("#page-status")).to_contain_text("Pagina 2")
         page.locator("#results a").click()
-        page.get_by_role("link", name="Torna ai risultati").click()
+        page.locator("a.back-link").click()
         expect(page.locator("#page-status")).to_contain_text("Pagina 2")
         page.reload()
         expect(page.locator("#page-status")).to_contain_text("Pagina 2")
@@ -123,7 +129,7 @@ def test_advanced_profiles_navigation(seeded_backend, browser_page, profile):
         page.get_by_role("button", name="Successiva").click()
         expect(page.locator("#page-status")).to_contain_text("Pagina 2")
         page.locator("#results a").click()
-        page.get_by_role("link", name="Torna ai risultati").click()
+        page.locator("a.back-link").click()
         expect(page.locator("#page-status")).to_contain_text("Pagina 2")
         expect(page.get_by_label("Modalità di ricerca")).to_have_value(profile)
 
@@ -181,7 +187,7 @@ def test_search_history_recovery_and_responsive_layout(seeded_backend, browser_p
         page.locator("#results a").click()
         expect(page.locator(".article-body")).to_contain_text("soccorsi")
         page.screenshot(path=str(output / "article.png"))
-        page.get_by_role("link", name="Torna ai risultati").click()
+        page.locator("a.back-link").click()
         expect(page.locator("#results a")).to_have_count(1)
         for width, height in [(1440, 900), (1024, 768), (390, 844), (640, 450)]:
             page.set_viewport_size({"width": width, "height": height})
@@ -197,4 +203,5 @@ def test_search_history_recovery_and_responsive_layout(seeded_backend, browser_p
         page.get_by_text("Opzioni di ricerca", exact=False).click()
         page.get_by_label("Modalità di ricerca").select_option("E4")
         expect(page.locator("#profile-help")).to_contain_text("virgolette")
-        expect(page.locator("#profile-summary")).to_have_text("Frasi · E4")
+        expect(page.locator("#profile-summary")).to_have_text("Frasi")
+        expect(page.locator("#profile-help")).to_contain_text("Profilo E4")
