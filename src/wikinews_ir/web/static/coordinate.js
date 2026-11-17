@@ -33,6 +33,8 @@
   function topicLimit() {
     const topic = data.packets.find(p => p.id === $('packet').value)?.topics.find(t => t.query_id === $('topic').value);
     $('overlap').max = topic?.pairs || 0;
+    $('overlap').value = Math.min(Number($('overlap').value), Number($('overlap').max));
+    $('overlap-help').textContent = `Da 0 a ${$('overlap').max} documenti assegnati anche al secondo valutatore. Per la tripla lettura: ${$('overlap').max}.`;
   }
   async function refresh() {
     data = await api('dashboard');
@@ -40,7 +42,11 @@
     $('total-completed').textContent = data.progress.reduce((n,p) => n + (p.judged || 0) + (p.needs_review || 0),0);
     $('total-reviews').textContent = data.pending_reviews.length; $('total-finalized').textContent = data.finalized;
     $('progress-table').replaceChildren(...data.progress.map(p => {
-      const row = element('tr'); [p.user_id,p.total,p.unstarted || 0,p.judged || 0,p.needs_review || 0,p.deferred || 0].forEach(v => row.append(element('td',v))); return row;
+      const row = element('tr'); row.append(element('td',p.user_id));
+      const cell = element('td',undefined,'progress-cell'), done = (p.judged || 0) + (p.needs_review || 0), bar = element('progress');
+      bar.max = Math.max(p.total,1); bar.value = done; bar.setAttribute('aria-label',`Avanzamento di ${p.user_id}`); bar.setAttribute('aria-valuetext',`${done} di ${p.total}`);
+      cell.append(element('span',`${done}/${p.total}`),bar); row.append(cell);
+      [p.total,p.unstarted || 0,p.judged || 0,p.needs_review || 0,p.deferred || 0].forEach(v => row.append(element('td',v))); return row;
     }));
     const packets = data.packets.map((p,i) => ({value:p.id,label:`Pacchetto ${i + 1} · ${p.topics.map(t => t.query).join(', ')} · ${p.id.slice(0,8)}`}));
     options($('packet'),packets); options($('export-packet'),packets); topicOptions();
@@ -55,8 +61,14 @@
       } return card;
     }));
     if (!data.blocks.length) $('blocks').append(element('p','Non sono ancora stati preparati blocchi.','muted'));
-    $('reviews').replaceChildren(...data.pending_reviews.map(review => {
+    const unassigned = data.pending_reviews.filter(r => !r.reviewer).length;
+    $('review-attention').hidden = !unassigned;
+    const attentionLink = element('a',`${unassigned} revisioni da assegnare`); attentionLink.href = '#revisioni';
+    $('review-attention').replaceChildren(attentionLink);
+    $('total-reviews').parentElement.querySelector('span').textContent = `Revisioni pendenti (${unassigned} da assegnare, ${data.pending_reviews.length - unassigned} assegnate)`;
+    $('reviews').replaceChildren(...[...data.pending_reviews].sort((a,b) => Number(!!a.reviewer)-Number(!!b.reviewer)).map(review => {
       const card = element('div'); card.append(element('p',`${review.query_id} · documento ${review.document_id}`));
+      card.append(element('span',review.reviewer ? `Assegnata a ${review.reviewer}` : 'Da assegnare','status-chip'));
       const label = element('label','Revisore indipendente'), select = element('select');
       options(select,review.eligible.map(u => ({value:u,label:u})), 'Scegli un revisore'); select.value = review.reviewer || '';
       label.append(select); card.append(label);
@@ -75,7 +87,12 @@
   }
   function showPreview(result) {
     preview = result; const b = result.block; step('preview');
-    $('preview-summary').textContent = `${b.query_id} · principale: ${b.primary_user} · secondo: ${b.secondary_user || 'nessuno'} · terzo: ${b.third_user || 'nessuno'} · ${b.overlap} documenti in doppio · seed: ${b.seed}`;
+    const topic = data.packets.find(p => p.id === b.packet_id)?.topics.find(t => t.query_id === b.query_id);
+    $('preview-summary').replaceChildren();
+    for (const [label,value] of [['Topic',topic?.query || b.query_id],['Valutatore principale',b.primary_user],['Secondo valutatore',b.secondary_user || 'Nessuno'],['Terzo valutatore',b.third_user || 'Nessuno'],['Documenti in doppio',b.overlap],['Assegnazioni totali',(result.assignments || []).length]]) {
+      $('preview-summary').append(element('dt',label),element('dd',String(value)));
+    }
+    $('preview-seed').textContent = `Seed: ${b.seed}`;
     $('preview-order').replaceChildren(...(result.assignments || []).map(a => element('li',`${a.user_id}: ${a.document_id}`)));
     $('block-preview').hidden = false; $('block-preview').scrollIntoView({block:'nearest'});
   }

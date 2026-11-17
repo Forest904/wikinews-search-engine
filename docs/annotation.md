@@ -100,24 +100,22 @@ cambio di topic.
 
 - Leggere bisogno informativo, inclusioni, esclusioni e rubrica specifica.
 - Usare la ricerca facoltativa e le frecce per navigare tra le occorrenze: non suggerisce gradi.
-- Selezionare passaggi nel corpo e premere **Cita il passaggio** vicino al testo
-  oppure **Aggiungi citazione** nel modulo. Le citazioni
-  conservano offset Unicode e sono verificate sul testo congelato anche al salvataggio.
+- Selezionare passaggi nel documento e premere **Aggiungi citazione** nel pannello
+  del giudizio. Il cestino accanto a ogni citazione permette di rimuoverla.
 - Scegliere `0`, `1` o `2`, aggiungere una motivazione. Ogni grado richiede almeno
   una citazione. Le scorciatoie numeriche funzionano fuori dai campi di inserimento.
-- **Salva** mantiene l'attività; **Salva e continua** passa alla successiva solo
+- **Salva e continua** passa alla successiva solo
   dopo conferma del server. La causale rapida aggiunge testo modificabile alla motivazione.
 - **Astieniti** richiede una motivazione e registra `needs_review`, senza grado.
-  **Riprendi dopo** conserva motivazione e citazioni come bozza `deferred`, senza grado.
-  Rinviare non equivale ad assegnare zero né a completare l'annotazione.
-- **Modifica ultimo giudizio** riapre il salvataggio più recente. La cronologia
+- Il selettore **Attività** permette di riaprire i giudizi salvati. La cronologia
   conserva tutte le proprie revisioni. Dopo un conflitto, ricaricare il giudizio
   salvato e riconciliare la modifica: nessuna sovrascrittura silenziosa.
 
-Il riepilogo personale distingue giudizi, astensioni e rinvii. L'ultima attività
+La barra di completamento mostra il numero di annotazioni completate sul totale.
+Giudizi e astensioni contano come completati; i rinvii no. L'ultima attività
 si ricorda nella sessione browser; i contenuti salvati sono nel database e possono
 essere ripresi anche da un altro computer. Le modifiche non ancora inviate restano
-solo nel form: prima di chiudere usare **Riprendi dopo**. La pagina avvisa quando
+solo nel form e vengono perse quando si lascia la pagina senza salvare. La pagina avvisa quando
 si abbandona un modulo modificato e lo conserva in caso di errore di salvataggio.
 
 ## Finalizzazione e revisione
@@ -209,3 +207,30 @@ restano il gate M7-A.
 
 `/api/health` continua a descrivere lo stato del servizio di ricerca: una sua
 risposta 503 per Elasticsearch spento non impedisce l'uso dell'area valutatori.
+
+
+### Navigazione e coordinamento
+
+Il filtro Mostra offre Tutte, Da fare, Rinviate e Completate con i relativi conteggi.
+Completate comprende giudizi e astensioni. La barra superiore resta riferita al totale;
+frecce e selettore seguono il filtro, ricordato nella sessione browser. Una coda vuota
+permette di tornare a tutte le attività. Il filtro non si applica alle revisioni.
+Le sezioni Grado, Evidenze e Motivazione restano visibili; Salva e continua avanza
+nella coda filtrata, mentre l’astensione resta un’azione separata. La causale rapida si trova sopra Motivazione.
+
+La panoramica del coordinatore mostra l'avanzamento per valutatore e distingue
+revisioni da assegnare e assegnate. Per una doppia annotazione scegliere il secondo valutatore e il numero di documenti
+in doppio. Il terzo valutatore richiede un topic di calibrazione, tre utenti distinti
+e tutti i documenti in doppio: ciascuno dei tre legge l'intero topic.
+I tre selettori e il seed sono sempre visibili nel modulo. Verificare il
+riepilogo prima di attivare il blocco; seed e ordine sono nei dettagli tecnici.
+
+Nella ricerca, i codici dei profili restano nel testo di aiuto. In assenza di
+risultati si può modificare la query o provare Standard. In fondo agli articoli
+sono disponibili i collegamenti ai risultati e all'inizio del documento.
+
+
+In **Altre azioni**, **Salva** registra il giudizio senza avanzare. **Riprendi dopo**
+(solo nelle annotazioni) mette in pausa il timer, salva motivazione e citazioni
+come bozza rinviata, senza grado, e torna alla Ricerca mantenendo l'accesso.
+Se il salvataggio fallisce, la pagina rimane aperta e conserva il modulo.

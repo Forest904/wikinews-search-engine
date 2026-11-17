@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Area valutatori{% endblock %}
-{% block styles %}<link rel="stylesheet" href="/static/annotation.css">{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ static_asset('annotation.css') }}">{% endblock %}
 {% block coordinator_nav %}<a href="/coordinate" id="coordinate-link" hidden {% block coordinate_active %}{% endblock %}>Coordinamento</a>{% endblock %}
 {% block account %}<div id="account" hidden><span id="user-name"></span><button id="logout" class="quiet">Esci</button></div>{% endblock %}
 {% block main %}
@@ -18,4 +18,4 @@
   {% block content %}{% endblock %}
 </main>
 {% endblock %}
-{% block scripts %}<script src="/static/annotation-common.js" defer></script>{% block script %}{% endblock %}{% endblock %}
+{% block scripts %}<script src="{{ static_asset('annotation-common.js') }}" defer></script>{% block script %}{% endblock %}{% endblock %}

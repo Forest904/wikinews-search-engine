@@ -30,8 +30,9 @@ Gli script funzionano anche quando lanciati da una directory diversa.
 
 - Sincronizza le dipendenze dal lockfile e usa `.venv/Scripts/python.exe`.
 - Riutilizza Elasticsearch locale; se non è in ascolto avvia soltanto il servizio
-  Elasticsearch di `compose.yaml`. Se Docker non risponde, avvia Docker Desktop
-  e ripeti il comando.
+  Elasticsearch di `compose.yaml`. Se Docker non risponde, il comando avvia
+  automaticamente Docker Desktop (oppure ne attende l'avvio già in corso) e
+  aspetta fino a 120 secondi che il motore sia pronto prima di eseguire Compose.
 - Mantiene corpus e nomi degli indici configurati. Non scarica il dump, non
   ricostruisce indici e non importa la preview. Se la ricerca non è pronta,
   mostra il comando `uv run --locked wikinews-ir index build` da eseguire dopo

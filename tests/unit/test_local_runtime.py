@@ -62,3 +62,49 @@ def test_reload_worker_resolves_to_checkout_parent(monkeypatch, tmp_path):
     monkeypatch.setattr(local.subprocess, "run", run)
     local.stop_instance(8000)
     run.assert_called_once_with(["taskkill", "/PID", "100", "/T", "/F"], check=True, capture_output=True)
+
+
+def test_running_docker_does_not_launch_desktop(monkeypatch):
+    monkeypatch.setattr(local.subprocess, "run", Mock(return_value=Mock(returncode=0)))
+    launch = Mock()
+    monkeypatch.setattr(local, "powershell", launch)
+    local.ensure_docker({})
+    launch.assert_not_called()
+
+
+def test_docker_waits_for_engine_after_desktop_launch(monkeypatch):
+    probe = Mock(side_effect=[Mock(returncode=1), local.subprocess.TimeoutExpired("docker", 5), Mock(returncode=0)])
+    monkeypatch.setattr(local.subprocess, "run", probe)
+    launch = Mock()
+    monkeypatch.setattr(local, "powershell", launch)
+    monkeypatch.setattr(local.time, "sleep", Mock())
+    local.ensure_docker({})
+    launch.assert_called_once()
+    assert probe.call_count == 3
+
+
+def test_missing_docker_reports_installation_needed(monkeypatch):
+    monkeypatch.setattr(local.subprocess, "run", Mock(side_effect=FileNotFoundError))
+    launch = Mock()
+    monkeypatch.setattr(local, "powershell", launch)
+    with pytest.raises(RuntimeError, match="Installa Docker Desktop"):
+        local.ensure_docker({})
+    launch.assert_not_called()
+
+
+def test_docker_startup_has_bounded_wait(monkeypatch):
+    monkeypatch.setattr(local.subprocess, "run", Mock(return_value=Mock(returncode=1)))
+    monkeypatch.setattr(local, "powershell", Mock())
+    monkeypatch.setattr(local.time, "monotonic", Mock(side_effect=[0, 1, 2, 120]))
+    monkeypatch.setattr(local.time, "sleep", Mock())
+    with pytest.raises(RuntimeError, match="dopo 120 secondi"):
+        local.ensure_docker({})
+
+
+def test_desktop_launch_error_is_reported(monkeypatch):
+    monkeypatch.setattr(local.subprocess, "run", Mock(return_value=Mock(returncode=1)))
+    monkeypatch.setattr(local, "powershell", Mock(side_effect=local.subprocess.CalledProcessError(
+        1, "powershell.exe", stderr="Docker Desktop non trovato.",
+    )))
+    with pytest.raises(RuntimeError, match="Avvio Docker Desktop fallito: Docker Desktop non trovato"):
+        local.ensure_docker({})

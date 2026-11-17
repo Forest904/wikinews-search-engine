@@ -3,9 +3,6 @@
 .page-heading h1{font-size:28px;margin-bottom:6px}
 .page-heading .eyebrow{margin-bottom:5px}
 .page-heading p:last-child{font-size:14px;margin:0}
-.progress-card{min-width:230px;font-size:14px}
-.progress-card span{display:block;font-weight:600}
-.progress-card small{display:block;font-size:12px;color:var(--muted)}
 progress{width:100%;height:6px;border:0;border-radius:8px;margin:8px 0;accent-color:var(--teal)}
 progress::-webkit-progress-bar{background:#dce6e9;border-radius:8px}
 progress::-webkit-progress-value{background:var(--teal);border-radius:8px}
@@ -15,7 +12,7 @@ progress::-webkit-progress-value{background:var(--teal);border-radius:8px}
 .tab.active{color:var(--blue);border-color:var(--blue)}
 .task-navigation{display:flex;align-items:center;gap:10px;margin-bottom:16px}
 .task-navigation label{margin:0}
-.task-navigation select{flex:1;max-width:800px}
+.task-navigation select{flex:1;min-width:0}
 .task-navigation button{padding:10px 14px}
 .context-row{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:20px;align-items:start}
 .topic-panel{padding:20px 24px}
@@ -140,7 +137,6 @@ tbody tr:last-child td{border:0}
 .page-heading{display:block}
 .page-heading h1{font-size:26px}
 .page-heading>button{margin-top:14px}
-.progress-card{margin-top:14px;min-width:0}
 .work-toolbar{align-items:start;flex-direction:column;gap:0}
 .tabs{gap:16px}
 .task-navigation{flex-wrap:wrap}
@@ -208,7 +204,6 @@ tbody tr:last-child td{border:0}
 
   .criteria-grid{grid-template-columns:.8fr .8fr 1.6fr;gap:16px}
 
-  .progress-card progress{margin:4px 0;height:4px}
 
   .page-heading{margin-bottom:4px}
 
@@ -260,3 +255,63 @@ tbody tr:last-child td{border:0}
 @media(max-width:999px){.timer-panel{margin:0}.context-heading{margin-bottom:10px}}
 .grade input{inset:0;width:100%;height:100%;margin:0;z-index:1;cursor:pointer}
 .timer-panel::details-content{display:inline}
+
+/* Compact annotation workspace heading, independent of coordinator headings. */
+#workspace .workspace-heading{display:flex;align-items:center;gap:24px;margin-bottom:20px}
+#workspace .workspace-heading h1{flex:none;margin:0;white-space:nowrap}
+.workspace-heading progress{flex:1;min-width:0;width:auto;margin:0}
+.workspace-heading #progress-label{flex:none;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+#task-position{flex:none;white-space:nowrap}
+@media(max-width:700px){
+  #workspace .workspace-heading{gap:12px}
+  #workspace .workspace-heading h1{font-size:20px}
+}
+@media(max-width:360px){
+  #workspace .workspace-heading{gap:8px}
+  #workspace .workspace-heading h1{font-size:18px}
+}
+
+/* Give the workspace sections a consistent vertical rhythm. */
+#workspace .work-toolbar{margin-bottom:24px}
+#workspace .task-navigation{margin-bottom:24px}
+#workspace .context-row .panel,
+#workspace #review-originals{margin-bottom:28px}
+#workspace .mobile-jumps{margin-bottom:20px}
+
+.task-filters{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.task-filters label{margin:0}.task-filters select{width:auto;min-width:180px}
+.judgment-section{border-top:1px solid var(--border);padding-top:16px;margin-top:20px}
+.judgment-section>label{font-weight:600}.judgment-section .quick-reason{margin:16px 0 0}
+.alternative-actions{border-top:1px solid var(--border);margin-top:18px;padding-top:16px}
+.alternative-actions p{margin:6px 0 14px}.save-actions>.secondary{margin-top:8px}
+.progress-cell{min-width:130px}.progress-cell progress{display:block;margin:5px 0}
+.preview-summary{display:grid;grid-template-columns:max-content 1fr;gap:8px 20px}
+.preview-summary dt{font-weight:600}.preview-summary dd{margin:0;overflow-wrap:anywhere}
+@media(max-width:700px){.preview-summary{grid-template-columns:1fr;gap:4px}.preview-summary dd{margin-bottom:10px}}
+
+#workspace .save-actions{position:static;box-shadow:none}
+#block-form .checkbox-label{color:var(--ink)}
+
+.task-navigation-row{display:flex;align-items:center;gap:24px;margin-bottom:24px}
+#workspace .task-navigation-row .task-filters,
+#workspace .task-navigation-row .task-navigation{margin-bottom:0}
+.task-navigation-row .task-filters{flex:none}
+.task-navigation-row .task-navigation{flex:1;min-width:0}
+@media(max-width:700px){
+  .task-navigation-row{flex-wrap:wrap;gap:16px}
+  .task-navigation-row .task-navigation{flex-basis:100%}
+}
+
+#topic-panel .context-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 20px;margin-bottom:8px}
+#topic-panel .context-heading .eyebrow{grid-column:1;grid-row:1;margin:0}
+#topic-panel .context-heading h2{grid-column:1;grid-row:2;margin:0}
+#topic-panel #timer-slot{grid-column:2;grid-row:1 / 3;align-self:start}
+.evidence-list li{display:flex;align-items:flex-start;gap:10px}
+.evidence-list blockquote{flex:1;min-width:0}
+.evidence-list .remove-evidence{flex:none;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:6px;color:var(--muted)}
+.remove-evidence svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:transform .15s}
+.remove-evidence:hover svg,.remove-evidence:focus-visible svg{transform:scale(1.2)}
+.abstain{background:#fbe8e7;color:#8c302c;border:1px solid #edc2be}
+.abstain:hover{background:#f5d6d3}
+@media(prefers-reduced-motion:reduce){.remove-evidence svg{transition:none}}
+@media(max-width:700px){#topic-panel .context-heading{grid-template-columns:minmax(0,1fr)}#topic-panel #timer-slot{grid-column:1;grid-row:3;margin-left:0}}

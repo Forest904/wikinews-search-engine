@@ -5,7 +5,19 @@
   let annotations = [], reviews = [], current = null, evidence = [], mode = 'annotation', user = null;
   let pending = null, saving = false, selectedIndex = 0;
   let topicKey = null, selectedQuote = null, matches = [], matchIndex = -1;
-  const list = () => mode === 'annotation' ? annotations : reviews;
+  let taskFilter = 'all';
+  const filterNames = {all:'Tutte',todo:'Da fare',deferred:'Rinviate',completed:'Completate'};
+  const includesTask = (task, filter) => filter === 'all' || (filter === 'todo' ? !task.own_judgment || task.own_judgment.status === 'unstarted' : filter === 'deferred' ? task.own_judgment?.status === 'deferred' : ['judged','needs_review'].includes(task.own_judgment?.status));
+  const list = () => mode === 'annotation' ? annotations.filter(t => includesTask(t,taskFilter)) : reviews;
+  function changeFilter(value) {
+    if (saving || !mayLeave()) { $('task-filter').value = taskFilter; return; }
+    const previous = current && key(current);
+    taskFilter = value; $('task-filter').value = value;
+    sessionStorage.setItem(`annotation-filter:${user.user_id}`,value);
+    renderOptions(); selectTask(Math.max(0,list().findIndex(t => key(t) === previous)));
+  }
+  $('task-filter').onchange = () => changeFilter($('task-filter').value);
+  $('show-all-tasks').onclick = () => changeFilter('all');
   const key = task => [task.packet_id, task.topic.query_id, task.document.document_id].join('/');
   function clearValidation() {
     for (const id of ['grade-error','evidence-error','rationale-error']) { $(id).hidden = true; $(id).textContent = ''; }
@@ -15,22 +27,29 @@
   function mayLeave() { return !window.annotationDirty || confirm('Ci sono modifiche non salvate. Vuoi abbandonarle?'); }
   function progress() {
     const done = annotations.filter(t => ['judged','needs_review'].includes(t.own_judgment?.status)).length;
-    const deferred = annotations.filter(t => t.own_judgment?.status === 'deferred').length;
-    const abstained = annotations.filter(t => t.own_judgment?.status === 'needs_review').length;
-    $('progress-label').textContent = `${done} di ${annotations.length} annotazioni completate`;
+    $('progress-label').textContent = `${done}/${annotations.length}`;
     $('progress').max = Math.max(annotations.length,1); $('progress').value = done;
-    $('progress-detail').textContent = `${deferred} rinviate · ${abstained} astensioni`;
+    $('progress').setAttribute('aria-valuetext', `${done} di ${annotations.length} annotazioni completate`);
     $('review-count').textContent = reviews.length;
   }
   function renderEvidence() {
     $('evidence-count').textContent = evidence.length; $('evidence-empty').hidden = !!evidence.length;
     $('evidence').replaceChildren(...evidence.map((item,index) => {
-      const li = element('li'), quote = element('blockquote', item.quote), remove = element('button','Rimuovi citazione','quiet');
+      const li = element('li'), quote = element('blockquote', item.quote), remove = element('button',undefined,'quiet remove-evidence');
+      remove.setAttribute('aria-label','Rimuovi citazione'); remove.title = 'Rimuovi citazione';
+      const icon = document.createElementNS('http://www.w3.org/2000/svg','svg');
+      icon.setAttribute('viewBox','0 0 24 24'); icon.setAttribute('aria-hidden','true');
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d','M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7');
+      icon.append(path); remove.append(icon);
       remove.type = 'button'; remove.disabled = saving; remove.onclick = () => { evidence.splice(index,1); dirty(); renderEvidence(); };
       li.append(quote,remove); return li;
     }));
   }
   function renderOptions() {
+    $('task-filters').hidden = mode !== 'annotation';
+    for (const option of $('task-filter').options) option.textContent = `${filterNames[option.value]} (${annotations.filter(t => includesTask(t,option.value)).length})`;
+    $('show-all-tasks').hidden = mode !== 'annotation' || taskFilter === 'all';
     $('tasks').replaceChildren(...list().map((t,i) => new Option(
       `${mode === 'annotation' ? labels[t.own_judgment?.status || 'unstarted'] + ' · ' : ''}${t.document.title}`, i)));
   }
@@ -42,6 +61,7 @@
     $('find-previous').disabled = $('find-next').disabled = true;
     $('quote-feedback').textContent = '';
     $('empty-state').hidden = !!current; $('task-area').hidden = !current;
+    $('tasks').closest('.task-navigation').hidden = !current;
     if (!current) return;
     window.annotationTimerTask = {packet_id:current.packet_id,query_id:current.topic.query_id,
       document_id:current.document.document_id, review:mode === 'review'};
@@ -68,7 +88,7 @@
     $('current-status').className = `status-chip ${own ? 'saved' : ''}`;
     $('save-state').textContent = own ? `Salvato · versione ${own.version}` : 'Nessuna modifica da salvare.';
     $('save-state').className = 'small'; $('judgment-heading').textContent = mode === 'review' ? 'Decisione finale' : 'Valuta la rilevanza';
-    $('defer').hidden = mode === 'review'; $('history-details').hidden = mode === 'review';
+    $('defer-action').hidden = mode === 'review'; $('history-details').hidden = mode === 'review';
     $('history-details').open = false; $('history').replaceChildren();
     $('review-originals').hidden = mode !== 'review'; $('originals').replaceChildren();
     if (mode === 'review') current.originals.forEach(original => {
@@ -82,6 +102,7 @@
     [annotations,reviews] = await Promise.all([api('tasks'),api('reviews')]); progress(); renderOptions();
     const remembered = preferred || sessionStorage.getItem(`annotation-resume:${user.user_id}:${mode}`);
     let index = list().findIndex(t => key(t) === remembered);
+    if (index < 0 && preferred) index = Math.min(selectedIndex, list().length - 1);
     if (index < 0) index = list().findIndex(t => !t.own_judgment || t.own_judgment.status === 'deferred');
     selectTask(Math.max(0,index));
   }
@@ -91,17 +112,12 @@
     for (const [id,value] of [['annotation-mode','annotation'],['review-mode','review']]) {
       $(id).classList.toggle('active', mode === value); $(id).setAttribute('aria-pressed',String(mode === value));
     }
-    $('last-judgment').hidden = mode !== 'annotation'; renderOptions(); selectTask();
+    renderOptions(); selectTask();
   }
   $('annotation-mode').onclick = () => changeMode('annotation'); $('review-mode').onclick = () => changeMode('review');
   $('tasks').onchange = () => { if (mayLeave()) selectTask(Number($('tasks').value)); else $('tasks').value = String(selectedIndex); };
   $('previous-task').onclick = () => { if (mayLeave()) selectTask(selectedIndex - 1); };
   $('next-task').onclick = () => { if (mayLeave()) selectTask(selectedIndex + 1); };
-  $('last-judgment').onclick = () => {
-    if (!mayLeave()) return;
-    const last = annotations.filter(t => t.own_judgment).sort((a,b) => b.own_judgment.saved_at.localeCompare(a.own_judgment.saved_at))[0];
-    if (last) selectTask(annotations.indexOf(last)); else message('Non hai ancora salvato giudizi.');
-  };
   $('refresh-tasks').onclick = () => $('reload-task').click();
   $('reload-task').onclick = async () => {
     if (!mayLeave()) return;
@@ -121,7 +137,7 @@
   document.addEventListener('selectionchange', () => {
     const quote = captureQuote();
     if (quote) selectedQuote = quote;
-    else if (!['quote','quote-document'].includes(document.activeElement?.id)) selectedQuote = null;
+    else if (!['quote'].includes(document.activeElement?.id)) selectedQuote = null;
   });
   function addQuote() {
     if (saving || !current) return;
@@ -134,7 +150,7 @@
     $('quote-feedback').textContent = 'Citazione aggiunta alle evidenze.';
     message('Citazione aggiunta.');
   }
-  for (const id of ['quote','quote-document']) {
+  for (const id of ['quote']) {
     $(id).addEventListener('pointerdown', () => { selectedQuote = captureQuote(); });
     $(id).onclick = addQuote;
   }
@@ -179,7 +195,7 @@
   };
   function lock(value) {
     saving = value;
-    document.querySelectorAll('#judgment button,#judgment input,#judgment select,#judgment textarea,#tasks,#previous-task,#next-task,#last-judgment,#quote-document,#reload-task,#logout').forEach(el => el.disabled = value);
+    document.querySelectorAll('#judgment-panel [data-state],#judgment button,#judgment input,#judgment select,#judgment textarea,#tasks,#task-filter,#previous-task,#next-task,#reload-task,#logout').forEach(el => el.disabled = value);
     if (!value) { $('previous-task').disabled = selectedIndex === 0; $('next-task').disabled = selectedIndex >= list().length - 1; }
   }
   document.querySelectorAll('[data-state]').forEach(button => button.onclick = async () => {
@@ -209,6 +225,7 @@
       if (window.pauseAnnotationTimer) await window.pauseAnnotationTimer();
       await api(mode === 'annotation' ? 'judgments' : 'decisions',data);
       window.annotationDirty = false; pending = null;
+      if (button.dataset.exit) { window.location.assign('/'); return; }
       // The response confirms persistence. A refresh failure must not imply that saving failed.
       message(mode === 'review' ? 'Decisione finale salvata.' : 'Salvataggio confermato.','success');
       try { await refresh(button.dataset.advance && nextKey ? nextKey : previousKey); }
@@ -231,5 +248,5 @@
     if (saving || !mayLeave()) event.preventDefault();
     else window.annotationDirty = false;
   }));
-  start(async session => { user = session; await refresh(); $('workspace').hidden = false; });
+  start(async session => { user = session; const stored = sessionStorage.getItem(`annotation-filter:${user.user_id}`); taskFilter = Object.hasOwn(filterNames,stored) ? stored : 'all'; $('task-filter').value = taskFilter; await refresh(); $('workspace').hidden = false; });
 })();

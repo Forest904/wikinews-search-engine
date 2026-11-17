@@ -15,11 +15,11 @@ const descriptions = {
   E1: 'Riconosce le varianti delle parole italiane, nel titolo e nel testo.',
   E2: 'Dà più importanza alle parole presenti nel titolo.',
   E3: 'Dà più importanza al titolo e include parole simili per tollerare piccoli refusi.',
-  E4: 'Premia le parole vicine. Usa "energia solare" Italia per richiedere la frase e almeno un termine esterno. Ogni frase tra virgolette è obbligatoria; il confronto usa l’analisi linguistica italiana. Le virgolette valgono solo in E4.'
+  E4: 'Premia le parole vicine. Esempio: "energia solare" Italia. Ogni frase tra virgolette deve comparire; le virgolette hanno effetto solo in questa modalità.'
 };
 function profileHelp() {
   document.querySelector('#profile-summary').textContent = form.elements.profile.selectedOptions[0].textContent;
-  document.querySelector('#profile-help').textContent = descriptions[form.elements.profile.value] || '';
+  document.querySelector('#profile-help').textContent = `${descriptions[form.elements.profile.value] || ''} Profilo ${form.elements.profile.value}.`;
 }
 function restore() {
   const params = new URLSearchParams(location.search);
@@ -30,6 +30,7 @@ function restore() {
   profileHelp();
 }
 function initialState() {
+  document.querySelector('#no-results').hidden = true;
   controller?.abort(); controller = null;
   button.disabled = false;
   results.removeAttribute('aria-busy');
@@ -51,6 +52,7 @@ async function search(historyMode = 'push') {
   if (historyMode === 'push' && location.pathname + location.search !== url) history.pushState(null, '', url);
   else if (historyMode === 'replace') history.replaceState(null, '', url);
   document.querySelector('#main').classList.add('has-results');
+  document.querySelector('#no-results').hidden = true;
   empty.hidden = true; retry.hidden = true; pagination.hidden = true;
   previous.disabled = next.disabled = true; button.disabled = true;
   results.replaceChildren(); results.setAttribute('aria-busy', 'true');
@@ -64,6 +66,8 @@ async function search(historyMode = 'push') {
     }
     const data = await response.json();
     if (controller !== request) return;
+    document.querySelector('#no-results').hidden = data.total !== 0;
+    document.querySelector('#standard-search').hidden = form.elements.profile.value === 'E0';
     status.textContent = data.total === 0 ? 'Nessun risultato. Prova con meno parole o modifica la modalità di ricerca.' : `${data.total.toLocaleString('it-IT')} ${data.total === 1 ? 'risultato' : 'risultati'}`;
     status.title = `Tempo di ricerca: ${data.elapsed_ms} ms`;
     const pages = Math.min(Math.ceil(data.total / data.page_size), Math.floor(10000 / data.page_size));
@@ -103,3 +107,6 @@ function renderSegments(element, segments, fallback) {
     node.textContent = segment.text; element.append(node);
   }
 }
+
+document.querySelector('#edit-search').onclick = () => { form.elements.q.focus(); form.elements.q.select(); };
+document.querySelector('#standard-search').onclick = () => { form.elements.profile.value = 'E0'; profileHelp(); currentPage = 1; search(); };

@@ -137,6 +137,48 @@ def run(command, env):
     subprocess.run(command, cwd=ROOT, env=env, check=True)
 
 
+def ensure_docker(env, timeout=120):
+    """Start Desktop when needed and wait for the engine, not just its GUI."""
+    def ready(wait):
+        try:
+            return subprocess.run(
+                ["docker", "info"], env=env, capture_output=True,
+                timeout=wait, check=False,
+            ).returncode == 0
+        except FileNotFoundError:
+            raise RuntimeError("Docker non trovato. Installa Docker Desktop e riapri VS Code.") from None
+        except subprocess.TimeoutExpired:
+            return False
+
+    if ready(5):
+        return
+    print("Docker non pronto: avvio Docker Desktop e attendo il motore...", flush=True)
+    launch_code = """
+$ErrorActionPreference = 'Stop'
+if (-not (Get-Process -Name 'Docker Desktop' -ErrorAction SilentlyContinue)) {
+    $candidates = @(
+        "$env:ProgramFiles\\Docker\\Docker\\Docker Desktop.exe",
+        "$env:LOCALAPPDATA\\Programs\\DockerDesktop\\Docker Desktop.exe"
+    )
+    $desktop = $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+    if (-not $desktop) { throw 'Docker Desktop non trovato. Installalo o avvialo manualmente e riprova.' }
+    Start-Process -FilePath $desktop -WindowStyle Hidden
+}
+"""
+    try:
+        powershell(launch_code)
+    except subprocess.CalledProcessError as error:
+        detail = (error.stderr or error.stdout or str(error)).strip()
+        raise RuntimeError(f"Avvio Docker Desktop fallito: {detail}") from None
+    deadline = time.monotonic() + timeout
+    while (remaining := deadline - time.monotonic()) > 0:
+        if ready(min(5, remaining)):
+            print("Docker pronto.", flush=True)
+            return
+        time.sleep(min(2, max(0, deadline - time.monotonic())))
+    raise RuntimeError(f"Docker non pronto dopo {timeout} secondi. Controlla Docker Desktop e riprova.")
+
+
 def start(args):
     env, elastic = configuration()
     if args.mock:
@@ -150,10 +192,11 @@ def start(args):
         es_port = int(env.get("ES_PORT", "9200"))
         if (elastic.port or 9200) != es_port:
             raise RuntimeError("ES_PORT e la porta di ELASTICSEARCH_URL non coincidono.") from None
+        ensure_docker(env)
         try:
             run(["docker", "compose", "--project-directory", str(ROOT), "--env-file", str(ROOT / ".env"), "-f", str(ROOT / "compose.yaml"), "up", "-d", "--wait", "elasticsearch"], env)
         except (FileNotFoundError, subprocess.CalledProcessError):
-            raise RuntimeError("Avvio Elasticsearch fallito. Avvia Docker Desktop e riprova.") from None
+            raise RuntimeError("Avvio Elasticsearch fallito. Controlla l'errore Docker Compose riportato sopra.") from None
     run([str(PYTHON), "-m", "wikinews_ir.cli", "annotation", "init"], env)
     if args.mock:
         run([str(PYTHON), "-m", "wikinews_ir.cli", "seed-demo"], env)

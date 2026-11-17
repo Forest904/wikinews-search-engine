@@ -7,8 +7,9 @@
   {% if error %}
   <section class="empty-state"><p class="eyebrow">Lettura non disponibile</p><h1>Articolo non disponibile</h1><p role="alert">Non è possibile aprire questo articolo in questo momento. Torna ai risultati oppure riprova più tardi.</p><a class="button secondary" href="">Riprova</a></section>
   {% else %}
-  <header class="article-heading"><p class="eyebrow">Dall'archivio Wikinotizie</p><h1>{{ article.title }}</h1>{% if source_url %}<a href="{{ source_url }}" rel="noopener noreferrer">Leggi la fonte su Wikinotizie ↗</a>{% endif %}</header>
+  <header id="article-start" class="article-heading" tabindex="-1"><p class="eyebrow">Dall'archivio Wikinotizie</p><h1>{{ article.title }}</h1>{% if source_url %}<a href="{{ source_url }}" rel="noopener noreferrer">Leggi la fonte su Wikinotizie ↗</a>{% endif %}</header>
   <article class="article-body">{{ article.body }}</article>
+  <nav class="reading-actions" aria-label="Navigazione articolo"><a href="{{ back_url }}">Torna ai risultati</a><a href="#article-start">Torna all’inizio</a></nav>
   <details class="article-metadata"><summary>Informazioni sul documento</summary><p class="small muted">Identificativo: {{ article.document_id }}</p></details>
   {% endif %}
 </main>

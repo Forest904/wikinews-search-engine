@@ -153,3 +153,19 @@ def test_article_routes(client, path, failure, expected):
             assert "Testo completo" in response.text
     finally:
         app.dependency_overrides.clear()
+
+
+def test_static_assets_change_url_with_content(client, monkeypatch):
+    from pathlib import Path
+
+    from wikinews_ir.api.routes import static_asset
+
+    original = static_asset("annotation.js")
+    response = client.get("/annotate")
+    assert original in response.text
+    assert client.get(original).status_code == 200
+    read_bytes = Path.read_bytes
+    monkeypatch.setattr(Path, "read_bytes", lambda path: read_bytes(path) + b"\n// changed" if path.name == "annotation.js" else read_bytes(path))
+    changed = static_asset("annotation.js")
+    assert changed != original
+    assert changed in client.get("/annotate").text

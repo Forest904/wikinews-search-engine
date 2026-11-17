@@ -6,17 +6,18 @@
   <form id="search-form" role="search">
     <label for="q">Cerca nelle notizie</label>
     <div class="search-row"><input id="q" name="q" type="search" placeholder="Es. terremoto in Abruzzo" minlength="1" maxlength="250" required><button class="primary" type="submit">Cerca</button></div>
-    <details id="search-options" class="search-options"><summary>Opzioni di ricerca <span id="profile-summary" class="muted">Standard · E0</span></summary>
+    <details id="search-options" class="search-options"><summary>Opzioni di ricerca <span id="profile-summary" class="muted">Standard</span></summary>
       <label for="profile">Modalità di ricerca</label>
       {% set names = {'E0':'Standard','E1':'Analisi italiana','E2':'Priorità al titolo','E3':'Tolleranza ai refusi','E4':'Frasi'} %}
-      <select id="profile" name="profile" aria-describedby="profile-help">{% for profile in profiles %}<option value="{{ profile }}">{{ names.get(profile, profile) }} · {{ profile }}</option>{% endfor %}</select>
+      <select id="profile" name="profile" aria-describedby="profile-help">{% for profile in profiles %}<option value="{{ profile }}">{{ names.get(profile, profile) }}</option>{% endfor %}</select>
       <p id="profile-help" class="small muted"></p>
     </details>
   </form>
   <div class="result-toolbar"><p id="status" role="status" aria-live="polite">Inserisci una parola per cercare nelle notizie.</p><button id="retry" class="secondary" hidden>Riprova</button></div>
   <div id="search-empty" class="empty-state"><h2>Da dove vuoi iniziare?</h2><p>Prova un argomento o il nome di una città.</p><div class="suggestions"><button type="button" data-query="energia solare" class="secondary">Energia solare</button><button type="button" data-query="Roma" class="secondary">Roma</button><button type="button" data-query="esplorazione spaziale" class="secondary">Esplorazione spaziale</button></div></div>
+  <section id="no-results" class="empty-state" hidden><h2>Nessuna notizia trovata</h2><p>Prova meno parole o una ricerca più generale.</p><div class="suggestions"><button id="edit-search" class="secondary" type="button">Modifica la ricerca</button><button id="standard-search" class="secondary" type="button">Prova la modalità Standard</button></div></section>
   <ol id="results" aria-label="Risultati della ricerca"></ol>
   <nav id="pagination" class="pagination" aria-label="Paginazione" hidden><button id="previous" class="secondary" type="button" disabled>Precedente</button><span id="page-status"></span><button id="next" class="secondary" type="button" disabled>Successiva</button></nav>
 </main>
 {% endblock %}
-{% block scripts %}<script src="/static/app.js" defer></script>{% endblock %}
+{% block scripts %}<script src="{{ static_asset('app.js') }}" defer></script>{% endblock %}

@@ -1,5 +1,6 @@
 """HTTP endpoints for the initial demo. No dump ingestion in API requests."""
 
+import hashlib
 import sqlite3
 from pathlib import Path
 from urllib.parse import urlencode, urlsplit
@@ -24,6 +25,16 @@ router = APIRouter()
 templates = Jinja2Templates(
     directory=str(Path(__file__).resolve().parent.parent / "web" / "templates")
 )
+
+
+def static_asset(filename: str) -> str:
+    """Change asset URLs when their contents change, including during local reload."""
+    asset = Path(__file__).resolve().parent.parent / "web" / "static" / filename
+    version = hashlib.sha256(asset.read_bytes()).hexdigest()[:16]
+    return f"/static/{filename}?v={version}"
+
+
+templates.env.globals["static_asset"] = static_asset
 
 
 def engine(request: Request) -> RetrievalEngine:
