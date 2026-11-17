@@ -17,7 +17,7 @@ def client():
 def test_home_page_loads_without_elasticsearch(client):
     response = client.get("/")
     assert response.status_code == 200
-    assert "Ricerca Wikinotizie" in response.text
+    assert "NewsFinder" in response.text
 
 
 def test_openapi_contains_search(client):

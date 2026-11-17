@@ -1,112 +1,227 @@
 "use strict";
-const form = document.querySelector('#search-form');
-const status = document.querySelector('#status');
-const results = document.querySelector('#results');
-const button = form.querySelector('button');
-const previous = document.querySelector('#previous');
-const next = document.querySelector('#next');
-const pageStatus = document.querySelector('#page-status');
-const pagination = document.querySelector('#pagination');
-const empty = document.querySelector('#search-empty');
-const retry = document.querySelector('#retry');
-let currentPage = 1, pageSize = 10, controller = null;
-const descriptions = {
-  E0: 'Cerca le parole nel titolo e nel testo delle notizie.',
-  E1: 'Riconosce le varianti delle parole italiane, nel titolo e nel testo.',
-  E2: 'Dà più importanza alle parole presenti nel titolo.',
-  E3: 'Dà più importanza al titolo e include parole simili per tollerare piccoli refusi.',
-  E4: 'Premia le parole vicine. Esempio: "energia solare" Italia. Ogni frase tra virgolette deve comparire; le virgolette hanno effetto solo in questa modalità.'
+const form = document.querySelector("#search-form"),
+  results = document.querySelector("#results"),
+  status = document.querySelector("#status"),
+  pagination = document.querySelector("#pagination");
+let page = 1,
+  controller = null;
+const help = {
+  E0: "Cerca nel titolo e nel testo.",
+  E1: "Riconosce varianti delle parole italiane.",
+  E2: "Dà più importanza al titolo.",
+  E3: "Include parole simili per piccoli refusi.",
+  E4: "Premia le parole vicine e riconosce le frasi tra virgolette.",
 };
 function profileHelp() {
-  document.querySelector('#profile-summary').textContent = form.elements.profile.selectedOptions[0].textContent;
-  document.querySelector('#profile-help').textContent = `${descriptions[form.elements.profile.value] || ''} Profilo ${form.elements.profile.value}.`;
+  document.querySelector("#profile-summary").textContent =
+    form.elements.profile.selectedOptions[0].textContent;
+  document.querySelector("#profile-help").textContent =
+    help[form.elements.profile.value] +
+    " Profilo " +
+    form.elements.profile.value +
+    ".";
+}
+function segments(el, parts, fallback) {
+  if (!parts?.length) {
+    el.textContent = fallback;
+    return;
+  }
+  for (const part of parts) {
+    const n = part.highlighted
+      ? document.createElement("mark")
+      : document.createTextNode("");
+    n.textContent = part.text;
+    el.append(n);
+  }
+}
+function show(mode) {
+  document.querySelector("#foot-status").textContent = "";
+  setNavigation(mode);
+  const saved = mode === "saved",
+    search = mode === "results";
+  document.querySelector("#main").classList.toggle("has-results", search);
+  document.querySelector("#main").classList.toggle("show-saved", saved);
+  document.querySelector("#results-view").hidden = !search;
+  document.querySelector("#saved-view").hidden = !saved;
+  document.querySelector("#crumb-current").textContent = saved
+    ? "Salvati"
+    : search
+      ? "Risultati"
+      : "Home";
+}
+function savedView() {
+  show("saved");
+  const list = document.querySelector("#saved-results");
+  list.replaceChildren();
+  const items = savedItems();
+  document.querySelector("#saved-empty").hidden = items.length > 0;
+  for (const item of items) {
+    const li = document.createElement("li"),
+      icon = document.createElement("span"),
+      copy = document.createElement("div"),
+      a = document.createElement("a"),
+      b = document.createElement("button");
+    icon.className = "doc-icon";
+    icon.append(explorerIcon("doc"));
+    copy.className = "result-copy";
+    a.textContent = item.title;
+    a.href = "/articles/" + encodeURIComponent(item.id) + "?view=saved";
+    b.className = "save-button";
+    b.type = "button";
+    b.dataset.id = item.id;
+    b.dataset.title = item.title;
+    b.dataset.url = item.url;
+    const excerpt = document.createElement("p");
+    excerpt.textContent = item.snippet || "";
+    copy.append(a, excerpt);
+    li.append(icon, copy, b);
+    list.append(li);
+  }
+  document.querySelector("#foot-status").textContent =
+    `${items.length} documenti salvati`;
+  refreshSaved();
+  restoreListPosition();
 }
 function restore() {
-  const params = new URLSearchParams(location.search);
-  form.elements.q.value = params.get('q') || '';
-  form.elements.profile.value = [...form.elements.profile.options].some(o => o.value === params.get('profile')) ? params.get('profile') : 'E0';
-  currentPage = Number(params.get('page') || 1);
-  pageSize = Number(params.get('page_size') || 10);
-  profileHelp();
-}
-function initialState() {
-  document.querySelector('#no-results').hidden = true;
-  controller?.abort(); controller = null;
-  button.disabled = false;
-  results.removeAttribute('aria-busy');
-  results.replaceChildren(); pagination.hidden = true; retry.hidden = true; empty.hidden = false;
-  document.querySelector('#main').classList.remove('has-results');
-  status.className = ''; status.textContent = 'Inserisci una parola per cercare nelle notizie.';
-}
-async function search(historyMode = 'push') {
-  const query = form.elements.q.value.trim();
-  if (!query) {
-    if (historyMode === 'push') history.pushState(null, '', `/?profile=${form.elements.profile.value}`);
-    currentPage = 1; form.elements.q.value = ''; initialState(); return;
-  }
   controller?.abort();
-  const request = new AbortController(); controller = request;
-  const params = new URLSearchParams(new FormData(form));
-  params.set('q', query); params.set('page', currentPage); params.set('page_size', pageSize);
-  const url = `/?${params}`;
-  if (historyMode === 'push' && location.pathname + location.search !== url) history.pushState(null, '', url);
-  else if (historyMode === 'replace') history.replaceState(null, '', url);
-  document.querySelector('#main').classList.add('has-results');
-  document.querySelector('#no-results').hidden = true;
-  empty.hidden = true; retry.hidden = true; pagination.hidden = true;
-  previous.disabled = next.disabled = true; button.disabled = true;
-  results.replaceChildren(); results.setAttribute('aria-busy', 'true');
-  pageStatus.textContent = ''; status.className = ''; status.textContent = 'Ricerca in corso…';
+  controller = null;
+  const p = new URLSearchParams(location.search);
+  form.elements.q.value = p.get("q") || "";
+  form.elements.profile.value = p.get("profile") || "E0";
+  if (!form.elements.profile.value) form.elements.profile.value = "E0";
+  page = Math.max(1, Number(p.get("page")) || 1);
+  profileHelp();
+  if (p.get("view") === "saved") savedView();
+  else if (form.elements.q.value.trim()) search(false);
+  else show("home");
+}
+async function search(push = true) {
+  const q = form.elements.q.value.trim();
+  if (!q) {
+    show("home");
+    if (push) history.pushState(null, "", "/");
+    return;
+  }
+  show("results");
+  controller?.abort();
+  const request = new AbortController();
+  controller = request;
+  const params = new URLSearchParams({
+    q,
+    profile: form.elements.profile.value,
+    page: String(page),
+    page_size: new URLSearchParams(location.search).get("page_size") || "10",
+  });
+  if (push) history.pushState(null, "", `/?${params}`);
+  document.querySelector("#results-title").textContent = `Risultati per “${q}”`;
+  document.querySelector("#foot-status").textContent = "";
+  status.textContent = "Ricerca in corso…";
+  results.replaceChildren();
+  pagination.hidden = true;
+  document.querySelector("#no-results").hidden = true;
+  document.querySelector("#retry").hidden = true;
   try {
-    const response = await fetch(`/api/search?${params}`, {signal:request.signal});
+    const response = await fetch(`/api/search?${params}`, {
+      signal: request.signal,
+    });
     if (!response.ok) {
-      const messages = {404:'L’archivio non è disponibile. Riprova più tardi.',422:'Controlla la query e le opzioni di ricerca.',503:'Il servizio di ricerca non è disponibile. Riprova più tardi.'};
-      const error = response.status === 422 ? await response.json() : null;
-      throw new Error((typeof error?.detail === 'string' ? error.detail : null) || messages[response.status] || 'La ricerca non è riuscita. Riprova.');
+      const payload = await response.json().catch(() => ({}));
+      const messages = {
+        404: "L’archivio non è disponibile.",
+        422:
+          typeof payload.detail === "string"
+            ? payload.detail
+            : "Controlla la ricerca e le opzioni.",
+        503: "Il servizio di ricerca non è disponibile.",
+      };
+      throw Error(messages[response.status] || "Ricerca non riuscita.");
     }
     const data = await response.json();
+    document.querySelector("#standard-search").hidden = form.elements.profile.value === "E0";
     if (controller !== request) return;
-    document.querySelector('#no-results').hidden = data.total !== 0;
-    document.querySelector('#standard-search').hidden = form.elements.profile.value === 'E0';
-    status.textContent = data.total === 0 ? 'Nessun risultato. Prova con meno parole o modifica la modalità di ricerca.' : `${data.total.toLocaleString('it-IT')} ${data.total === 1 ? 'risultato' : 'risultati'}`;
-    status.title = `Tempo di ricerca: ${data.elapsed_ms} ms`;
-    const pages = Math.min(Math.ceil(data.total / data.page_size), Math.floor(10000 / data.page_size));
-    pageStatus.textContent = `Pagina ${data.page} di ${Math.max(pages,1)}` + (data.total > 10000 ? ' · Primi 10.000 risultati' : '');
-    pagination.hidden = pages <= 1;
-    previous.disabled = data.page <= 1; next.disabled = data.page >= pages;
-    results.start = (data.page - 1) * data.page_size + 1;
-    for (const [index,hit] of data.hits.entries()) {
-      const li = document.createElement('li'), link = document.createElement('a'), p = document.createElement('p');
-      const rank = document.createElement('span'); rank.className = 'result-rank'; rank.textContent = String(results.start + index);
-      rank.setAttribute('aria-hidden', 'true');
-      link.href = `/articles/${encodeURIComponent(hit.document_id)}?${params}`;
-      renderSegments(link, hit.title_segments, hit.title); renderSegments(p, hit.snippet_segments, hit.snippet);
-      li.append(rank,link,p); results.append(li);
+    status.textContent = data.total
+      ? `${data.total.toLocaleString("it-IT")} ${data.total === 1 ? "risultato" : "risultati"}`
+      : "Nessun risultato";
+    document.querySelector("#foot-status").textContent =
+      `Pagina ${data.page} · ${data.total} notizie`;
+    document.querySelector("#no-results").hidden = data.total !== 0;
+    for (const hit of data.hits) {
+      const li = document.createElement("li"),
+        icon = document.createElement("span"),
+        copy = document.createElement("div"),
+        a = document.createElement("a"),
+        p = document.createElement("p"),
+        b = document.createElement("button");
+      icon.className = "doc-icon";
+      icon.append(explorerIcon("doc"));
+      copy.className = "result-copy";
+      a.href = `/articles/${encodeURIComponent(hit.document_id)}?${params}`;
+      segments(a, hit.title_segments, hit.title);
+      segments(p, hit.snippet_segments, hit.snippet);
+      b.type = "button";
+      b.className = "save-button";
+      b.dataset.id = hit.document_id;
+      b.dataset.title = hit.title;
+      b.dataset.url = `/articles/${encodeURIComponent(hit.document_id)}`;
+      b.dataset.snippet = hit.snippet;
+      copy.append(a, p);
+      li.append(icon, copy, b);
+      results.append(li);
     }
-  } catch(error) {
-    if (error.name === 'AbortError' || controller !== request) return;
-    status.className = 'error'; status.textContent = error instanceof TypeError ? 'Impossibile contattare il servizio. Controlla la connessione e riprova.' : error.message;
-    retry.hidden = false;
-  } finally {
-    if (controller === request) { button.disabled = false; results.removeAttribute('aria-busy'); }
+    refreshSaved();
+    restoreListPosition();
+    const pages = Math.min(
+      Math.ceil(data.total / data.page_size),
+      Math.floor(10000 / data.page_size),
+    );
+    pagination.hidden = pages <= 1;
+    document.querySelector("#page-status").textContent =
+      `Pagina ${data.page} di ${pages}`;
+    document.querySelector("#previous").disabled = data.page <= 1;
+    document.querySelector("#next").disabled = data.page >= pages;
+  } catch (e) {
+    if (controller !== request || e.name === "AbortError") return;
+    status.textContent =
+      e instanceof TypeError
+        ? "Connessione non disponibile. Riprova."
+        : e.message;
+    document.querySelector("#retry").hidden = false;
   }
 }
-form.addEventListener('submit', event => { event.preventDefault(); currentPage = 1; search(); });
-form.elements.profile.addEventListener('change', () => { profileHelp(); currentPage = 1; if (form.elements.q.value.trim()) search(); });
-previous.addEventListener('click', () => { currentPage--; search(); document.querySelector('#main').scrollIntoView(); });
-next.addEventListener('click', () => { currentPage++; search(); document.querySelector('#main').scrollIntoView(); });
-retry.addEventListener('click', () => search('replace'));
-document.querySelectorAll('[data-query]').forEach(el => el.onclick = () => { form.elements.q.value = el.dataset.query; currentPage = 1; search(); });
-window.addEventListener('popstate', () => { restore(); if (form.elements.q.value.trim()) search('none'); else initialState(); });
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  page = 1;
+  search();
+});
+form.elements.profile.addEventListener("change", () => {
+  profileHelp();
+  page = 1;
+  if (form.elements.q.value.trim()) search();
+});
+document.querySelectorAll("[data-query]").forEach((b) =>
+  b.addEventListener("click", () => {
+    form.elements.q.value = b.dataset.query;
+    page = 1;
+    search();
+  }),
+);
+document.querySelector("#previous").onclick = () => {
+  page--;
+  search();
+  window.scrollTo(0, 0);
+};
+document.querySelector("#next").onclick = () => {
+  page++;
+  search();
+  window.scrollTo(0, 0);
+};
+document.querySelector("#retry").onclick = () => search(false);
+document.querySelector("#edit-search").onclick = () => form.elements.q.focus();
+document.querySelector("#standard-search").onclick = () => {
+  form.elements.profile.value = "E0";
+  profileHelp();
+  page = 1;
+  search();
+};
+window.addEventListener("popstate", restore);
 restore();
-if (form.elements.q.value.trim()) search('replace');
-function renderSegments(element, segments, fallback) {
-  if (!segments?.length) { element.textContent = fallback; return; }
-  for (const segment of segments) {
-    const node = segment.highlighted ? document.createElement('mark') : document.createTextNode('');
-    node.textContent = segment.text; element.append(node);
-  }
-}
-
-document.querySelector('#edit-search').onclick = () => { form.elements.q.focus(); form.elements.q.select(); };
-document.querySelector('#standard-search').onclick = () => { form.elements.profile.value = 'E0'; profileHelp(); currentPage = 1; search(); };

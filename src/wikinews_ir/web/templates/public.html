@@ -1,0 +1,48 @@
+{% extends "explorer.html" %}
+{% block ribbon %}<a href="/" class="ribbon-item">
+<svg class="icon" aria-hidden="true">
+<use href="/static/explorer-icons.svg#home">
+</use>
+</svg>
+<span>Home</span>
+</a>
+<a href="/?view=saved" class="ribbon-item">
+<svg class="icon" aria-hidden="true">
+<use href="/static/explorer-icons.svg#saved">
+</use>
+</svg>
+<span>Salvati <b id="saved-count">
+</b>
+</span>
+</a>
+<a href="/#folders" class="ribbon-item">
+<svg class="icon" aria-hidden="true">
+<use href="/static/explorer-icons.svg#topics">
+</use>
+</svg>
+<span>Argomenti</span>
+</a>
+{% endblock %}
+{% block ribbon_end %}
+<a class="staff-login" href="/annotate" aria-label="Accesso riservato a valutatori e coordinatori" title="Accesso riservato a valutatori e coordinatori">
+  <svg class="icon" aria-hidden="true"><use href="/static/explorer-icons.svg#lock"></use></svg>
+</a>
+{% endblock %}
+{% block sidebar %}
+<a href="/">
+<svg class="icon" aria-hidden="true">
+<use href="/static/explorer-icons.svg#home">
+</use>
+</svg>  Home</a>
+<a href="/#folders">
+<svg class="icon" aria-hidden="true">
+<use href="/static/explorer-icons.svg#topics">
+</use>
+</svg>  Argomenti</a>
+<a href="/?view=saved">
+<svg class="icon" aria-hidden="true">
+<use href="/static/explorer-icons.svg#saved">
+</use>
+</svg>  Salvati</a>
+{% endblock %}
+{% block scripts %}<script src="{{ static_asset('explorer-common.js') }}" defer></script>{% block public_scripts %}{% endblock %}{% endblock %}

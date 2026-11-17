@@ -315,3 +315,20 @@ tbody tr:last-child td{border:0}
 .abstain:hover{background:#f5d6d3}
 @media(prefers-reduced-motion:reduce){.remove-evidence svg{transition:none}}
 @media(max-width:700px){#topic-panel .context-heading{grid-template-columns:minmax(0,1fr)}#topic-panel #timer-slot{grid-column:1;grid-row:3;margin-left:0}}
+.work-area {--blue:#115f9f;--teal:#176da8;--border:#cad7e2;--surface:#f2f7fb}
+.work-area .workspace {background:#f5f8fb}
+.work-area .app-shell {flex:1;min-width:0;margin:0 auto;padding:20px clamp(12px,2vw,30px) 40px}
+.work-area .panel,.work-area .login-card,.work-area .metric {border-radius:5px;border-color:var(--border)}
+.work-area .ribbon {align-items:stretch}
+.work-area #account {align-self:center;margin-left:auto;min-width:0}
+.work-area #user-name {overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.work-area .address button,.work-area .address>a {padding:0;min-height:30px}
+.work-area .login-card {box-shadow:0 4px 18px #1c3d5a12}
+.work-area .work-links {display:grid;align-content:start;gap:4px;padding:0;border:0;background:none;margin:0}
+.work-area .work-links button,.work-area #sidebar a {white-space:normal;text-align:left;justify-content:start;padding:8px 6px;border:0;border-radius:3px;font-size:14px;line-height:1.35;font-weight:500;background:transparent}
+.work-area .work-links button[aria-pressed=true],.work-area #sidebar a[aria-current] {background:#d6ebff}
+.work-area:not(:has(#workspace:not([hidden]))) :is(#sidebar,.sidebar-rail,.mobile-menu),.work-area:has(#account[hidden]) .ribbon-item[href="/annotate"] {display:none}
+@media(min-width:701px){.work-area .workspace:not(.sidebar-closed) :is(.inline-nav,.work-toolbar){display:none}}
+@media(max-width:700px){.work-area .ribbon-item{min-width:0;padding-inline:6px}.work-area #account{gap:3px}.work-area #logout{padding:4px}.work-area .app-shell{padding:12px}.work-area .mobile-menu{min-width:30px;padding:4px}}
+.work-links .tabs{display:grid;gap:3px}
+@media(max-width:700px){.work-area:has(#sidebar.open) .inline-nav{display:none}}

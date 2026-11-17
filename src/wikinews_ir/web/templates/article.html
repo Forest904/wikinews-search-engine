@@ -1,16 +1,33 @@
-{% extends "base.html" %}
-{% block title %}{{ article.title if article else 'Articolo non disponibile' }}{% endblock %}
-{% block search_active %}aria-current="page"{% endblock %}
-{% block main %}
-<main id="main" class="reading-shell">
-  <a class="back-link" href="{{ back_url }}">Torna ai risultati</a>
-  {% if error %}
-  <section class="empty-state"><p class="eyebrow">Lettura non disponibile</p><h1>Articolo non disponibile</h1><p role="alert">Non è possibile aprire questo articolo in questo momento. Torna ai risultati oppure riprova più tardi.</p><a class="button secondary" href="">Riprova</a></section>
-  {% else %}
-  <header id="article-start" class="article-heading" tabindex="-1"><p class="eyebrow">Dall'archivio Wikinotizie</p><h1>{{ article.title }}</h1>{% if source_url %}<a href="{{ source_url }}" rel="noopener noreferrer">Leggi la fonte su Wikinotizie ↗</a>{% endif %}</header>
-  <article class="article-body">{{ article.body }}</article>
-  <nav class="reading-actions" aria-label="Navigazione articolo"><a href="{{ back_url }}">Torna ai risultati</a><a href="#article-start">Torna all’inizio</a></nav>
-  <details class="article-metadata"><summary>Informazioni sul documento</summary><p class="small muted">Identificativo: {{ article.document_id }}</p></details>
-  {% endif %}
-</main>
-{% endblock %}
+{% extends "public.html" %}
+{% block title %}{{ article.title if article else 'Articolo non disponibile' }} · NewsFinder{% endblock %}
+{% block crumbs %}
+{% if saved_origin or query %}<a href="{{ back_url }}">{{ 'Salvati' if saved_origin else 'Risultati' }}</a>
+<span>›</span>{% endif %}<span>Articolo</span>{% endblock %}
+{% block main %}<main id="main" class="content article-content">
+<form id="article-search" action="/" method="get" role="search">
+<input type="search" name="q" value="{{ query }}" placeholder="Cerca nell'archivio…" aria-label="Cerca nell'archivio" required>
+<input type="hidden" name="profile" value="{{ profile }}">
+<button>Cerca</button>
+</form>
+<div class="article-tools">
+<a class="back-link" href="{{ back_url }}">{{ back_label }}</a>{% if article %}<button class="save-button" type="button" data-id="{{ article.document_id }}" data-title="{{ article.title }}" data-url="{{ request.url.path }}">Salva</button>{% endif %}</div>{% if error %}<div class="empty-state">
+<h1>Articolo non disponibile</h1>
+<p role="alert">Impossibile aprire il documento. Riprova più tardi.</p>
+</div>{% else %}<div class="reader-layout">
+<article class="document">
+<div id="article-start" class="document-label">DOCUMENTO · WIKINOTIZIE</div>
+<h1>{{ article.title }}</h1>
+<div class="article-body">{{ article.body }}</div>
+<nav class="reading-actions" aria-label="Navigazione articolo">
+<a href="{{ back_url }}">{{ back_label }}</a> <a href="#article-start">↑ Torna all'inizio</a>
+</nav>
+</article>
+<details class="properties" open>
+<summary>Proprietà documento</summary>
+<dl>
+<dt>Archivio</dt>
+<dd>Wikinotizie</dd>
+<dt>Identificativo</dt>
+<dd>{{ article.document_id }}</dd>
+</dl>{% if source_url %}<a href="{{ source_url }}" rel="noopener noreferrer">Apri la fonte ↗</a>{% endif %}</details>
+</div>{% endif %}</main>{% endblock %}

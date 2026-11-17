@@ -1,23 +1,79 @@
-{% extends "base.html" %}
-{% block search_active %}aria-current="page"{% endblock %}
-{% block main %}
-<main id="main" class="search-shell">
-  <header class="search-heading"><p class="eyebrow">Esplora l'archivio</p><h1>Ricerca Wikinotizie</h1><p class="muted">Una parola, un luogo, un avvenimento. Ritrova le notizie che cerchi.</p></header>
-  <form id="search-form" role="search">
-    <label for="q">Cerca nelle notizie</label>
-    <div class="search-row"><input id="q" name="q" type="search" placeholder="Es. terremoto in Abruzzo" minlength="1" maxlength="250" required><button class="primary" type="submit">Cerca</button></div>
-    <details id="search-options" class="search-options"><summary>Opzioni di ricerca <span id="profile-summary" class="muted">Standard</span></summary>
-      <label for="profile">Modalità di ricerca</label>
-      {% set names = {'E0':'Standard','E1':'Analisi italiana','E2':'Priorità al titolo','E3':'Tolleranza ai refusi','E4':'Frasi'} %}
-      <select id="profile" name="profile" aria-describedby="profile-help">{% for profile in profiles %}<option value="{{ profile }}">{{ names.get(profile, profile) }}</option>{% endfor %}</select>
-      <p id="profile-help" class="small muted"></p>
-    </details>
-  </form>
-  <div class="result-toolbar"><p id="status" role="status" aria-live="polite">Inserisci una parola per cercare nelle notizie.</p><button id="retry" class="secondary" hidden>Riprova</button></div>
-  <div id="search-empty" class="empty-state"><h2>Da dove vuoi iniziare?</h2><p>Prova un argomento o il nome di una città.</p><div class="suggestions"><button type="button" data-query="energia solare" class="secondary">Energia solare</button><button type="button" data-query="Roma" class="secondary">Roma</button><button type="button" data-query="esplorazione spaziale" class="secondary">Esplorazione spaziale</button></div></div>
-  <section id="no-results" class="empty-state" hidden><h2>Nessuna notizia trovata</h2><p>Prova meno parole o una ricerca più generale.</p><div class="suggestions"><button id="edit-search" class="secondary" type="button">Modifica la ricerca</button><button id="standard-search" class="secondary" type="button">Prova la modalità Standard</button></div></section>
-  <ol id="results" aria-label="Risultati della ricerca"></ol>
-  <nav id="pagination" class="pagination" aria-label="Paginazione" hidden><button id="previous" class="secondary" type="button" disabled>Precedente</button><span id="page-status"></span><button id="next" class="secondary" type="button" disabled>Successiva</button></nav>
-</main>
-{% endblock %}
-{% block scripts %}<script src="{{ static_asset('app.js') }}" defer></script>{% endblock %}
+{% extends "public.html" %}
+{% block crumbs %}<span id="crumb-current">Home</span>{% endblock %}
+{% block main %}<main id="main" class="content home">
+<section id="hero">
+<img src="/static/images/newsfinder/brand.webp" srcset="/static/images/newsfinder/brand@2x.webp 2x" alt="" width="128" height="128">
+<h1>News<span>Finder</span>
+</h1>
+</section>
+<form id="search-form" role="search">
+<label for="q" class="sr-only">Cerca nelle notizie</label>
+<div class="search-row">
+<svg class="icon" aria-hidden="true">
+<use href="/static/explorer-icons.svg#search">
+</use>
+</svg>
+<input id="q" name="q" type="search" placeholder="Cerca notizie, luoghi, argomenti…" maxlength="250" required>
+<button type="submit">Cerca</button>
+</div>
+<details id="search-options">
+<summary>Opzioni di ricerca <span id="profile-summary">Standard</span>
+</summary>
+<label for="profile">Modalità di ricerca</label>
+<select id="profile" name="profile">{% set names = {'E0':'Standard','E1':'Analisi italiana','E2':'Priorità al titolo','E3':'Tolleranza ai refusi','E4':'Frasi'} %}
+{% for profile in profiles %}<option value="{{ profile }}">{{ names.get(profile,profile) }}</option>{% endfor %}</select>
+<p id="profile-help">
+</p>
+</details>
+</form>
+<section id="home-content">
+<h2 id="folders">Cartelle da esplorare</h2>
+<div class="folders">{% for name in ['politica','tecnologia','economia','sport'] %}<button type="button" data-query="{{ name }}">
+<img src="/static/images/newsfinder/{{ name }}.webp" srcset="/static/images/newsfinder/{{ name }}@2x.webp 2x" alt="" width="96" height="96">
+<span>{{ name|capitalize }}</span>
+</button>{% endfor %}</div>
+<p class="popular">Ricerche suggerite: <button data-query="energia solare">Energia solare</button>
+<button data-query="Roma">Roma</button>
+<button data-query="esplorazione spaziale">Esplorazione spaziale</button>
+</p>
+</section>
+<section id="saved-view" hidden>
+<h1>Documenti salvati</h1>
+<p>Le notizie che hai conservato in questo browser.</p>
+<ol id="saved-results" class="result-list">
+</ol>
+<div id="saved-empty" class="empty-state">
+<img src="/static/images/newsfinder/salvati.webp" srcset="/static/images/newsfinder/salvati@2x.webp 2x" alt="" width="140">
+<h2>La cartella è vuota</h2>
+<p>Salva una notizia dai risultati o dall'articolo.</p>
+</div>
+</section>
+<section id="results-view" hidden>
+<header class="results-heading">
+<div>
+<h1 id="results-title">Risultati di ricerca</h1>
+<p id="status" role="status" aria-live="polite">
+</p>
+</div>
+<span class="sort">Ordine: rilevanza</span>
+</header>
+<button id="retry" type="button" hidden>Riprova</button>
+<section id="no-results" class="empty-state" hidden>
+<img src="/static/images/newsfinder/vuoto.webp" srcset="/static/images/newsfinder/vuoto@2x.webp 2x" alt="" width="140">
+<h2>Nessuna notizia trovata</h2>
+<p>Prova con meno parole o una ricerca più generale.</p>
+<button id="edit-search" type="button">Modifica la ricerca</button>
+<button id="standard-search" type="button">Modalità Standard</button>
+</section>
+<ol id="results" class="result-list" aria-label="Risultati della ricerca">
+</ol>
+<nav id="pagination" class="pagination" aria-label="Paginazione" hidden>
+<button id="previous" type="button">Precedente</button>
+<span id="page-status">
+</span>
+<button id="next" type="button">Successiva</button>
+</nav>
+</section>
+</main>{% endblock %}
+{% block public_scripts %}<script src="{{ static_asset('app.js') }}" defer>
+</script>{% endblock %}

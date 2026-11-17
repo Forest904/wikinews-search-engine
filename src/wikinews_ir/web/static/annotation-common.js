@@ -73,3 +73,18 @@ window.Annotation = (() => {
   }
   return {$, api, message, element, start};
 })();
+const queueTabs = document.querySelector(".work-toolbar .tabs");
+if (queueTabs) {
+  const toolbar = queueTabs.parentElement;
+  const links = document.querySelector(".work-links");
+  const shell = document.querySelector(".workspace");
+  const desktop = matchMedia("(min-width:701px)");
+  function placeQueueTabs() {
+    const target = ((desktop.matches && !shell.classList.contains("sidebar-closed")) || (!desktop.matches && links.closest("#sidebar").classList.contains("open"))) ? links : toolbar;
+    if (queueTabs.parentElement !== target) target.append(queueTabs);
+  }
+  new MutationObserver(placeQueueTabs).observe(shell, {attributes:true,attributeFilter:["class"]});
+  new MutationObserver(placeQueueTabs).observe(links.closest("#sidebar"), {attributes:true,attributeFilter:["class"]});
+  desktop.addEventListener("change",placeQueueTabs);
+  placeQueueTabs();
+}

@@ -4,7 +4,7 @@
 {% block content %}
 <section id="workspace" hidden>
   <div class="page-heading"><div><p class="eyebrow">Gestione della raccolta</p><h1>Coordinamento</h1><p class="muted">Prepara i blocchi, segui l'avanzamento e assegna le revisioni indipendenti.</p></div><button id="refresh" class="secondary">Aggiorna</button></div>
-  <nav class="coord-nav" aria-label="Sezioni del coordinamento"><a href="#panoramica">Panoramica</a><a href="#assegnazioni">Assegnazioni</a><a href="#revisioni">Revisioni</a><a href="#esportazione">Esportazione</a></nav>
+  <nav class="coord-nav inline-nav" aria-label="Sezioni del coordinamento"><a href="#panoramica">Panoramica</a><a href="#assegnazioni">Assegnazioni</a><a href="#revisioni">Revisioni</a><a href="#esportazione">Esportazione</a></nav>
   <section id="panoramica" class="coord-section" tabindex="-1"><div class="section-feedback notice" aria-live="polite"></div>
   <div class="summary-grid"><div class="metric"><span>Attività assegnate</span><strong id="total-assigned">0</strong></div><div class="metric"><span>Annotazioni completate</span><strong id="total-completed">0</strong></div><div class="metric"><span>Revisioni pendenti</span><strong id="total-reviews">0</strong></div><div class="metric"><span>Coppie finalizzate</span><strong id="total-finalized">0</strong></div></div>
   <section class="panel"><div class="section-label"><h2>Avanzamento dei valutatori</h2><span class="small muted">Solo conteggi, senza etichette individuali</span></div><div class="table-scroll"><table><thead><tr><th>Valutatore</th><th>Avanzamento</th><th>Totale</th><th>Da iniziare</th><th>Giudicati</th><th>Astensioni</th><th>Rinviati</th></tr></thead><tbody id="progress-table"></tbody></table></div></section>

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}NewsFinder{% endblock %}</title>
+{% block base_styles %}{% endblock %}
+<link rel="stylesheet" href="{{ static_asset('explorer.css') }}">
+{% block styles %}{% endblock %}
+</head>
+<body class="{% block area %}public-area{% endblock %}">
+<a class="skip" href="#main">Vai al contenuto</a>
+<div class="window">
+<header class="ribbon">
+{% block ribbon %}{% endblock %}
+<button class="mobile-menu" id="menu-button" aria-controls="sidebar" type="button" aria-label="Apri navigazione" aria-expanded="false">
+<svg class="icon" aria-hidden="true">
+<use href="/static/explorer-icons.svg#menu">
+</use>
+</svg>
+</button>
+{% block ribbon_end %}{% endblock %}
+</header>
+<nav class="address" aria-label="Percorso">
+<button type="button" onclick="history.back()" aria-label="Indietro">
+<svg class="icon" aria-hidden="true">
+<use href="/static/explorer-icons.svg#back">
+</use>
+</svg>
+</button>
+<a href="{{ back_url|default('/') }}" aria-label="Livello superiore">
+<svg class="icon" aria-hidden="true">
+<use href="/static/explorer-icons.svg#up">
+</use>
+</svg>
+</a>
+<div class="breadcrumbs">
+<a href="/">NewsFinder</a>
+<span aria-hidden="true">›</span>{% block crumbs %}
+{% endblock %}</div>
+<button type="button" onclick="location.reload()" aria-label="Ricarica pagina">
+<svg class="icon" aria-hidden="true">
+<use href="/static/explorer-icons.svg#refresh">
+</use>
+</svg>
+</button>
+</nav>
+<div class="workspace">
+<aside id="sidebar">{% block sidebar %}{% endblock %}</aside>
+<div class="sidebar-rail">
+  <div id="sidebar-resize" role="separator" aria-label="Larghezza navigazione" aria-controls="sidebar" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="300" aria-valuenow="160" tabindex="0"></div>
+  <button id="sidebar-toggle" type="button" aria-controls="sidebar" aria-expanded="true" aria-label="Chiudi navigazione"><span aria-hidden="true">&#8249;</span></button>
+</div>
+{% block main %}
+{% endblock %}</div>
+<footer class="statusbar">NewsFinder · Archivio Wikinotizie <span id="foot-status">
+</span>
+</footer>
+</div>
+<script src="{{ static_asset('explorer-shell.js') }}" defer>
+</script>{% block scripts %}
+{% endblock %}</body>
+</html>

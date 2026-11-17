@@ -119,7 +119,16 @@ def article_page(
     page: int = Query(default=1, ge=1), page_size: int = Query(default=10, ge=1, le=100),
     backend: RetrievalEngine = Depends(engine),
 ):
-    context = {"back_url": "/?" + urlencode({"q": q, "profile": profile, "page": page, "page_size": page_size})}
+    saved_origin = request.query_params.get("view") == "saved"
+    back_url = "/"
+    back_label = "Home"
+    if saved_origin:
+        back_url, back_label = "/?view=saved", "Torna ai salvati"
+    elif q:
+        back_url = "/?" + urlencode(dict(q=q, profile=profile, page=page, page_size=page_size))
+        back_label = "Torna ai risultati"
+    context = dict(back_url=back_url, back_label=back_label, query=q,
+                   profile=profile, saved_origin=saved_origin)
     try:
         item = backend.get_article(document_id, profile)
     except (ArticleNotFound, SearchIndexMissing, RetrievalUnavailable) as exc:

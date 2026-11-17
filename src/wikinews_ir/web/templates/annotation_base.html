@@ -1,12 +1,33 @@
-{% extends "base.html" %}
-{% block title %}Area valutatori{% endblock %}
+{% extends "explorer.html" %}
+{% set coordinating = request.url.path == '/coordinate' %}
+{% block area %}work-area{% endblock %}
+{% block title %}Valutazione · NewsFinder{% endblock %}
+{% block base_styles %}<link rel="stylesheet" href="{{ static_asset('common.css') }}">{% endblock %}
 {% block styles %}<link rel="stylesheet" href="{{ static_asset('annotation.css') }}">{% endblock %}
-{% block coordinator_nav %}<a href="/coordinate" id="coordinate-link" hidden {% block coordinate_active %}{% endblock %}>Coordinamento</a>{% endblock %}
-{% block account %}<div id="account" hidden><span id="user-name"></span><button id="logout" class="quiet">Esci</button></div>{% endblock %}
+{% block ribbon %}
+{% for url,icon,label in [('/','home','Ricerca'),('/annotate','doc','Valutazione'),('/coordinate','topics','Coordinamento')] %}
+<a class="ribbon-item" href="{{ url }}" {% if url == request.url.path %}aria-current="page"{% endif %} {% if url == '/coordinate' %}id="coordinate-link" hidden{% endif %}>
+<svg class="icon" aria-hidden="true"><use href="/static/explorer-icons.svg#{{ icon }}"></use></svg><span>{{ label }}</span></a>
+{% endfor %}
+<div id="account" hidden><span id="user-name"></span><button id="logout" class="secondary">Esci</button></div>
+{% endblock %}
+{% block crumbs %}<span>{{ 'Coordinamento' if coordinating else 'Valutazione' }}</span>{% endblock %}
+{% block sidebar %}
+{% if coordinating %}
+<nav class="coord-nav work-links" aria-label="Sezioni del coordinamento">
+{% for anchor,label in [('panoramica','Panoramica'),('assegnazioni','Assegnazioni'),('revisioni','Revisioni'),('esportazione','Esportazione')] %}
+<a href="#{{ anchor }}">{{ label }}</a>
+{% endfor %}
+</nav>
+{% else %}
+<nav class="work-links" aria-label="Code di lavoro">
+</nav>
+{% endif %}
+{% endblock %}
 {% block main %}
 <main id="main" class="app-shell">
   <section id="login-panel" class="login-card" hidden>
-    <p class="eyebrow">Area valutatori</p><h1>Riprendi da dove eri rimasto.</h1>
+    <img src="/static/images/newsfinder/brand.webp" alt="" width="64" height="64"><h1>Accedi a NewsFinder</h1>
     <p class="muted">Accedi per leggere i documenti e ritrovare le tue attività.</p>
     <form id="login"><label for="login-user">Nome utente</label><input id="login-user" name="user_id" autocomplete="username" required>
     <label for="login-password">Password</label><div class="password-row"><input id="login-password" name="password" type="password" autocomplete="current-password" required><button id="show-password" type="button" class="secondary" aria-pressed="false" aria-controls="login-password">Mostra</button></div>
