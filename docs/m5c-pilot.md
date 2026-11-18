@@ -1,14 +1,6 @@
 # M5-C — Pilot locale e congelamento
 
-Stato: strumenti implementati, materiali reali preparati, **raccolta umana non iniziata**.
-La preparazione locale non certifica il gate M5-C. Servono le valutazioni dei tre
-validatori, la discussione, misure complete e un piano di produzione sostenibile.
-La pubblicazione online rimane M7-A.
-
-Aggiornamento 16 novembre 2026: completata la prima prova silver indipendente,
-24 giudizi con modello dichiarato GPT-6.0-Astra, validati e importati.
-[Diario, risultati e artefatti](m5c-validation.md#diario--prima-raccolta-silver-indipendente-16-novembre-2026).
-Il confronto con i validatori e il congelamento restano pendenti.
+**M5-C chiusa il 18 novembre 2026.** È disponibile il pacchetto congelato per M5-D. La preparazione e il percorso cronometrato sono descritti sotto. Per questa versione si è adottata la modalità con stima dichiarata e revisione del coordinatore. [Risultati e manifest](m5c-validation.md#congelamento-di-produzione-del-18-novembre-2026).
 
 ## Materiali pronti
 
@@ -112,12 +104,16 @@ La stima usa il percentile 75 di lettura + compilazione, somma calibrazione e
 riunione già consumate, aggiunge riserva di revisione e letture in doppio.
 I tre scenari da 12/15/18 ore richiedono anche carichi individuali entro 4/5/6 ore.
 
-Tempi mancanti, segmenti incompleti e pilot non completato impediscono una stima
+Nel percorso cronometrato, tempi mancanti, segmenti incompleti e pilot non completato impediscono una stima
 utilizzabile per congelare. Non riempire i buchi con zero o con valori inventati:
 se non è possibile una misura completa, ripetere la sessione di calibrazione in
 un nuovo pacchetto/versione e documentare anche il costo già sostenuto. Questa
 versione del comando misura un singolo giro: eventuali giri aggiuntivi richiedono
 un consolidamento esplicito del budget prima del congelamento.
+
+### Percorso con stima dichiarata
+
+Per il primo pilot aggiungere a `benchmark pilot-report` l’opzione `--coordinator-review benchmarks/pilot/coordinator-review-v1.json`. Il report verifica il manifest sorgente, le 72 risposte e una decisione motivata per ciascun disaccordo. Conserva i tempi osservati e identifica separatamente la stima retrospettiva. Eseguire `benchmark budget` con `configs/evaluation/budget-approved.json`. Il piano approvato di produzione usa questa modalità. La revisione semantica delle famiglie da parte di Codex è dichiarata nel piano di congelamento.
 
 ## Congelamento successivo al pilot
 
@@ -137,12 +133,12 @@ conteggi e ai carichi del budget. Non attivare raccolta di produzione in anticip
 
 Copiare e compilare `configs/evaluation/freeze-example.json`. I percorsi sono
 relativi alla posizione del file piano. Il testo `semantic_overlap_review` deve
-documentare la revisione umana delle famiglie; il software controlla ID e hash,
+documentare la revisione delle famiglie e chi l’ha svolta; il software controlla ID e hash,
 non può certificare equivalenza semantica. Calibrare il prompt silver soltanto su
 calibrazione/development; indicare modello dichiarato oppure `unknown`.
 
 ```powershell
-uv run --locked wikinews-ir benchmark freeze --plan configs/evaluation/freeze-approved.json --output output/benchmark-frozen-v1
+uv run --locked wikinews-ir benchmark freeze --plan configs/evaluation/freeze-approved.json --output output/benchmark-frozen-v1.1
 ```
 
 L'output contiene `archive/` per il coordinatore e `packet/` cieco importabile.
@@ -155,7 +151,7 @@ Per attivare **esattamente** le assegnazioni gold congelate (senza assegnare le
 coppie solo silver), creare prima i tre account previsti dal piano e usare:
 
 ```powershell
-uv run --locked wikinews-ir annotation activate-freeze --freeze output/benchmark-frozen-v1 --actor valutatore-1
+uv run --locked wikinews-ir annotation activate-freeze --freeze output/benchmark-frozen-v1.1 --actor valutatore-1
 ```
 
 L'attore deve essere coordinatore. Import e attivazione sono idempotenti; una

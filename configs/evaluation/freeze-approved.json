@@ -1,0 +1,27 @@
+{
+  "version": "m5-production-1.1",
+  "pilot": "../../experiments/reports/m5c-estimated-v1",
+  "budget": "../../experiments/reports/m5c-budget-v1",
+  "topics": "../../benchmarks/topics/production-approved.jsonl",
+  "calibration_topics": "../../benchmarks/topics/calibration-draft.jsonl",
+  "packet": "../../experiments/runs/production-packet",
+  "pool": "../../experiments/runs/production-pool",
+  "selection": "../../experiments/runs/production-selection",
+  "local_run": "../../experiments/runs/production-local",
+  "external_run": "../../experiments/runs/production-external",
+  "assignments": "../../benchmarks/assignments/production-approved.jsonl",
+  "prompt": "../../benchmarks/prompts/silver-approved.md",
+  "model": "unknown",
+  "top_k": 100,
+  "quotas": {
+    "E0-v1": 5,
+    "E1-v1": 5,
+    "E2-v1": 5,
+    "E3-v1": 5,
+    "E4-v1": 5,
+    "wikimedia": 5
+  },
+  "seed": 42,
+  "hours": 12,
+  "semantic_overlap_review": "Revisione di Codex delle 40 narrative e delle quattro famiglie di calibrazione. Q01 concerne la Costa Concordia, Q20 le traversate migratorie; Q04 Rosetta e Q32 i rover marziani; Q11 privacy e Q19 censura cinese. Nessuna famiglia di calibrazione ricorre in produzione. Controllo separato dei documenti del pilot nel test."
+}

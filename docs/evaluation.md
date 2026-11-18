@@ -1,15 +1,6 @@
 # Benchmark M5-A — preparazione offline e silver Codex
 
-La preparazione locale M5-C è ora disponibile: [pilot e congelamento](m5c-pilot.md),
-[evidenze](m5c-validation.md). I comandi `pilot-report`, `budget` e `freeze`
-aggiungono misurazione e gate; il protocollo reale rimane draft fino al pilot umano.
-
-M5-A implementa contratti, pooling e pacchetti di giudizio. Il protocollo è **draft**:
-sono state importate le prime **24 silver di calibrazione**, senza gold consolidato
-o confronto umano/silver; [diario e risultati](m5c-validation.md#diario--prima-raccolta-silver-indipendente-16-novembre-2026). M5-B aggiunge
-la [UI di annotazione](annotation.md), verificata localmente; M5-C calibrazione e
-congelamento; M5-D raccoglierà i giudizi di produzione. Metriche e report
-sperimentali rimangono M6. Evidenze locali: [m5a-validation.md](m5a-validation.md).
+Il benchmark di produzione M5-C è congelato. Il pilot comprende 24 riferimenti di calibrazione e 24 giudizi silver. La raccolta di produzione appartiene a M5-D e la valutazione sperimentale a M6. [Risultati e manifest del congelamento](m5c-validation.md#congelamento-di-produzione-del-18-novembre-2026).
 
 ## Identità e formati
 

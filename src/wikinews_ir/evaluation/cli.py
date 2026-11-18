@@ -15,7 +15,7 @@ def configure(subparsers):
         return p
 
     command("validate", ("topics", "protocol"))
-    command("pilot-report", ("source", "output"))
+    command("pilot-report", ("source", "output")).add_argument("--coordinator-review", type=Path)
     command("budget", ("report", "plan", "output"))
     command("freeze", ("plan", "output"))
     command("reconcile-pilot", ("pilot", "corpus", "output"))
@@ -31,6 +31,7 @@ def configure(subparsers):
     p = command("select", ("pool", "output"))
     p.add_argument("--quotas", type=Path, help="JSON object run_id -> quota per topic")
     p.add_argument("--seed", type=int)
+    p.add_argument("--exclude-pairs", type=Path)
     command("packet", ("topics", "protocol", "selection", "corpus", "output"))
     p = command("export-qrels", ("packet", "judgments", "output"))
     p.add_argument("--source", choices=("gold", "silver"), required=True)
@@ -62,7 +63,7 @@ def dispatch(args):
     if cmd in {"pilot-report", "budget", "freeze"}:
         from wikinews_ir.evaluation import pilot
         if cmd == "pilot-report":
-            return pilot.pilot_report(args.source, args.output)
+            return pilot.pilot_report(args.source, args.output, args.coordinator_review)
         if cmd == "budget":
             return pilot.budget(args.report, args.plan, args.output)
         return pilot.freeze(args.plan, args.output)
@@ -81,7 +82,7 @@ def dispatch(args):
         return b.pool(args.topics, args.corpus, args.runs, args.output)
     if cmd == "select":
         quotas = json.loads(args.quotas.read_text("utf-8")) if args.quotas else None
-        return b.select(args.pool, args.output, quotas, args.seed)
+        return b.select(args.pool, args.output, quotas, args.seed, args.exclude_pairs)
     if cmd == "packet":
         return b.packet(args.topics, args.protocol, args.selection, args.corpus, args.output)
     if cmd == "export-qrels":

@@ -1,0 +1,49 @@
+{
+  "provenance": "Stima retrospettiva comunicata dal coordinatore: tre persone, circa due minuti per documento. Decisioni accolte dal coordinatore su revisione assistita da Codex.",
+  "seconds_per_reading": 120,
+  "source_manifest_sha256": "dfae7043f3dfac07e297452d28c91fe1971a71153a76b3ae2427b024b06649ad",
+  "decisions": [
+    {
+      "query_id": "P01",
+      "document_id": "26210",
+      "grade": 1,
+      "rationale": "La notizia sul G8 riporta fondi per le zone terremotate e risparmi destinati alla ricostruzione."
+    },
+    {
+      "query_id": "P02",
+      "document_id": "11351",
+      "grade": 0,
+      "rationale": "La sinfonia è il tema centrale. Il riferimento alla produzione elettrica resta generico."
+    },
+    {
+      "query_id": "P02",
+      "document_id": "20928",
+      "grade": 0,
+      "rationale": "Bush riconosce la legittimità della richiesta iraniana. Il testo descrive negoziati e sanzioni, senza dettagli concreti sull’impiego civile."
+    },
+    {
+      "query_id": "P02",
+      "document_id": "21300",
+      "grade": 0,
+      "rationale": "La notizia riguarda un test militare. Il richiamo al nucleare civile figura tra gli articoli correlati."
+    },
+    {
+      "query_id": "P02",
+      "document_id": "20726",
+      "grade": 2,
+      "rationale": "Perdita nel circuito di raffreddamento e spegnimento controllato sono al centro della notizia su Krško."
+    },
+    {
+      "query_id": "P02",
+      "document_id": "32117",
+      "grade": 2,
+      "rationale": "Guasto al raffreddamento, esplosione ed evacuazione descrivono direttamente l’incidente di Fukushima."
+    },
+    {
+      "query_id": "P04",
+      "document_id": "24134",
+      "grade": 0,
+      "rationale": "Il testo colloca l’alluvione di Cagliari il 22 ottobre 2008. Il periodo richiesto è il 2010–2014 incluso."
+    }
+  ]
+}

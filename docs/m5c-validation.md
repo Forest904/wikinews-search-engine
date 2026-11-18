@@ -145,18 +145,52 @@ dei voti non misura la qualità dei sistemi E0–E4 e il campione diagnostico no
 rappresentativo. Nessun accordo gold/silver o metrica di retrieval è stato calcolato.
 La baseline Wikimedia live non è ancora raccolta nel progetto.
 
-Prossimo passo: raccogliere le 72 valutazioni dei tre validatori sulle stesse
-24 coppie senza mostrare le silver, discutere i disaccordi e misurare i tempi.
-Solo successivamente rivedere rubriche e prompt, dimensionare la produzione,
-confermare i topic, raccogliere le run anche Wikimedia e congelare il protocollo.
+## Primo export di calibrazione del 18 novembre 2026
 
-## Gate ancora aperti
+Archivio locale in `data/annotation/exports/pilot-calibrazione-v1-export-01-2026-11-18.zip`, nella directory degli artefatti di annotazione esclusa da Git. SHA-256 verificato sulla copia e sull’originale `gold-calibration.zip`: `4e086d56f6b22b8d66cc616127b46339a40e3a15f954c1eae2713bc59b2d4f4d`.
 
-Occorrono 72 annotazioni umane indipendenti, tempi completi e discussione effettiva.
-Non esistono ancora stime reali sostenibili né un budget approvato. Quote e top-k
-di produzione, 40 topic definitivi, revisione delle famiglie, run Wikinotizie,
-prompt/modello silver calibrati e congelamento finale restano successivi al pilot.
-Il timer misura attività dichiarata, non attenzione. I controlli di hash non sono
-firme digitali e non certificano la veridicità dei dati dichiarati.
+Le 79 voci di cronologia corrispondono a 72 giudizi finali prendendo l’ultima versione per assegnazione. Tutti e tre i valutatori hanno giudicato le stesse 24 coppie. Astensioni e rinvii sono entrambi a zero. Prima della revisione, 17 coppie su 24 (70,8%) hanno tre voti identici. Nelle altre sette lo scarto massimo è un grado.
 
-Procedura completa: [m5c-pilot.md](m5c-pilot.md).
+### Decisioni di calibrazione
+
+Il coordinatore ha accolto la revisione proposta con assistenza di Codex, applicando la rubrica al testo degli articoli. Le decisioni sono documentate qui. Lo ZIP conserva i giudizi originali, con qrels, decisioni e verbali vuoti.
+
+| Topic | Documento | Voti (valutatori 1, 2, 3) | Grado adottato | Evidenza decisiva |
+|---|---:|---|---:|---|
+| P01 | 26210 | 0, 1, 1 | 1 | La notizia sul G8 riporta fondi per le zone terremotate e risparmi destinati alla ricostruzione. |
+| P02 | 11351 | 0, 0, 1 | 0 | La sinfonia è il tema centrale. Il riferimento alla produzione elettrica resta generico. |
+| P02 | 20928 | 0, 1, 1 | 0 | Bush riconosce la legittimità della richiesta iraniana. Il testo descrive negoziati e sanzioni, senza dettagli concreti sull’impiego civile. |
+| P02 | 21300 | 1, 0, 0 | 0 | La notizia riguarda un test militare. Il richiamo al nucleare civile figura tra gli articoli correlati. |
+| P02 | 20726 | 1, 2, 2 | 2 | Perdita nel circuito di raffreddamento e spegnimento controllato sono al centro della notizia su Krško. |
+| P02 | 32117 | 1, 2, 2 | 2 | Guasto al raffreddamento, esplosione ed evacuazione descrivono direttamente l’incidente di Fukushima. |
+| P04 | 24134 | 1, 0, 1 | 0 | Il testo colloca l’alluvione di Cagliari il 22 ottobre 2008. Il periodo richiesto è il 2010–2014 incluso. |
+
+### Tempi e gate aperti
+
+`timing.jsonl` è vuoto. La stima retrospettiva riferita dal coordinatore è circa 2 minuti per documento a persona, pari a circa 48 minuti per valutatore e 144 minuti-persona complessivi. Non si è svolta una discussione collegiale e non è stato redatto un verbale.
+
+## Congelamento di produzione del 18 novembre 2026
+
+Il coordinatore ha confermato tre annotatori umani. Prima della revisione, l’accordo esatto su 24 coppie è 18/24 tra 1 e 2, 18/24 tra 1 e 3 e 22/24 tra 2 e 3. I sette esiti adottati sono tracciati nella [revisione del coordinatore](../benchmarks/pilot/coordinator-review-v1.json).
+
+### Confronto silver
+
+I 24 identificativi coincidono tra fonti. La [tabella per coppia](../benchmarks/pilot/confronto-calibrazione-v1.tsv) conserva i voti originali, il riferimento adottato e il primo silver. La matrice riporta i conteggi.
+
+| Riferimento | Silver 0 | Silver 1 | Silver 2 |
+|---|---:|---:|---:|
+| 0 | 9 | 1 | 0 |
+| 1 | 0 | 1 | 1 |
+| 2 | 0 | 0 | 12 |
+
+22/24 coincidono (91,7%). Le due sovrastime di un grado riguardano il tema secondario nel pezzo sul G8 (P01/26210) e l’obiettivo generico di produzione elettrica nella notizia sulla sinfonia (P02/11351). Nessuna sottostima osservata. Il prompt di produzione chiarisce queste soglie e richiama il vincolo temporale essenziale emerso dalla revisione umana. Il dato descrive il prompt originale sul pilot. Il nuovo prompt è incluso nel pacchetto con checksum. Il modello per la futura sessione è registrato come `unknown`.
+
+### Budget e selezione congelati
+
+La modalità stimata usa la dichiarazione retrospettiva dei partecipanti. Dei 720 minuti-persona, 144 sono attribuiti al pilot, 456 alle 228 letture di produzione e 120 alla riserva di revisione. Ogni valutatore ha 76 letture e 4 ore complessive previste. Mantenendo fissi pilot e riserva, con 90, 120 e 150 secondi per lettura il totale passa da 10 h 06 a 12 h e 13 h 54. Lo scenario centrale esaurisce il tetto.
+
+Run E0–E4 e Wikinotizie live a profondità 100 sui 40 topic definitivi. Il pool comprende 6.173 coppie. Con seed 42 e quota 5 per topic e run, quattro coppie del test sono state escluse dal campionamento perché contengono documenti del pilot. Dopo la deduplicazione sono state selezionate 982 coppie per il pacchetto. Il gold copre 190 coppie (4 o 5 per ciascuno dei 40 topic), con 38 doppie su altrettanti topic. I topic sono percorsi a rotazione in ordine mescolato con seed 42. Per il gold, tra i candidati disponibili si privilegia la run usata meno spesso, poi il miglior rango. Le letture sono ripartite tra i valutatori con carico minimo. Il [piano di congelamento](../configs/evaluation/freeze-approved.json) registra split, provenienza della revisione semantica, parametri e percorsi delle evidenze.
+
+I manifest verificati sono in `output/benchmark-frozen-v1.1/archive` (coordinatore) e `output/benchmark-frozen-v1.1/packet` (cieco). SHA-256 dei rispettivi manifest: `014651b93dc76ef7c0767fe11a60262e7c13b77692a0715c90fac6efcd450677` e `cc8ab5c23c33d5802820834d5ab4a8970f9091fc2e9a8a437d4d07996aca8c77`. Conservare entrambe le directory locali. L’attivazione in produzione apre M5-D.
+
+La versione consegnata è m5-production-1.1. I riferimenti ai documenti esplorativi usati nella progettazione dei topic rimangono nell’archivio del coordinatore. Il pacchetto cieco omette queste note.

@@ -32,7 +32,7 @@ Regole di esecuzione:
 | M4-P — Benchmark prestazionale | Latenza di ricerca confrontabile per E0–E4 sul corpus reale | M4 | Completata localmente. Due sessioni, 400 richieste misurate, zero errori |
 | M5-A — Infrastruttura benchmark | Topic, pooling, schema giudizi, pacchetti silver Codex ed export | M3, M4 | Completata localmente su fixture; 48 coppie esterne riconciliate, nessun gold/silver reale |
 | M5-B — Strumento di annotazione | Pagina condivisa, assegnazioni e revisione | M5-A | Completata localmente su fixture: flusso multiutente, persistenza, revisione ed export verificati |
-| M5-C — Pilot e congelamento | Calibrazione, budget, topic e protocollo congelati | M5-A, M5-B; M7-A per pilot online | 24 silver di calibrazione importate; confronto umano, tempi e congelamento pendenti |
+| M5-C — Pilot e congelamento | Calibrazione, budget, topic e protocollo congelati | M5-A, M5-B; M7-A per pilot online | Completata il 18 novembre: confronto silver 22/24, budget stimato 12 ore, pacchetto congelato |
 | M5-D — Raccolta e consolidamento | Gold/silver separati e pool tracciabili | M5-C; M7-A per raccolta condivisa | Copertura prevista raggiunta e qualità annotazione controllata |
 | M6-A — Implementazione valutazione | Metriche, confronti e generazione report | M5-A | Calcoli verificati su fixture con risultati attesi |
 | M6-B — Esperimenti reali | Tuning development, confronto finale, error analysis | M4, M6-A; gold development per tuning, M5-D per finale | Test gold usato una volta secondo protocollo congelato |
@@ -262,23 +262,16 @@ reale raccolto. Guida in [annotation.md](annotation.md), evidenze in
   Questo risultato non completa la raccolta di produzione M5-D.
 
 - [x] Costruire **pilot di 4 topic**, uno per tipologia, usando strategia ibrida corpus/user-driven e riconciliando gli spunti esterni con il corpus M2.
-- [ ] Far giudicare indipendentemente un piccolo insieme comune ai tre validatori, poi discutere i disaccordi e correggere la rubrica prima della produzione.
-- [ ] Misurare tempi di lettura, annotazione e revisione; dimensionare coppie distinte e quota doppia nel budget di 12–18 ore, riservando tempo per calibrazione e adjudication.
-- [ ] Portare il benchmark al target di **40 topic**: 10 evento, 10 tema, 10 entità, 10 multi-vincolo. Stratificare temi e periodi; non copiare automaticamente query dai titoli.
-- [ ] Congelare split **24 development / 16 test** per famiglie, escludendo dal test i casi di calibrazione; documentare eventuali variazioni motivate dal pilot.
-- [ ] Fissare top-k, budget, quote di campionamento, copertura gold e doppia annotazione prima di osservare i giudizi di produzione; preservare gold su parte development e **tutti i topic di test**.
-- [ ] Eseguire e conservare run E0–E4 e ricerca Wikinotizie per i topic definitivi; congelare pool, testi, assegnazioni e manifest prima della raccolta.
-- [ ] Scegliere il modello nella chat Codex e congelare prompt e pacchetti sulla sola calibrazione/development prima del silver di produzione; registrare modello dichiarato o `unknown`, senza inventare un identificatore.
+- [x] Raccogliere i giudizi dei tre valutatori sulle 24 coppie comuni e documentare le decisioni del coordinatore sui disaccordi.
+- [x] Recepire nel protocollo la modalità di revisione adottata e confermare la rubrica prima della produzione.
+- [x] Adottare la stima retrospettiva di due minuti per lettura e dimensionare coppie distinte e quota doppia nel budget di 12–18 ore, riservando tempo per calibrazione e adjudication.
+- [x] Portare il benchmark al target di **40 topic**: 10 evento, 10 tema, 10 entità, 10 multi-vincolo. Stratificare temi e periodi; non copiare automaticamente query dai titoli.
+- [x] Congelare split **24 development / 16 test** per famiglie, escludendo dal test i casi di calibrazione; documentare eventuali variazioni motivate dal pilot.
+- [x] Fissare top-k, budget, quote di campionamento, copertura gold e doppia annotazione prima di osservare i giudizi di produzione; preservare gold su parte development e **tutti i topic di test**.
+- [x] Eseguire e conservare run E0–E4 e ricerca Wikinotizie per i topic definitivi; congelare pool, testi, assegnazioni e manifest prima della raccolta.
+- [x] Scegliere il modello nella chat Codex e congelare prompt e pacchetti sulla sola calibrazione/development prima del silver di produzione; registrare modello dichiarato o `unknown`, senza inventare un identificatore.
 
-**Gate M5-C:** ambiguità affrontate, tempi misurati, budget motivato e protocollo congelato. Una modifica successiva richiede nuova versione e analisi d'impatto sui giudizi già raccolti.
-
-**Stato: preparazione locale implementata e verificata (2026-11-16), gate non ancora
-superato.** Pacchetto reale di 24 coppie pronto per 72 annotazioni indipendenti;
-40 topic di produzione in bozza, run E0–E4 del pilot e pool di 151 coppie conservati.
-Timer, discussione tripla, report, budget e congelamento verificati su fixture.
-Nessun giudizio umano reale e nessun protocollo di produzione congelato. Procedura
-in [m5c-pilot.md](m5c-pilot.md), evidenze in [m5c-validation.md](m5c-validation.md),
-decisioni in [ADR 0007](decisions/0007-pilot-calibration.md).
+**M5-C completata il 18 novembre 2026.** Budget stimato, 190 coppie gold e 982 coppie nel pacchetto di produzione. Il congelamento è stato verificato sulle sei run reali. [Risultati e manifest](m5c-validation.md#congelamento-di-produzione-del-18-novembre-2026).
 
 ### M5-D — Raccolta e consolidamento in parallelo
 
@@ -409,7 +402,7 @@ M0–M4, M5-A e M5-B sono completate localmente. Il percorso di riferimento è:
 
 **Lavoro parallelo completato.** La baseline HTTP M4-P è disponibile per E0–E4 e può essere ripetuta durante il pilot e la raccolta gold/silver.
 
-**Gate immediato:** M7-A, scegliere hosting e pubblicare il flusso verificato localmente, con accessi e ripristino online. La raccolta massiva parte soltanto dopo il pilot e il congelamento; nessun dato sintetico sostituisce il benchmark reale.
+**Prossimo passo M5-D.** Attivare sul sito le assegnazioni congelate dopo aver verificato accessi e persistenza M7-A, quindi raccogliere gold e silver. M6-A può procedere in parallelo su fixture.
 
 ## 13. Tracciabilità tra requisito e milestone
 

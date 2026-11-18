@@ -65,6 +65,41 @@ def test_missing_timing_blocks_budget(tmp_path):
         budget(tmp_path / "report", tmp_path / "plan.json", tmp_path / "budget")
 
 
+def test_estimated_pilot_requires_documented_decisions(tmp_path):
+    source = tmp_path / "source"
+    pilot_export(source)
+    history = [json.loads(line) for line in (source / "history.jsonl").read_text().splitlines()]
+    history[0]["grade"] = 1
+    files = {p.name: p.read_text("utf-8") for p in source.iterdir() if p.name != "manifest.json"}
+    files.update({"history.jsonl": jsonl(history), "discussions.jsonl": "", "timing.jsonl": ""})
+    export = tmp_path / "untimed"
+    write_bundle(export, "annotation-gold-export", files)
+    review_path = tmp_path / "review.json"
+    review = {"seconds_per_reading": 120, "source_manifest_sha256": file_sha(export / "manifest.json"),
+              "provenance": "Stima dei partecipanti", "decisions": []}
+    review_path.write_text(encoded(review), "utf-8")
+    with pytest.raises(ValueError, match="disaccordi"):
+        pilot_report(export, tmp_path / "report", review_path)
+    review["decisions"] = [{k: history[0][k] for k in ("query_id", "document_id", "grade")}
+                           | {"rationale": "Informazione secondaria"}]
+    review_path.write_text(encoded(review), "utf-8")
+    pilot_report(export, tmp_path / "report", review_path)
+    result = read(tmp_path / "report/report.json")
+    assert result["ready_for_freeze"] and result["annotation_seconds"]["p75"] is None
+    assert len(result["missing_timing"]) == 72 and result["consumed_person_seconds"] == 0
+    plan = {"distinct_pairs": 190, "double_pairs": 38, "review_reserve_minutes": 120,
+            "annotations_per_user": {"a": 76, "b": 76, "c": 76}}
+    (tmp_path / "plan.json").write_text(encoded(plan), "utf-8")
+    budget(tmp_path / "report", tmp_path / "plan.json", tmp_path / "budget")
+    estimate = read(tmp_path / "budget/budget.json")
+    assert estimate["sensitivity_hours"] == {"90": 10.1, "120": 12, "150": 13.9}
+    assert estimate["total_hours_per_user"] == {"a": 4, "b": 4, "c": 4}
+    review["provenance"] = ""
+    review_path.write_text(encoded(review), "utf-8")
+    with pytest.raises(ValueError, match="provenienza"):
+        pilot_report(export, tmp_path / "invalid", review_path)
+
+
 def freeze_fixture(root):
     # Synthetic artifacts exercise the freeze mechanics; never evidence for the actual milestone.
     report = {"ready_for_freeze": True, "fixture": False, "calibration_families": ["cal-0"]}

@@ -25,7 +25,7 @@ def stats(values):
             "p75": values[math.ceil(.75 * len(values)) - 1] if values else None}
 
 
-def pilot_report(source, output):
+def pilot_report(source, output, coordinator_review=None):
     source = Path(source)
     manifest = verify_bundle(source, "annotation-gold-export")
     if not {"packet.json", "assignments.jsonl", "history.jsonl", "timing.jsonl",
@@ -99,6 +99,30 @@ def pilot_report(source, output):
         report["ready_for_freeze"] = False
     files = {"report.json": encoded(report),
              "source__manifest.json": (source / "manifest.json").read_text("utf-8")}
+    if coordinator_review is not None:
+        review = json.loads(Path(coordinator_review).read_text("utf-8"))
+        seconds = review.get("seconds_per_reading")
+        expected = {(p["query_id"], p["document_id"], u) for p in packet["pairs"] for u in users}
+        if (len(expected) != 72 or len(users) != 3 or len(assignments) != 72
+                or {key(r) for r in assignments} != expected or set(completed) != expected
+                or len(packet["topics"]) != 4 or len({t["type"] for t in packet["topics"]}) != 4
+                or any(r["status"] != "judged" for r in completed.values())
+                or review.get("source_manifest_sha256") != report["source_manifest_sha256"]
+                or not review.get("provenance", "").strip()
+                or type(seconds) not in (float, int) or not math.isfinite(seconds) or seconds <= 0):
+            raise ValueError("Stima o provenienza del pilot non valida")
+        disputed = {(q, d) for q, d in pairs if len({completed[q, d, u]["grade"] for u in users}) > 1}
+        decisions = review["decisions"]
+        if ({(r["query_id"], r["document_id"]) for r in decisions} != disputed
+                or len(decisions) != len(disputed)
+                or any(type(r["grade"]) is not int or r["grade"] not in (0, 1, 2)
+                       or not r["rationale"].strip() for r in decisions)):
+            raise ValueError("Revisione incompleta dei disaccordi")
+        report.update(kind="estimated-pilot", ready_for_freeze=True,
+                      estimated_seconds_per_reading=seconds,
+                      estimated_pilot_seconds_per_user={u: len(pairs) * seconds for u in users})
+        files["coordinator-review.json"] = encoded(review)
+        files["report.json"] = encoded(report)
     for name in manifest["artifacts"]:
         files["source__" + name] = (source / name).read_text("utf-8")
     return write_bundle(output, "pilot-report", files)
@@ -108,8 +132,10 @@ def budget(report_dir, plan_path, output):
     verify_bundle(report_dir, "pilot-report")
     report = json.loads((Path(report_dir) / "report.json").read_text("utf-8"))
     plan = json.loads(Path(plan_path).read_text("utf-8"))
-    p75 = report["annotation_seconds"]["p75"]
-    if not p75 or not report["ready_for_freeze"]:
+    estimated = report["kind"] == "estimated-pilot"
+    seconds = report["estimated_seconds_per_reading"] if estimated else report["annotation_seconds"]["p75"]
+    consumed = report["estimated_pilot_seconds_per_user"] if estimated else report["consumed_seconds_per_user"]
+    if not seconds or not report["ready_for_freeze"]:
         raise ValueError("Misure complete del pilot richieste")
     pairs, double = plan["distinct_pairs"], plan["double_pairs"]
     reserve = plan["review_reserve_minutes"]
@@ -119,18 +145,23 @@ def budget(report_dir, plan_path, output):
             or reserve <= 0 or len(loads) != 3 or sum(loads.values()) != pairs + double
             or any(type(n) is not int or n < 0 for n in loads.values())):
         raise ValueError("Piano budget non valido")
-    required = report["consumed_person_seconds"] + reserve * 60 + (pairs + double) * p75
+    fixed = sum(consumed.values()) + reserve * 60
+    required = fixed + (pairs + double) * seconds
     if set(loads) != set(report["consumed_seconds_per_user"]):
         raise ValueError("Gli utenti del budget devono corrispondere al pilot")
-    total_user = {u: (n * p75 + report["consumed_seconds_per_user"][u] + reserve * 60 / 3) / 3600
+    total_user = {u: (n * seconds + consumed[u] + reserve * 60 / 3) / 3600
                   for u, n in loads.items()}
-    result = {"plan": plan, "p75_seconds": p75, "required_person_hours": required / 3600,
-              "production_hours_per_user": {u: n * p75 / 3600 for u, n in loads.items()},
+    result = {"plan": plan, "p75_seconds": report["annotation_seconds"]["p75"],
+              "timing_basis": report["kind"], "required_person_hours": required / 3600,
+              "production_hours_per_user": {u: n * seconds / 3600 for u, n in loads.items()},
               "total_hours_per_user": total_user,
               "scenarios": [{"hours": h, "fits": required <= h * 3600 and
                              all(v <= h / 3 for v in total_user.values()),
                              "remaining_seconds": h * 3600 - required} for h in (12, 15, 18)],
               "pilot_manifest_sha256": file_sha(Path(report_dir) / "manifest.json")}
+    if estimated:
+        result["sensitivity_hours"] = {str(s): (fixed + (pairs + double) * s) / 3600
+                                       for s in (90, 120, 150)}
     return write_bundle(output, "pilot-budget", {"budget.json": encoded(result)})
 
 
@@ -241,6 +272,9 @@ def freeze(plan_path, output):
     if not paths["prompt"].read_text("utf-8").strip():
         raise ValueError("Prompt vuoto")
     packet["protocol"].update(version=plan["version"], status="frozen")
+    # Topic-design notes can identify the document that inspired the query.
+    for topic in packet["topics"]:
+        topic.pop("selection_rationale", None)
     validate_payload(packet)
     files = {"plan.json": encoded(plan), "packet.json": encoded(packet)}
     for name, path in paths.items():

@@ -182,11 +182,14 @@ def pool(topics_path, corpus, run_dirs, output):
     })
 
 
-def select(pool_dir, output, quotas=None, seed=None):
+def select(pool_dir, output, quotas=None, seed=None, exclude_pairs=None):
     manifest = verify_bundle(pool_dir, "pool")
     candidates = [Candidate.model_validate(r).model_dump()
                   for r in read_rows(Path(pool_dir) / "pool.jsonl")]
     chosen, allocations = {}, []
+    if exclude_pairs is not None:
+        excluded = {(r["query_id"], r["document_id"]) for r in read_rows(exclude_pairs)}
+        candidates = [r for r in candidates if (r["query_id"], r["document_id"]) not in excluded]
     if quotas is None:
         for row in candidates:
             row["selection"] = ["all"]
@@ -212,7 +215,8 @@ def select(pool_dir, output, quotas=None, seed=None):
         "selection.jsonl": jsonl([chosen[k] for k in sorted(chosen)]),
         "allocations.json": encoded(allocations),
     }, {**manifest["metadata"], "pool_manifest_sha256": file_sha(Path(pool_dir)/"manifest.json"),
-        "quotas": quotas, "seed": seed, "selected_pairs": len(chosen)})
+        "quotas": quotas, "seed": seed, "selected_pairs": len(chosen),
+        **({"excluded_pairs_sha256": file_sha(exclude_pairs)} if exclude_pairs else {})})
 
 
 def packet(topics_path, protocol_path, selection_dir, corpus, output):
