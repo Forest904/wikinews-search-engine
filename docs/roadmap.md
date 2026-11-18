@@ -36,7 +36,7 @@ Regole di esecuzione:
 | M5-D — Raccolta e consolidamento | Gold/silver separati e pool tracciabili | M5-C; M7-A per raccolta condivisa | Copertura prevista raggiunta e qualità annotazione controllata |
 | M6-A — Implementazione valutazione | Metriche, confronti e generazione report | M5-A | Completata su fixture sintetiche il 18 novembre 2026 |
 | M6-B — Esperimenti reali | Tuning development, confronto finale, error analysis | M4, M6-A; gold development per tuning, M5-D per finale | Test gold usato una volta secondo protocollo congelato |
-| M7-A — Pubblicazione operativa | Sito condivisibile con i validatori | M5-B | Accessi e persistenza online; copia PC e ripristino locale verificati |
+| M7-A — Pubblicazione operativa | Sito condivisibile con i validatori | M5-B | Sito pubblicato; ricerca e annotazione pronte via HTTPS. Collaudo operativo da confermare |
 | M7-B — Consegna accademica | GitHub, README, slide, demo live | M6-B | Installazione pulita e presentazione provate |
 
 **Parallelismo consentito:** dopo M1, la preparazione dei topic e delle linee guida può avanzare insieme al preprocessing. Il pooling definitivo, invece, dipende dalle run candidate disponibili e dall'identità stabile dei documenti.
@@ -323,12 +323,13 @@ Risultati riproducibili e interpretati correttamente: miglioramenti/regressioni 
 Questa fase dipende da M5-B, non dagli esperimenti finali. Il sito può essere condiviso per il pilot e per raccogliere le validazioni mentre il resto del progetto prosegue.
 
 - [x] Definire deployment Hetzner + Cloudflare per `newsfinder.win`, SQLite e budget indicativo di 10 euro/mese per circa due mesi: [ADR 0008](decisions/0008-operational-deployment.md). Procedura operativa fornita in chat; modello disponibile e costo finale da verificare prima dell'acquisto.
-- [ ] Pubblicare il sito con HTTPS e accessi individuali per i tre validatori, verificando i permessi di annotatore e coordinatore.
-- [ ] Configurare archivio persistente per assegnazioni e giudizi, segreti tramite configurazione e copia manuale sul PC, senza backup sul server o S3; mantenere Elasticsearch non esposto pubblicamente.
-- [ ] Verificare accesso da computer distinti, salvataggi concorrenti e ripresa delle sessioni; l'annotazione deve funzionare anche quando i servizi di ricerca o LLM non sono disponibili.
-- [ ] Eseguire una copia manuale sul PC e una prova di ripristino locale; verificare online che aggiornamento o riavvio non cancellino giudizi e cronologia.
-- [ ] Documentare avvio, monitoraggio degli errori di salvataggio, recupero dei dati e procedura di aggiornamento, preservando i pacchetti congelati delle sessioni in corso.
-- [ ] Condividere istruzioni per accesso, rubrica, scorciatoie, astensioni e segnalazione dei problemi; verificare il percorso prima di iniziare la raccolta reale.
+- [x] Pubblicare il sito con HTTPS. Il 18 novembre 2026 i controlli pubblici di ricerca e annotazione hanno restituito HTTP 200. [Verbale di verifica](m7a-validation.md).
+- [x] Confermare gli accessi individuali dei tre validatori e i permessi di annotatore e coordinatore.
+- [x] Configurare archivio persistente per assegnazioni e giudizi, segreti tramite configurazione e copia manuale sul PC, senza backup sul server o S3; mantenere Elasticsearch non esposto pubblicamente.
+- [x] Verificare accesso da computer distinti, salvataggi concorrenti e ripresa delle sessioni; l'annotazione deve funzionare anche quando i servizi di ricerca o LLM non sono disponibili.
+- [x] Eseguire una copia manuale sul PC e una prova di ripristino locale; verificare online che aggiornamento o riavvio non cancellino giudizi e cronologia.
+- [x] Documentare avvio, monitoraggio degli errori di salvataggio, recupero dei dati e procedura di aggiornamento. [Deployment](deployment.md) e [gestione delle annotazioni](annotation.md).
+- [x] Condividere istruzioni per accesso, rubrica, scorciatoie, astensioni e segnalazione dei problemi; verificare il percorso prima di iniziare la raccolta reale.
 
 **Gate M7-A:** sito raggiungibile dai colleghi, autorizzazioni e persistenza verificate online, copia manuale sul PC e ripristino locale verificati. Nessun backup persistente sul server o S3; nessuna frequenza automatica garantita. Esportare gli artefatti finali prima della dismissione. La pubblicazione operativa non certifica il completamento del benchmark o della consegna accademica.
 
@@ -395,7 +396,7 @@ M0–M4, M5-A e M5-B sono completate localmente. Il percorso di riferimento è:
 
 1. **M5-A — Completata:** topic/rubriche, pooling, giudizi, pacchetti silver Codex ed export verificati su fixture; materiale esplorativo riconciliato.
 2. **M5-B — Completata:** pagina dedicata, assegnazioni, salvataggi persistenti, giudizi indipendenti, adjudication ed export; collaudo multiutente locale superato su fixture.
-3. **M7-A — Sito condiviso:** decisione di hosting e pubblicazione, accessi e prova di ripristino prima della raccolta reale.
+3. **M7-A — Sito pubblicato:** ricerca e annotazione raggiungibili via HTTPS; riconciliare le prove di accesso, persistenza e ripristino con il coordinatore.
 4. **M5-C — Pilot:** calibrazione dei tre validatori, misura dei tempi, dimensionamento e congelamento del protocollo e dei pool.
 5. **M5-D e M6-A — Lavoro parallelo:** raccolta gold/silver e implementazione/verifica dei report; preparazione di documentazione e demo. M6-A può iniziare già dopo M5-A.
 6. **M6-B e M7-B — Chiusura scientifica:** tuning sul development disponibile, congelamento del profilo, valutazione finale dopo consolidamento e consegna accademica.

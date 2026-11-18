@@ -1,6 +1,15 @@
 # M7-A — Implementazione e verifiche
 
-Data: 2026-11-16. **Implementata localmente; pubblicazione e gate online pendenti.**
+**18 novembre 2026 — Sito pubblicato.** Verifica HTTPS sul dominio pubblico:
+
+| Endpoint | HTTP | Risposta |
+|---|---:|---|
+| `https://newsfinder.win/api/health` | 200 | `{"app":"ok","elasticsearch":"ready"}` |
+| `https://newsfinder.win/api/health/annotation` | 200 | `{"annotation":"ready"}` |
+
+Il precedente HTTP 503 della ricerca è superato. Le prove operative svolte direttamente dal coordinatore, tra cui accessi individuali e ripristino della copia PC, attendono conferma per chiudere il gate.
+
+## Stato iniziale del 16 novembre 2026
 
 Disponibili Compose produzione, Caddy, bootstrap Ubuntu, deploy per commit,
 health separati, log degli errori di scrittura senza payload e copia SQLite
@@ -25,7 +34,7 @@ concordato in [ADR 0008](decisions/0008-operational-deployment.md).
   senza Elasticsearch, riavvio del processo e snapshot su file con utenti
   preservati e `integrity_check=ok`. Non equivale al riavvio della VPS.
 
-## Gate ancora da eseguire sulla VPS
+## Checklist di produzione da riconciliare con le prove del coordinatore
 
 - [ ] Registrare modello, regione, prezzo IVA/IPv4 e commit pubblicato.
 - [ ] DNS proxied, Full (strict), certificato Origin CA, redirect e cache bypass.
