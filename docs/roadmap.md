@@ -34,7 +34,7 @@ Regole di esecuzione:
 | M5-B — Strumento di annotazione | Pagina condivisa, assegnazioni e revisione | M5-A | Completata localmente su fixture: flusso multiutente, persistenza, revisione ed export verificati |
 | M5-C — Pilot e congelamento | Calibrazione, budget, topic e protocollo congelati | M5-A, M5-B; M7-A per pilot online | Completata il 18 novembre: confronto silver 22/24, budget stimato 12 ore, pacchetto congelato |
 | M5-D — Raccolta e consolidamento | Gold/silver separati e pool tracciabili | M5-C; M7-A per raccolta condivisa | Copertura prevista raggiunta e qualità annotazione controllata |
-| M6-A — Implementazione valutazione | Metriche, confronti e generazione report | M5-A | Calcoli verificati su fixture con risultati attesi |
+| M6-A — Implementazione valutazione | Metriche, confronti e generazione report | M5-A | Completata su fixture sintetiche il 18 novembre 2026 |
 | M6-B — Esperimenti reali | Tuning development, confronto finale, error analysis | M4, M6-A; gold development per tuning, M5-D per finale | Test gold usato una volta secondo protocollo congelato |
 | M7-A — Pubblicazione operativa | Sito condivisibile con i validatori | M5-B | Accessi e persistenza online; copia PC e ripristino locale verificati |
 | M7-B — Consegna accademica | GitHub, README, slide, demo live | M6-B | Installazione pulita e presentazione provate |
@@ -292,11 +292,11 @@ Esistono topic, split, candidate pools, qrels gold e silver separati, ranking Wi
 
 ### M6-A — Implementazione valutazione senza attendere il gold
 
-- [ ] Implementare report `ir-measures`: nDCG@10, P@5 (soglia di rilevanza dichiarata), eventuale MRR@10.
-- [ ] Implementare copertura in top-k, analisi degli unjudged, confronto gold/silver sulle stesse coppie e generazione di tabelle/grafici con manifest.
-- [ ] Verificare calcoli e report con fixture sintetiche dai risultati attesi, inclusi giudizi mancanti e astensioni; distinguere chiaramente questi output dagli esperimenti reali.
+- [x] Implementare report `ir-measures`: nDCG@10, P@5 (soglia di rilevanza dichiarata), eventuale MRR@10.
+- [x] Implementare copertura in top-k, analisi degli unjudged, confronto gold/silver sulle stesse coppie e generazione di tabelle/grafici con manifest.
+- [x] Verificare calcoli e report con fixture sintetiche dai risultati attesi, inclusi giudizi mancanti e astensioni; distinguere chiaramente questi output dagli esperimenti reali.
 
-**Gate M6-A:** pipeline di valutazione pronta e verificata, anche con raccolta gold ancora in corso.
+**Gate M6-A superato il 18 novembre 2026.** Pipeline verificata su fixture sintetiche. [Risultati del collaudo](m6a-validation.md).
 
 ### M6-B — Esperimenti reali e valutazione finale
 
@@ -402,7 +402,7 @@ M0–M4, M5-A e M5-B sono completate localmente. Il percorso di riferimento è:
 
 **Lavoro parallelo completato.** La baseline HTTP M4-P è disponibile per E0–E4 e può essere ripetuta durante il pilot e la raccolta gold/silver.
 
-**Prossimo passo M5-D.** Attivare sul sito le assegnazioni congelate dopo aver verificato accessi e persistenza M7-A, quindi raccogliere gold e silver. M6-A può procedere in parallelo su fixture.
+**Prossimo passo M5-D.** Attivare sul sito le assegnazioni congelate dopo aver verificato accessi e persistenza M7-A, quindi raccogliere gold e silver. M6-A è stata verificata su fixture sintetiche.
 
 ## 13. Tracciabilità tra requisito e milestone
 

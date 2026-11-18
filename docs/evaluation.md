@@ -137,6 +137,42 @@ Gli export sono separati per split e il test richiede rilascio esplicito registr
 
 ## Verifica offline
 
+### Riprodurre il report M6-A
+
+Dalla radice del repository, in PowerShell, scegliere directory di destinazione nuove.
+
+```powershell
+$fixture = "output/m6a-fixture"
+uv run --locked python scripts/m6a_fixture.py $fixture
+uv run --locked wikinews-ir benchmark evaluate --topics "$fixture/topics.jsonl" --split development `
+  --runs "$fixture/profile" "$fixture/external" --gold "$fixture/gold" --silver "$fixture/silver" `
+  --fixture --output experiments/reports/m6a-fixture
+```
+
+Aprire `report.md` nella directory di output. Il comando accetta una o entrambe le fonti.
+Per gli esperimenti M6-B usare i topic completi corrispondenti alle run, scegliere lo split,
+passare le directory degli export consolidati e omettere `--fixture`. Per Wikimedia si valuta
+la proiezione TREC sul corpus già prodotta dall’esportatore. Per tutti i profili vale il rank
+esportato, anche quando più documenti hanno lo stesso score.
+
+- `metrics.tsv` contiene una riga per run, fonte e query. nDCG@10 usa i gradi 0–2.
+  P@5 divide sempre per 5 e considera rilevanti i gradi 1 e 2. MRR@10 considera gli stessi
+  gradi sui soli topic di tipo `event-specific`.
+- `summary.tsv` espone il denominatore di ogni macro-media. Un topic con almeno un grado
+  valido entra nel calcolo anche se la run è vuota. Un topic senza gradi ha metriche N/D.
+- `coverage.tsv` conta i risultati restituiti, giudicati e unjudged a 5 e 10. Le astensioni
+  identificabili sono un sottoinsieme degli unjudged. Per i qrels M5-A è disponibile solo
+  il totale delle astensioni dell’intero bundle. Il grafico divide il totale dei risultati
+  giudicati per il totale restituito a ciascun cutoff. Una lista vuota ha copertura N/D.
+- `confusion.tsv` usa righe gold e colonne silver. Il confronto considera l’intersezione
+  delle coppie con grado in entrambe le fonti. La macro-F1 media le tre classi con F1 zero
+  per una classe assente da entrambe. La kappa usa pesi lineari. `disagreements.tsv`
+  elenca le singole coppie discordanti.
+- `manifest.json` conserva checksum, fonti, split, versione di ir-measures, soglia,
+  cutoff e denominatori. Gli export originali mantengono la provenienza dei giudizi.
+
+### Controlli del repository
+
 ```powershell
 uv run --locked ruff check .
 uv run --locked pytest -m "not integration and not e2e"

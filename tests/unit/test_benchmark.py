@@ -95,6 +95,10 @@ def test_end_to_end_and_standalone(setup):
     assert report["judgments"][0]["evidence"][0]["start"] == 0
     s.import_silver(chat, path, root/"import", "reviewer", "session-1")
     s.export_qrels(chat, root/"import", root/"qrels", "silver")
+    from wikinews_ir.evaluation.report import evaluate
+    manifest = evaluate(setup["topics"], "calibration", [setup["runs"]], root/"evaluation",
+                        silver=root/"qrels", fixture=True)
+    assert manifest["metadata"]["sources"]["silver"]["bundle_abstentions"] == 1
     assert (root/"qrels"/"qrels_silver.tsv").read_text() == "Q1 0 1 2\nQ1 0 2 2\n"
     with pytest.raises(ValueError, match="esiste"):
         s.import_silver(chat, path, root/"import", "reviewer", "session-1")

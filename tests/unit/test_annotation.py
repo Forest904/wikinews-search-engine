@@ -257,6 +257,10 @@ def test_export_compatible_history_and_pending(setup, tmp_path):
     output = tmp_path / "export"
     write_export(snapshot, output)
     verify_bundle(output, "annotation-gold-export")
+    from wikinews_ir.evaluation.report_inputs import load_labels
+    ids = {t["query_id"] for t in snapshot["packet"]["topics"]}
+    assert load_labels(output, "gold", ids, ids, "calibration") == (
+        {("demo-energia", "demo-1"): 1}, set(), 0)
     qrels_manifest = json.loads((output / "qrels_manifest.json").read_text("utf-8"))
     assert qrels_manifest["metadata"]["judgments_sha256"] == file_sha(output / "judgments.jsonl")
     assert qrels_manifest["metadata"]["packet_sha256"] == file_sha(output / "packet.json")
