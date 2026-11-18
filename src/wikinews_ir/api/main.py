@@ -7,6 +7,8 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from wikinews_ir.adapters.live import LiveSearch
+from wikinews_ir.adapters.mediawiki import MediaWiki
 from wikinews_ir.api.annotation_routes import router as annotation_router
 from wikinews_ir.api.routes import router
 from wikinews_ir.retrieval.engine import RetrievalEngine
@@ -15,9 +17,12 @@ from wikinews_ir.retrieval.engine import RetrievalEngine
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.engine = RetrievalEngine()
+    api = MediaWiki()
+    app.state.wikinews = LiveSearch(api)
     try:
         yield
     finally:
+        api.close()
         app.state.engine.close()
 
 

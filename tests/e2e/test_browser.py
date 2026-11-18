@@ -1,3 +1,4 @@
+import re
 import socket
 import threading
 import time
@@ -107,9 +108,9 @@ def test_profile_pagination_and_restored_url(seeded_backend, browser_page):
         expect(page.locator("#results li")).to_have_count(1)
         page.get_by_role("button", name="Filtri").click()
         page.get_by_label("Modalità di ricerca").select_option("E0")
-        expect(page).to_have_url(__import__("re").compile("profile=E1"))
+        expect(page).to_have_url(re.compile("profile=E1"))
         page.get_by_role("button", name="Cerca", exact=True).click()
-        expect(page).to_have_url(__import__("re").compile("profile=E0"))
+        expect(page).to_have_url(re.compile("profile=E0"))
         expect(page.get_by_role("button", name="Successiva")).to_be_enabled()
         page.get_by_role("button", name="Successiva").click()
         expect(page.locator("#page-status")).to_contain_text("Pagina 2")
@@ -207,3 +208,43 @@ def test_search_history_recovery_and_responsive_layout(seeded_backend, browser_p
         expect(page.locator("#profile-help")).to_contain_text("virgolette")
         expect(page.locator("#profile option:checked")).to_have_text("Frasi")
         expect(page.locator("#profile-help")).to_contain_text("Profilo E4")
+
+
+@pytest.mark.parametrize("width", [390, 1280])
+def test_live_results_and_navigation(browser_page, width):
+    page = browser_page
+    page.set_viewport_size({"width": width, "height": 850})
+    hit = dict(document_id="42", pageid=42, title="Notizia", snippet="Testo",
+               url="https://it.wikinews.org/wiki/Notizia", local_url="/articles/42",
+               image=dict(url="https://thumb.wikimedia.org/test.png", width=320, height=240,
+                          source="https://commons.wikimedia.org/wiki/File:Test.png",
+                          license="Public domain", artist="Autore", license_url=""))
+    page.route("https://thumb.wikimedia.org/**", lambda route: route.fulfill(
+        content_type="image/svg+xml", body='<svg xmlns="http://www.w3.org/2000/svg"/>'))
+    page.route("**/api/search/live?*", lambda route: route.fulfill(json={
+        "total": 12, "hits": [hit, {**hit, "document_id": "43", "local_url": None, "image": None}],
+        "next_cursor": None if "cursor=" in route.request.url else "next"}))
+    backend = RetrievalEngine()
+    try:
+        with serve(backend) as url:
+            page.goto(url)
+            page.locator("#filters").click()
+            page.locator("[name=year_from]").fill("2005")
+            page.locator("#profile").select_option("live")
+            expect(page.locator("[name=year_from]")).to_be_disabled()
+            page.locator("#q").fill("test")
+            page.locator("#q").press("Enter")
+            expect(page.locator("#results li")).to_have_count(2)
+            expect(page.locator(".live-figure")).to_be_visible()
+            expect(page.locator(".result-copy > a").first).to_have_attribute("href", re.compile("/articles/42.*mode=live"))
+            expect(page.locator(".result-copy > a").last).to_have_attribute("href", hit["url"])
+            page.locator("#next").click()
+            expect(page.locator("#page-status")).to_have_text("Pagina 2")
+            page.go_back()
+            expect(page.locator("#page-status")).to_have_text("Pagina 1")
+            page.locator("#filters").click()
+            page.locator("#profile").select_option("E0")
+            expect(page.locator("[name=year_from]")).to_be_enabled()
+            expect(page.locator("[name=year_from]")).to_have_value("2005")
+    finally:
+        backend.close()

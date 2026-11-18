@@ -1,17 +1,22 @@
 """HTTP endpoints for the initial demo. No dump ingestion in API requests."""
 
+import asyncio
 import hashlib
 import sqlite3
+import time
 from datetime import date
 from pathlib import Path
 from urllib.parse import urlencode, urlsplit
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
 
+from wikinews_ir.adapters.live import continuation
 from wikinews_ir.annotation import database_path
+from wikinews_ir.api.schemas import LiveSearchResponse
 from wikinews_ir.models import Article, SearchRequest, SearchResponse
 from wikinews_ir.operations import check_annotation
 from wikinews_ir.reader import read_page
@@ -140,6 +145,31 @@ def search(
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
+@router.get("/api/search/live", response_model=LiveSearchResponse)
+async def live_search(request: Request, q: str = Query(min_length=1, max_length=250),
+                      cursor: str = Query("", max_length=512), backend=Depends(engine)):
+    q = q.strip()
+    if not q:
+        raise HTTPException(422, "Inserire una query")
+    try:
+        continuation(cursor)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    deadline = time.monotonic() + 5
+    try:
+        page = await request.app.state.wikinews.page(q, cursor, deadline - 0.6)
+    except (TimeoutError, httpx.HTTPError, ValueError, KeyError):
+        raise HTTPException(503, "Wikinotizie temporaneamente indisponibile") from None
+    ids = [hit["document_id"] for hit in page["hits"]]
+    remaining = max(0, deadline - time.monotonic())
+    try:
+        archived = await asyncio.wait_for(asyncio.to_thread(backend.archived_ids, ids, remaining), remaining)
+    except TimeoutError:
+        archived = set()
+    return {**page, "hits": [{**hit, "local_url": "/articles/" + hit["document_id"]
+                              if hit["document_id"] in archived else None} for hit in page["hits"]]}
+
+
 @router.get("/api/articles/{document_id}", response_model=Article)
 def article(document_id: str, profile: ProfileId = "E0",
             backend: RetrievalEngine = Depends(engine)):
@@ -166,6 +196,9 @@ def article_page(
     elif q:
         years = {k: request.query_params[k] for k in ("year_from", "year_to") if request.query_params.get(k)}
         back_url = "/?" + urlencode(dict(q=q, profile=profile, page=page, page_size=page_size, **years))
+        if request.query_params.get("mode") == "live":
+            back_url = "/?" + urlencode({k: request.query_params[k] for k in
+                ("q", "mode", "cursor", "page") if k in request.query_params})
         back_label = "Torna ai risultati"
     context = dict(back_url=back_url, back_label=back_label, query=q,
                    profile=profile, saved_origin=saved_origin)

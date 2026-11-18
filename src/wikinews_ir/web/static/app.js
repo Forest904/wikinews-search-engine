@@ -3,6 +3,7 @@ const form = document.querySelector("#search-form"),
   results = document.querySelector("#results"),
   status = document.querySelector("#status"),
   pagination = document.querySelector("#pagination");
+let nextCursor = null;
 let page = 1,
   controller = null;
 const publicationDateFormat = new Intl.DateTimeFormat("it-IT", {
@@ -28,6 +29,25 @@ function searchExcerpt(parts = []) {
   if (prefix.length <= 36) return parts;
   const context = prefix.slice(-36).replace(/^\S*\s+/, "");
   return [{text: "? " + context, highlighted: false}, ...parts.slice(match)];
+}
+function liveFigure(image) {
+  const figure = document.createElement("figure"), img = document.createElement("img");
+  const caption = document.createElement("figcaption"), source = document.createElement("a");
+  figure.className = "live-figure";
+  Object.assign(img, {src: image.url, width: image.width, height: image.height, alt: "", loading: "lazy"});
+  img.addEventListener("error", () => { figure.hidden = true; });
+  source.href = image.source;
+  source.textContent = "Scheda del file";
+  if (image.artist) caption.append(image.artist + " · ");
+  if (image.license_url) {
+    const license = document.createElement("a");
+    license.href = image.license_url;
+    license.textContent = image.license;
+    caption.append(license);
+  } else caption.append(image.license);
+  caption.append(" · ", source);
+  figure.append(img, caption);
+  return figure;
 }
 function show(mode) {
   document.querySelector("#foot-status").textContent = "";
@@ -77,24 +97,32 @@ function savedView() {
   refreshSaved();
   restoreListPosition();
 }
+function selectedProfile(params) {
+  return params.get("mode") === "live" ? "live" : params.get("profile") || "E0";
+}
 function restore() {
   controller?.abort();
   controller = null;
   const p = new URLSearchParams(location.search);
   form.elements.q.value = p.get("q") || "";
-  form.elements.profile.value = p.get("profile") || "E0";
+  form.elements.profile.value = selectedProfile(p);
   if (!form.elements.profile.value) form.elements.profile.value = "E0";
-  for (const name of ["year_from", "year_to"]) form.elements[name].value = p.get(name) || "";
+  for (const name of ["year_from", "year_to"]) {
+    form.elements[name].value = p.get(name) || history.state?.years?.[name] || "";
+  }
   form.elements.year_to.setCustomValidity("");
   page = Math.max(1, Number(p.get("page")) || 1);
   profileHelp();
   if (p.get("view") === "saved") savedView();
-  else if (form.elements.q.value.trim()) search(false);
+  else if (form.elements.q.value.trim()) search(false, p);
   else show("home");
 }
-async function search(push = true, applied = null) {
+async function search(push = true, applied = null, previousCursors = []) {
   const q = applied?.get("q") || form.elements.q.value.trim();
-  const profile = applied?.get("profile") || form.elements.profile.value;
+  const profile = applied
+    ? selectedProfile(applied)
+    : form.elements.profile.value;
+  const live = profile === "live";
   if (!q) {
     show("home");
     if (push) history.pushState(null, "", "/");
@@ -112,10 +140,20 @@ async function search(push = true, applied = null) {
   });
   for (const name of ["year_from", "year_to"]) {
     const value = applied ? applied.get(name) : form.elements[name].value;
-    if (value) params.set(name, value);
+    if (!live && value) params.set(name, value);
   }
-  if (push) history.pushState(null, "", `/?${params}`);
-  document.querySelector("#results-title").textContent = `Risultati per “${q}”`;
+  if (live) {
+    params.delete("profile");
+    params.delete("page_size");
+    params.set("mode", "live");
+    if (applied?.get("cursor")) params.set("cursor", applied.get("cursor"));
+  }
+  if (push) {
+    const years = {year_from: form.elements.year_from.value, year_to: form.elements.year_to.value};
+    history.pushState(live ? {years, previousCursors} : null, "", `/?${params}`);
+  }
+  const heading = live ? "Risultati da Wikinotizie" : "Risultati";
+  document.querySelector("#results-title").textContent = `${heading} per “${q}”`;
   document.querySelector("#foot-status").textContent = "";
   status.textContent = "Ricerca in corso…";
   results.replaceChildren();
@@ -123,7 +161,9 @@ async function search(push = true, applied = null) {
   document.querySelector("#no-results").hidden = true;
   document.querySelector("#retry").hidden = true;
   try {
-    const response = await fetch(`/api/search?${params}`, {
+    const apiParams = live ? new URLSearchParams({q}) : params;
+    if (live && params.has("cursor")) apiParams.set("cursor", params.get("cursor"));
+    const response = await fetch(`/api/search${live ? "/live" : ""}?${apiParams}`, {
       signal: request.signal,
     });
     if (!response.ok) {
@@ -139,14 +179,16 @@ async function search(push = true, applied = null) {
       throw Error(messages[response.status] || "Ricerca non riuscita.");
     }
     const data = await response.json();
-    document.querySelector("#standard-search").hidden = profile === "E0";
     if (controller !== request) return;
-    status.textContent = data.total
+    document.querySelector("#standard-search").hidden = profile === "E0";
+    if (live) data.page = page;
+    const hasHits = data.hits.length > 0;
+    status.textContent = hasHits
       ? `${data.total.toLocaleString("it-IT")} ${data.total === 1 ? "risultato" : "risultati"}`
       : "Nessun risultato";
     document.querySelector("#foot-status").textContent =
       `Pagina ${data.page} · ${data.total} notizie`;
-    document.querySelector("#no-results").hidden = data.total !== 0;
+    document.querySelector("#no-results").hidden = hasHits;
     for (const hit of data.hits) {
       const li = document.createElement("li"),
         icon = document.createElement("span"),
@@ -158,6 +200,7 @@ async function search(push = true, applied = null) {
       icon.append(explorerIcon("doc"));
       copy.className = "result-copy";
       a.href = `/articles/${encodeURIComponent(hit.document_id)}?${params}`;
+      if (live) a.href = hit.local_url ? hit.local_url + "?" + params : hit.url;
       segments(a, hit.title_segments, hit.title);
       segments(p, searchExcerpt(hit.snippet_segments), hit.snippet);
       b.type = "button";
@@ -173,11 +216,33 @@ async function search(push = true, applied = null) {
         copy.append(date);
       }
       copy.append(a, p);
-      li.append(icon, copy, b);
+      if (live) {
+        const destination = document.createElement("small");
+        destination.textContent = hit.local_url ? "Apri la copia in archivio" : "Apri su Wikinotizie";
+        if (hit.local_url) {
+          const current = document.createElement("a");
+          current.href = hit.url;
+          current.textContent = "Versione corrente";
+          destination.append(" · ", current);
+        }
+        copy.append(destination);
+        if (hit.image) copy.append(liveFigure(hit.image));
+      }
+      li.append(icon, copy);
+      if (!live || hit.local_url) li.append(b);
       results.append(li);
     }
     refreshSaved();
     restoreListPosition();
+    if (live) {
+      nextCursor = data.next_cursor;
+      const previous = Boolean(history.state?.previousCursors?.length);
+      pagination.hidden = !previous && !nextCursor;
+      document.querySelector("#page-status").textContent = `Pagina ${page}`;
+      document.querySelector("#previous").disabled = !previous;
+      document.querySelector("#next").disabled = !nextCursor;
+      return;
+    }
     const pages = Math.min(
       Math.ceil(data.total / data.page_size),
       Math.floor(10000 / data.page_size),
@@ -213,16 +278,21 @@ fetch("/archivio/cartelle-home")
     if (response.ok) document.querySelector("#home-folders").innerHTML = await response.text();
   })
   .catch(() => {}); // Keep the ordinary archive link when offline.
-document.querySelector("#previous").onclick = () => {
-  page--;
-  search(true, new URLSearchParams(location.search));
+function turnPage(step) {
+  const params = new URLSearchParams(location.search);
+  const previous = [...(history.state?.previousCursors || [])];
+  if (params.get("mode") === "live") {
+    const target = step > 0 ? nextCursor : previous.pop();
+    if (step > 0) previous.push(params.get("cursor"));
+    if (target) params.set("cursor", target);
+    else params.delete("cursor");
+  }
+  page += step;
+  search(true, params, previous);
   window.scrollTo(0, 0);
-};
-document.querySelector("#next").onclick = () => {
-  page++;
-  search(true, new URLSearchParams(location.search));
-  window.scrollTo(0, 0);
-};
+}
+document.querySelector("#previous").onclick = () => turnPage(-1);
+document.querySelector("#next").onclick = () => turnPage(1);
 document.querySelector("#retry").onclick = () => search(false, new URLSearchParams(location.search));
 document.querySelector("#edit-search").onclick = () => form.elements.q.focus();
 document.querySelector("#standard-search").onclick = () => {

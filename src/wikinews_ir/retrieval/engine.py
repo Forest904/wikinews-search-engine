@@ -154,6 +154,16 @@ class RetrievalEngine:
             elapsed_ms=int(result.get("took", 0)),
         )
 
+    def archived_ids(self, ids, timeout):
+        if not ids:
+            return set()
+        try:
+            result = self.client.options(request_timeout=timeout, max_retries=0).mget(
+                index=index_name(self.settings, "E0"), ids=ids, source=False)
+        except (ElasticsearchConnectionError, ConnectionTimeout, ApiError):
+            return set()
+        return {doc["_id"] for doc in result["docs"] if doc.get("found")}
+
     def get_article(self, document_id: str, profile: str = "E0") -> Article:
         try:
             meta = self.metadata(profile)

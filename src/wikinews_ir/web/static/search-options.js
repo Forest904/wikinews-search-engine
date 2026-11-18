@@ -8,11 +8,11 @@ const help = {
   E4: "Premia le parole vicine e riconosce le frasi tra virgolette.",
 };
 function profileHelp() {
-  document.querySelector("#profile-help").textContent =
-    help[searchForm.elements.profile.value] +
-    " Profilo " +
-    searchForm.elements.profile.value +
-    ".";
+  const live = searchForm.elements.profile.value === "live";
+  searchForm.querySelector(".year-range").disabled = live;
+  document.querySelector("#profile-help").textContent = live
+    ? "Cerca nel sito corrente. Il periodo di pubblicazione si applica solo alla ricerca in archivio."
+    : help[searchForm.elements.profile.value] + " Profilo " + searchForm.elements.profile.value + ".";
 }
 
 if (searchForm) {

@@ -33,6 +33,11 @@ def web_url(value, base=""):
     return ""
 
 
+def wikimedia_image_url(value):
+    url = web_url(value, "https://it.wikinews.org")
+    return url if url.startswith(("https://upload.wikimedia.org/", "https://thumb.wikimedia.org/")) else ""
+
+
 def destination(href, titles, base):
     url = web_url(href, base)
     parts = urlsplit(url)
@@ -114,7 +119,7 @@ def extract(markup, base, titles):
             name = unquote(img.get("resource")).removeprefix("./File:").replace("_", " ")
             if (not re.search(r"\.(jpe?g|png|webp)$", name, re.I)
                     or re.search(r"logo|icon|flag of|stemma|pictogram", name, re.I)
-                    or not img.get("src", "").startswith(("//upload.wikimedia.org/", "https://upload.wikimedia.org/"))):
+                    or not wikimedia_image_url(img.get("src"))):
                 return []
             caption = " ".join(el.xpath("string(figcaption)").split())
             figure = dict(tag="figure", file=name, caption=caption, alt=img.get("alt", ""))

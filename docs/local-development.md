@@ -113,3 +113,26 @@ python -m wikinews_ir.reader_build --enrich-only --user-agent "NewsFinder/1.0 (c
 ```
 
 La preparazione riporta il numero di pagine strutturate, figure candidate e immagini con crediti. Le richieste Wikimedia fallite restano da recuperare. Il lettore mostra una figura solo quando dispone dei suoi crediti. Il browser recupera la miniatura da Wikimedia. In produzione collocare il catalogo in `/opt/newsfinder/imports/reader/catalog.sqlite3`; per altre installazioni configurare `READER_CATALOG`. Il lettore usa il testo indicizzato se il catalogo manca o appartiene a un’altra revisione del corpus.
+
+
+## Ricerca live e accesso a Wikimedia
+
+In **Filtri > Modalità di ricerca > Cerca su Wikinotizie**, la ricerca usa il sito corrente.
+Il titolo apre la copia in archivio quando disponibile. La fonte della miniatura segue la vista:
+pagina corrente nei risultati live, figura della revisione del dump nel lettore locale.
+
+Il backend espone `GET /api/search/live?q=Sicilia`. Passare il valore opaco di `next_cursor`
+come `cursor` per la pagina successiva. Le pagine contengono fino a dieci risultati e sono
+memorizzate per due minuti per processo. Le immagini e il collegamento locale sono facoltativi.
+Un errore temporaneo della ricerca restituisce HTTP 503.
+
+Servizio, benchmark e catalogo usano `WIKIMEDIA_USER_AGENT`. Il valore predefinito identifica
+NewsFinder e indica la pagina delle issue del progetto come contatto. Le CLI accettano anche
+`--user-agent`. Per aggiornare i metadati delle immagini nel catalogo locale:
+
+```powershell
+uv run --locked python -m wikinews_ir.reader_build --enrich-only
+```
+
+La procedura conserva i crediti esistenti e riprende i lotti con errori temporanei.
+I file privi di crediti utilizzabili tornano verificabili dopo sette giorni.

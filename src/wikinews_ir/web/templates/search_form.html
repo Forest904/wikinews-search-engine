@@ -12,7 +12,7 @@
 <div id="search-options" hidden>
 <label for="profile">Modalità di ricerca</label>
 <select id="profile" name="profile">{% set names = {'E0':'Standard','E1':'Analisi italiana','E2':'Priorità al titolo','E3':'Tolleranza ai refusi','E4':'Frasi'} %}
-{% for profile in profiles %}<option value="{{ profile }}">{{ names.get(profile,profile) }}</option>{% endfor %}</select>
+{% for profile in profiles %}<option value="{{ profile }}">{{ names.get(profile,profile) }}</option>{% endfor %}<option value="live">Cerca su Wikinotizie</option></select>
 <p id="profile-help">
 </p>
 <fieldset class="year-range"><legend>Periodo di pubblicazione</legend>

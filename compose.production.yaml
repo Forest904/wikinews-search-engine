@@ -30,6 +30,7 @@ services:
     command: ["uvicorn", "wikinews_ir.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--proxy-headers", "--forwarded-allow-ips", "172.30.71.2", "--no-access-log"]
     environment:
       ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?Set Elasticsearch password}
+      WIKIMEDIA_USER_AGENT: ${WIKIMEDIA_USER_AGENT:-NewsFinder/1.0 (https://github.com/Forest904/wikinews-search-engine/issues)}
       ELASTICSEARCH_URL: http://elasticsearch:9200
       ANNOTATION_DB: ${ANNOTATION_DB:-/app/data/annotation/annotation.sqlite3}
       READER_CATALOG: /imports/reader/catalog.sqlite3

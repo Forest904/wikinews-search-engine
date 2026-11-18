@@ -8,17 +8,13 @@ from urllib.parse import quote
 
 import httpx
 
+from wikinews_ir.adapters.mediawiki import ENDPOINT, MediaWiki
 from wikinews_ir.evaluation.artifacts import encoded, file_sha, jsonl, write_bundle
 from wikinews_ir.evaluation.benchmark import corpus_data, load_topics
 
-ENDPOINT = "https://it.wikinews.org/w/api.php"
-
 
 def capture(topics, top_k, user_agent, client=None, sleep=time.sleep, audit=None):
-    if not user_agent or not user_agent.strip():
-        raise ValueError("User-Agent identificabile con contatto richiesto")
-    owned = client is None
-    client = client or httpx.Client(timeout=30)
+    api = MediaWiki(user_agent, client, sleep)
     pages = []
     audit = audit if audit is not None else []
     try:
@@ -29,34 +25,8 @@ def capture(topics, top_k, user_agent, client=None, sleep=time.sleep, audit=None
                 params = {"action": "query", "list": "search", "format": "json",
                           "formatversion": 2, "srnamespace": 0, "srsearch": topic["query"],
                           "srlimit": min(50, top_k - count), "maxlag": 5, **continuation}
-                for attempt in range(3):
-                    try:
-                        response = client.get(ENDPOINT, params=params,
-                                              headers={"User-Agent": user_agent})
-                        audit.append({"query_id": topic["query_id"], "params": params,
-                                      "at": datetime.now(UTC).isoformat(),
-                                      "status_code": response.status_code,
-                                      "response_text": response.text})
-                        if response.status_code == 429 or response.status_code >= 500:
-                            if attempt < 2:
-                                sleep(2 ** attempt)
-                                continue
-                        response.raise_for_status()
-                        data = response.json()
-                        if data.get("error", {}).get("code") in {"maxlag", "ratelimited"}:
-                            if attempt < 2:
-                                sleep(2 ** attempt)
-                                continue
-                        if "error" in data or "warnings" in data:
-                            raise ValueError(f"MediaWiki error/warning: {data}")
-                        break
-                    except httpx.TransportError as exc:
-                        audit.append({"query_id": topic["query_id"], "params": params,
-                                      "at": datetime.now(UTC).isoformat(),
-                                      "error": str(exc)})
-                        if attempt == 2:
-                            raise
-                        sleep(2 ** attempt)
+                data = api.query(params, audit=lambda entry: audit.append(
+                    {"query_id": topic["query_id"], **entry}))
                 hits = data["query"]["search"]
                 pages.append({"query_id": topic["query_id"], "params": params,
                               "captured_at": datetime.now(UTC).isoformat(), "response": data})
@@ -70,8 +40,7 @@ def capture(topics, top_k, user_agent, client=None, sleep=time.sleep, audit=None
                 continuation = data["continue"]
         return {"endpoint": ENDPOINT, "top_k": top_k, "pages": pages, "attempts": audit}
     finally:
-        if owned:
-            client.close()
+        api.close()
 
 
 def normalize(archive, topics, docs, top_k):

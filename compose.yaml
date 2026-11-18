@@ -25,6 +25,7 @@ services:
     profiles: ["full"]
     environment:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:?Define ELASTIC_PASSWORD in .env}
+      - WIKIMEDIA_USER_AGENT=${WIKIMEDIA_USER_AGENT:-NewsFinder/1.0 (https://github.com/Forest904/wikinews-search-engine/issues)}
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - ELASTICSEARCH_INDEX=wikinews_standard_v1
       - ANNOTATION_DB=/app/data/annotation/annotation.sqlite3

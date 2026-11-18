@@ -9,14 +9,15 @@ from contextlib import closing
 from pathlib import Path
 
 import httpx
-from bs4 import BeautifulSoup
 from lxml.etree import ParserError
 
-from wikinews_ir.adapters.wikimedia import ENDPOINT
+from wikinews_ir.adapters.images import credit as credit
+from wikinews_ir.adapters.images import fetch_images
+from wikinews_ir.adapters.mediawiki import MediaWiki
 from wikinews_ir.archive import classify
 from wikinews_ir.ingestion.corpus import checksum, records
 from wikinews_ir.ingestion.indexer import validate_corpus
-from wikinews_ir.reader import DEFAULT_PATH, extract, key, web_url
+from wikinews_ir.reader import DEFAULT_PATH, extract, key
 
 
 def revisions(dump, docs):
@@ -75,57 +76,33 @@ def build(db, corpus, dump, pilot):
         raise ValueError("Revisioni mancanti nel catalogo")
 
 
-def credit(info):
-    fields = info.get("extmetadata", {})
-    def plain(k):
-        value = fields.get(k, {}).get("value", "").strip()
-        if "<" in value or "&" in value:
-            return BeautifulSoup(value, "html.parser").get_text(" ", strip=True)
-        return value
-    artist = plain("Attribution") or plain("Artist")
-    license_name = plain("LicenseShortName")
-    license_url = web_url(plain("LicenseUrl"))
-    free = license_name.lower() in {"public domain", "cc0"} or (
-        license_url.startswith(("https://creativecommons.org/licenses/by/", "https://creativecommons.org/licenses/by-sa/",
-                                "https://creativecommons.org/publicdomain/")))
-    url = web_url(info.get("thumburl"))
-    source = web_url(info.get("descriptionurl"))
-    if not (free and license_name and source and url.startswith("https://upload.wikimedia.org/")
-            and (artist or license_name.lower() in {"public domain", "cc0"})):
-        return None
-    return dict(url=url, width=info["thumbwidth"], height=info["thumbheight"], artist=artist,
-                license=license_name, license_url=license_url, source=source)
-
-
 def enrich(db, user_agent):
-    names = [r[0] for r in db.execute("SELECT DISTINCT file FROM pages WHERE file IS NOT NULL "
-                                      "EXCEPT SELECT name FROM media ORDER BY 1")]
-    with httpx.Client(headers={"User-Agent": user_agent}, timeout=25) as client:
+    db.execute("""CREATE TABLE IF NOT EXISTS media_checks
+                  (name TEXT PRIMARY KEY, status TEXT, checked INTEGER)""")
+    names = [r[0] for r in db.execute("""SELECT DISTINCT p.file FROM pages p
+        LEFT JOIN media m ON m.name=p.file LEFT JOIN media_checks c ON c.name=p.file
+        WHERE p.file IS NOT NULL AND m.data IS NULL AND
+        (c.checked IS NULL OR c.status NOT IN ('credited','no_credit') OR c.checked <= unixepoch()-604800)
+        ORDER BY p.file""")]
+    api = MediaWiki(user_agent)
+    try:
         for offset in range(0, len(names), 25):
             batch = names[offset:offset+25]
-            response = client.get(ENDPOINT, params=dict(action="query", format="json", formatversion=2,
-                prop="imageinfo", iiprop="url|extmetadata", iiurlwidth=800, redirects=1, maxlag=5,
-                titles="|".join("File:" + n for n in batch)))
-            response.raise_for_status()
-            data = response.json()
-            if "error" in data:
-                raise ValueError(data["error"].get("code", "API error"))
-            query = data["query"]
-            aliases = {r["from"]: r["to"] for group in ("normalized","redirects") for r in query.get(group, [])}
-            pages = {p["title"]: p for p in query["pages"]}
-            for name in batch:
-                title = "File:" + name
-                seen = set()
-                while title in aliases and title not in seen:
-                    seen.add(title)
-                    title = aliases[title]
-                page = pages.get(title)
-                if page is None:
-                    continue
-                infos = page.get("imageinfo", [])
-                image = credit(infos[0]) if infos else None
-                db.execute("INSERT INTO media VALUES (?,?)", (name, json.dumps(image) if image else None))
+            try:
+                images = fetch_images(api, batch, 800)
+            except (httpx.HTTPError, ValueError):
+                db.executemany("INSERT OR REPLACE INTO media_checks VALUES (?, 'temporary', unixepoch())",
+                               [(name,) for name in batch])
+                db.commit()
+                raise
+            for name, image in images.items():
+                db.execute("INSERT OR REPLACE INTO media VALUES (?,?)",
+                           (name, json.dumps(image) if image else None))
+                db.execute("INSERT OR REPLACE INTO media_checks VALUES (?,?,unixepoch())",
+                           (name, "credited" if image else "no_credit"))
             db.commit()
+    finally:
+        api.close()
 
 
 def main():
@@ -135,7 +112,7 @@ def main():
     parser.add_argument("--output", type=Path, default=DEFAULT_PATH)
     parser.add_argument("--pilot", action="store_true")
     parser.add_argument("--enrich-only", action="store_true")
-    parser.add_argument("--user-agent", default="NewsFinder/1.0 (Wikinotizie archive reader)")
+    parser.add_argument("--user-agent")
     args = parser.parse_args()
     if not args.enrich_only and not args.dump:
         parser.error("--dump richiesto")
@@ -150,11 +127,15 @@ def main():
                     if args.enrich_only:
                         old.backup(db)
                     else:
+                        checks = old.execute("SELECT * FROM media_checks").fetchall() if old.execute(
+                            "SELECT 1 FROM sqlite_master WHERE name='media_checks'").fetchone() else []
                         cached = old.execute("SELECT name,data FROM media").fetchall()
             if not args.enrich_only:
                 build(db, args.corpus, args.dump, args.pilot)
                 if args.output.exists():
                     db.executemany("INSERT INTO media VALUES (?,?)", cached)
+                    db.execute("CREATE TABLE media_checks(name TEXT PRIMARY KEY, status TEXT, checked INTEGER)")
+                    db.executemany("INSERT INTO media_checks VALUES (?,?,?)", checks)
             db.commit()
             try:
                 enrich(db, args.user_agent)
