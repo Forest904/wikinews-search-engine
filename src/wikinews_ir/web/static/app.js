@@ -5,6 +5,9 @@ const form = document.querySelector("#search-form"),
   pagination = document.querySelector("#pagination");
 let page = 1,
   controller = null;
+const publicationDateFormat = new Intl.DateTimeFormat("it-IT", {
+  day: "numeric", month: "long", year: "numeric", timeZone: "UTC",
+});
 function segments(el, parts, fallback) {
   if (!parts?.length) {
     el.textContent = fallback;
@@ -17,6 +20,14 @@ function segments(el, parts, fallback) {
     n.textContent = part.text;
     el.append(n);
   }
+}
+function searchExcerpt(parts = []) {
+  const match = parts.findIndex(part => part.highlighted);
+  if (match < 1) return parts;
+  const prefix = parts.slice(0, match).map(part => part.text).join("");
+  if (prefix.length <= 36) return parts;
+  const context = prefix.slice(-36).replace(/^\S*\s+/, "");
+  return [{text: "? " + context, highlighted: false}, ...parts.slice(match)];
 }
 function show(mode) {
   document.querySelector("#foot-status").textContent = "";
@@ -148,13 +159,19 @@ async function search(push = true, applied = null) {
       copy.className = "result-copy";
       a.href = `/articles/${encodeURIComponent(hit.document_id)}?${params}`;
       segments(a, hit.title_segments, hit.title);
-      segments(p, hit.snippet_segments, hit.snippet);
+      segments(p, searchExcerpt(hit.snippet_segments), hit.snippet);
       b.type = "button";
       b.className = "save-button";
       b.dataset.id = hit.document_id;
       b.dataset.title = hit.title;
       b.dataset.url = `/articles/${encodeURIComponent(hit.document_id)}`;
       b.dataset.snippet = hit.snippet;
+      if (hit.publication_date) {
+        const date = document.createElement("time");
+        date.dateTime = hit.publication_date;
+        date.textContent = publicationDateFormat.format(new Date(hit.publication_date));
+        copy.append(date);
+      }
       copy.append(a, p);
       li.append(icon, copy, b);
       results.append(li);

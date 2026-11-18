@@ -137,6 +137,7 @@ class RetrievalEngine:
                 score=float(item.get("_score") or 0),
                 title=item.get("_source", {}).get("title", ""),
                 url=item.get("_source", {}).get("url", ""),
+                publication_date=item.get("_source", {}).get("publication_date"),
                 title_segments=segments(item.get("highlight", {}).get("title")),
                 snippet_segments=segments(item.get("highlight", {}).get("body")),
                 snippet=item.get("_source", {}).get("body", "")[:240],

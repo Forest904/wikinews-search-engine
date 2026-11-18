@@ -51,6 +51,7 @@ class SearchHit(BaseModel):
     score: float
     title: str
     url: str
+    publication_date: str | None = None
     snippet: str = ""
     title_segments: list[HighlightSegment] = Field(default_factory=list)
     snippet_segments: list[HighlightSegment] = Field(default_factory=list)

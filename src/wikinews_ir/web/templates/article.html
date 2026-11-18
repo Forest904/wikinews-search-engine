@@ -3,13 +3,8 @@
 {% block crumbs %}
 {% for parent in crumbs %}<a href="{{ back_url if loop.last else parent.url }}">{{ parent.label }}</a><span>›</span>{% endfor %}
 {% if saved_origin or query %}<a href="{{ back_url }}">{{ 'Salvati' if saved_origin else 'Risultati' }}</a>
-<span>›</span>{% endif %}<span>Articolo</span>{% endblock %}
+<span>›</span>{% endif %}<span aria-current="page" title="{{ article.title if article else 'Articolo non disponibile' }}">{{ article.title if article else 'Articolo non disponibile' }}</span>{% endblock %}
 {% block main %}<main id="main" class="content article-content">
-<form id="article-search" action="/" method="get" role="search">
-<input type="search" name="q" value="{{ query }}" placeholder="Cerca nell'archivio…" aria-label="Cerca nell'archivio" required>
-<input type="hidden" name="profile" value="{{ profile }}">
-<button>Cerca</button>
-</form>
 <div class="article-tools">
 <a class="back-link" href="{{ back_url }}">{{ back_label }}</a>{% if article %}<button class="save-button" type="button" data-id="{{ article.document_id }}" data-title="{{ article.title }}" data-url="{{ request.url.path }}">Salva</button>{% endif %}</div>{% if error %}<div class="empty-state">
 <h1>Articolo non disponibile</h1>
