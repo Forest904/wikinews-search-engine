@@ -33,7 +33,7 @@ Regole di esecuzione:
 | M5-A — Infrastruttura benchmark | Topic, pooling, schema giudizi, pacchetti silver Codex ed export | M3, M4 | Completata localmente su fixture; 48 coppie esterne riconciliate, nessun gold/silver reale |
 | M5-B — Strumento di annotazione | Pagina condivisa, assegnazioni e revisione | M5-A | Completata localmente su fixture: flusso multiutente, persistenza, revisione ed export verificati |
 | M5-C — Pilot e congelamento | Calibrazione, budget, topic e protocollo congelati | M5-A, M5-B; M7-A per pilot online | Completata il 18 novembre: confronto silver 22/24, budget stimato 12 ore, pacchetto congelato |
-| M5-D — Raccolta e consolidamento | Gold/silver separati e pool tracciabili | M5-C; M7-A per raccolta condivisa | Copertura prevista raggiunta e qualità annotazione controllata |
+| M5-D — Raccolta e consolidamento | Gold/silver separati e pool tracciabili | M5-C; M7-A per raccolta condivisa | Completata il 19 novembre 2026. 190 gold, 982 silver e 190 coppie condivise |
 | M6-A — Implementazione valutazione | Metriche, confronti e generazione report | M5-A | Completata su fixture sintetiche il 18 novembre 2026 |
 | M6-B — Esperimenti reali | Tuning development, confronto finale, error analysis | M4, M6-A; gold development per tuning, M5-D per finale | Test gold usato una volta secondo protocollo congelato |
 | M7-A — Pubblicazione operativa | Sito condivisibile con i validatori | M5-B | Sito pubblicato; ricerca e annotazione pronte via HTTPS. Collaudo operativo da confermare |
@@ -275,12 +275,12 @@ reale raccolto. Guida in [annotation.md](annotation.md), evidenze in
 
 ### M5-D — Raccolta e consolidamento in parallelo
 
-- [ ] Annotare manualmente gold secondo assegnazioni e campionamento congelati, mentre proseguono M6-A e la preparazione della consegna.
-- [ ] Eseguire il silver in una nuova chat Codex e workspace dedicato ai pacchetti selezionati, senza fornire gold, rank o giudizi altrui; validare e importare gli output con metadati. Separazione organizzativa, non sandbox tecnica; riproducibili gli artefatti, non garantite identiche etichette fra chat.
-- [ ] Controllare qualità con doppie annotazioni programmate e revisione dei disaccordi da parte del terzo validatore; documentare accordo umano e casi irrisolti.
-- [ ] Gestire esplicitamente `unjudged`, rinvii e astensioni: nessuna conversione automatica in non rilevanza e nessuna media tra gold, silver e ranking esterno.
-- [ ] Versionare separatamente gold e silver, con checksum e protocolli del benchmark.
-- [ ] Verificare copertura prevista, evidenze, integrità degli export e disponibilità delle stesse coppie per il confronto gold/silver.
+- [x] Annotare manualmente gold secondo assegnazioni e campionamento congelati, mentre proseguono M6-A e la preparazione della consegna.
+- [x] Eseguire il silver in una nuova chat Codex e workspace dedicato ai pacchetti selezionati, senza fornire gold, rank o giudizi altrui; validare e importare gli output con metadati. Separazione organizzativa, non sandbox tecnica; riproducibili gli artefatti, non garantite identiche etichette fra chat.
+- [x] Controllare qualità con doppie annotazioni programmate e revisione dei disaccordi da parte del terzo validatore; documentare accordo umano e casi irrisolti.
+- [x] Gestire esplicitamente `unjudged`, rinvii e astensioni: nessuna conversione automatica in non rilevanza e nessuna media tra gold, silver e ranking esterno.
+- [x] Versionare separatamente gold e silver, con checksum e protocolli del benchmark.
+- [x] Verificare copertura prevista, evidenze, integrità degli export e disponibilità delle stesse coppie per il confronto gold/silver.
 
 ### Exit criteria M5 complessiva
 
@@ -403,7 +403,7 @@ M0–M4, M5-A e M5-B sono completate localmente. Il percorso di riferimento è:
 
 **Lavoro parallelo completato.** La baseline HTTP M4-P è disponibile per E0–E4 e può essere ripetuta durante il pilot e la raccolta gold/silver.
 
-**Prossimo passo M5-D.** Attivare sul sito le assegnazioni congelate dopo aver verificato accessi e persistenza M7-A, quindi raccogliere gold e silver. M6-A è stata verificata su fixture sintetiche.
+**M5-D completata il 19 novembre 2026.** Prossimo passo M6-B: tuning su sviluppo e congelamento del profilo prima della valutazione finale. [Consolidamento gold e silver](m5d-validation.md).
 
 ## 13. Tracciabilità tra requisito e milestone
 
