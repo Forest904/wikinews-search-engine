@@ -1,8 +1,8 @@
 """HTTP endpoints for the initial demo. No dump ingestion in API requests."""
 
-from datetime import date
 import hashlib
 import sqlite3
+from datetime import date
 from pathlib import Path
 from urllib.parse import urlencode, urlsplit
 
@@ -13,8 +13,8 @@ from pydantic import ValidationError
 
 from wikinews_ir.annotation import database_path
 from wikinews_ir.models import Article, SearchRequest, SearchResponse
-from wikinews_ir.reader import read_page
 from wikinews_ir.operations import check_annotation
+from wikinews_ir.reader import read_page
 from wikinews_ir.retrieval.engine import (
     ArticleNotFound,
     RetrievalEngine,

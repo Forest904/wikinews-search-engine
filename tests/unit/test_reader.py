@@ -56,6 +56,7 @@ def test_range_filter_keeps_relevance_query_and_rejects_reversed_years():
 
     import pytest
     from pydantic import ValidationError
+
     from wikinews_ir.models import SearchRequest
     from wikinews_ir.retrieval.engine import RetrievalEngine
 

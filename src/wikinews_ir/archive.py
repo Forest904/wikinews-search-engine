@@ -1,9 +1,8 @@
 """Exclusive editorial folders for the public archive (taxonomy v1)."""
 
-from dataclasses import dataclass, field
 import re
 import unicodedata
-
+from dataclasses import dataclass, field
 
 # A deeper match wins. Within one level, declaration order is editorial priority.
 BRANCHES = [

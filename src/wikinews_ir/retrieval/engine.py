@@ -2,9 +2,6 @@
 
 from threading import Lock
 
-from elasticsearch.helpers import ScanError, scan
-from wikinews_ir.archive import build_catalog
-
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import (
     ApiError,
@@ -13,7 +10,9 @@ from elasticsearch.exceptions import (
 from elasticsearch.exceptions import (
     ConnectionError as ElasticsearchConnectionError,
 )
+from elasticsearch.helpers import ScanError, scan
 
+from wikinews_ir.archive import build_catalog
 from wikinews_ir.config import Settings, get_settings
 from wikinews_ir.ingestion.indexer import inspect_index
 from wikinews_ir.models import Article, SearchHit, SearchRequest, SearchResponse
