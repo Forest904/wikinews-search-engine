@@ -1,6 +1,6 @@
 # Roadmap end-to-end — Wikinews Search Engine
 
-**Versione documento:** 0.2.2 · **Data:** 2026-11-16 · **Stato:** piano approvato come sequenza di riferimento
+**Versione documento:** 0.2.4 · **Data:** 2026-11-18 · **Stato:** piano approvato come sequenza di riferimento
 
 **Documenti correlati:** [PRD](./prd.md) · [Architettura](./architeture.md)
 
@@ -29,6 +29,7 @@ Regole di esecuzione:
 | M2 — Corpus pipeline | Dump letto, ripulito, deduplicato e manifestato | M0 | Completato localmente: 11.032 articoli e build riproducibili |
 | M3 — Baseline completa | E0/E1 con corpus reale, API/UI stabile | M1, M2 | Completato localmente: 11.032 articoli per indice e run identiche dopo rebuild |
 | M4 — Retrieval avanzato | E2/E3/E4 e possibili estensioni | M3 | Completato localmente: E2/E3/E4, highlight e baseline invariate |
+| M4-P — Benchmark prestazionale | Latenza di ricerca confrontabile per E0–E4 sul corpus reale | M4 | Completata localmente. Due sessioni, 400 richieste misurate, zero errori |
 | M5-A — Infrastruttura benchmark | Topic, pooling, schema giudizi, pacchetti silver Codex ed export | M3, M4 | Completata localmente su fixture; 48 coppie esterne riconciliate, nessun gold/silver reale |
 | M5-B — Strumento di annotazione | Pagina condivisa, assegnazioni e revisione | M5-A | Completata localmente su fixture: flusso multiutente, persistenza, revisione ed export verificati |
 | M5-C — Pilot e congelamento | Calibrazione, budget, topic e protocollo congelati | M5-A, M5-B; M7-A per pilot online | 24 silver di calibrazione importate; confronto umano, tempi e congelamento pendenti |
@@ -178,6 +179,18 @@ rebuild. E0/E1 conservano gli hash M3. Nessun cambiamento al corpus; sinonimi e
 filtro date rinviati. Evidenze nel [report M4](m4-validation.md), semantica e
 limiti in [ADR 0005](decisions/0005-advanced-retrieval.md). CI remota da verificare
 dopo il push; selezione del profilo finale riservata a M5/M6.
+
+### M4-P — Benchmark prestazionale del motore di ricerca
+
+**Stato e obiettivo.** Completata localmente il 18 novembre 2026. Misurare la latenza interattiva a cache calda sulla macchina della demo, a partire dalle prove dei [report M3](m3-validation.md) e [M4](m4-validation.md).
+
+- [x] Versionare un insieme di query tratte dalle prove esistenti che includa ricerca semplice, refuso, frase tra virgolette e ricerca senza risultati. Usare le stesse query, nello stesso ordine e con la stessa paginazione, per tutti i profili E0–E4.
+- [x] Inviare richieste sequenziali a `/api/search`. Dopo un warmup escluso dalle statistiche, misurare dal client il tempo dall’invio alla ricezione della risposta completa. Registrare per ogni richiesta anche il tempo riportato da Elasticsearch, quando disponibile, e l’esito.
+- [x] Conservare i campioni grezzi e riportare per profilo richieste totali, errori, mediana e p95 delle latenze delle richieste riuscite, distinguendo le misure del client da quelle di Elasticsearch. Registrare macchina, versioni software, corpus, indici, profili, versione delle query, warmup e ripetizioni.
+
+**Criterio di completamento.** Un comando documentato esegue la prova sugli 11.032 articoli e genera il report per E0–E4. Due esecuzioni sulla stessa macchina e con la stessa configurazione permettono di confrontare mediana e p95 e descrivere la variabilità osservata. Questa baseline precede l’eventuale definizione di una soglia di latenza, come previsto dal [PRD](prd.md).
+
+Evidenze e comando di replica nel [report M4-P](m4p-validation.md).
 
 ## 8. Fase M5 — Benchmark e ground truth multi-sorgente
 
@@ -393,6 +406,8 @@ M0–M4, M5-A e M5-B sono completate localmente. Il percorso di riferimento è:
 4. **M5-C — Pilot:** calibrazione dei tre validatori, misura dei tempi, dimensionamento e congelamento del protocollo e dei pool.
 5. **M5-D e M6-A — Lavoro parallelo:** raccolta gold/silver e implementazione/verifica dei report; preparazione di documentazione e demo. M6-A può iniziare già dopo M5-A.
 6. **M6-B e M7-B — Chiusura scientifica:** tuning sul development disponibile, congelamento del profilo, valutazione finale dopo consolidamento e consegna accademica.
+
+**Lavoro parallelo completato.** La baseline HTTP M4-P è disponibile per E0–E4 e può essere ripetuta durante il pilot e la raccolta gold/silver.
 
 **Gate immediato:** M7-A, scegliere hosting e pubblicare il flusso verificato localmente, con accessi e ripristino online. La raccolta massiva parte soltanto dopo il pilot e il congelamento; nessun dato sintetico sostituisce il benchmark reale.
 
