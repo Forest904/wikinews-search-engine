@@ -1,6 +1,7 @@
 "use strict";
 const searchForm = document.querySelector("#search-form");
 const help = {
+  semantic: "Cerca articoli per significato, anche quando usano parole diverse.",
   E0: "Cerca nel titolo e nel testo.",
   E1: "Riconosce varianti delle parole italiane.",
   E2: "Dà più importanza al titolo.",
@@ -8,11 +9,12 @@ const help = {
   E4: "Premia le parole vicine e riconosce le frasi tra virgolette.",
 };
 function profileHelp() {
-  const live = searchForm.elements.profile.value === "live";
+  const profile = searchForm.elements.profile.value;
+  const live = profile === "live";
   searchForm.querySelector(".year-range").disabled = live;
   document.querySelector("#profile-help").textContent = live
     ? "Cerca nel sito corrente. Il periodo di pubblicazione si applica solo alla ricerca in archivio."
-    : help[searchForm.elements.profile.value] + " Profilo " + searchForm.elements.profile.value + ".";
+    : profile === "semantic" ? help.semantic : help[profile] + " Profilo " + profile + ".";
 }
 
 if (searchForm) {

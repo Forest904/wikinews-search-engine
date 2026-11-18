@@ -289,3 +289,5 @@ Configurazione Hetzner/Cloudflare per `newsfinder.win`:
 [decisioni](docs/decisions/0008-operational-deployment.md) e [verifiche](docs/m7a-validation.md).
 Usare `compose.production.yaml` separatamente dal Compose locale. Copie manuali
 sul PC, nessun backup conservato sulla VPS. Il gate online resta da collaudare.
+
+Per preparare gli embedding con Ollama, importare il pacchetto in Qdrant e attivare il profilo, consultare la [guida alla ricerca semantica](docs/semantic-search.md).

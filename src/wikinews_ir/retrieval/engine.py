@@ -2,6 +2,7 @@
 
 from threading import Lock
 
+import httpx
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import (
     ApiError,
@@ -101,6 +102,12 @@ class RetrievalEngine:
 
     def search(self, request: SearchRequest) -> SearchResponse:
         request = SearchRequest.model_validate(request.model_dump())
+        if request.profile == "semantic":
+            from wikinews_ir.semantic import search
+            try:
+                return search(request)
+            except (httpx.HTTPError, ValueError, KeyError) as exc:
+                raise RetrievalUnavailable("Ricerca semantica temporaneamente indisponibile") from exc
         body = build_query(request.query, request.profile)
         bounds = {}
         if request.year_from:
@@ -165,6 +172,8 @@ class RetrievalEngine:
         return {doc["_id"] for doc in result["docs"] if doc.get("found")}
 
     def get_article(self, document_id: str, profile: str = "E0") -> Article:
+        if profile == 'semantic':
+            profile = 'E0'
         try:
             meta = self.metadata(profile)
             result = self.client.get(index=index_name(self.settings, profile), id=document_id)

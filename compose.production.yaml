@@ -31,6 +31,10 @@ services:
     environment:
       ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?Set Elasticsearch password}
       WIKIMEDIA_USER_AGENT: ${WIKIMEDIA_USER_AGENT:-NewsFinder/1.0 (https://github.com/Forest904/wikinews-search-engine/issues)}
+      SEMANTIC_ENABLED: ${SEMANTIC_ENABLED:-0}
+      SEMANTIC_EXACT: ${SEMANTIC_EXACT:-1}
+      QDRANT_URL: http://qdrant:6333
+      OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
       ELASTICSEARCH_URL: http://elasticsearch:9200
       ANNOTATION_DB: ${ANNOTATION_DB:-/app/data/annotation/annotation.sqlite3}
       READER_CATALOG: /imports/reader/catalog.sqlite3
@@ -52,6 +56,20 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+
+  qdrant:
+    image: qdrant/qdrant:v1.15.5
+    profiles: ["semantic"]
+    volumes: [qdrant-data:/qdrant/storage]
+    mem_limit: 192m
+    restart: unless-stopped
+    networks: [backend]
+  ollama:
+    image: ollama/ollama:0.23.2
+    profiles: ["semantic"]
+    volumes: [ollama-data:/root/.ollama]
+    networks: [backend]
+    restart: unless-stopped
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.5.6
@@ -84,6 +102,8 @@ networks:
     internal: true
 
 volumes:
+  qdrant-data:
+  ollama-data:
   annotation-data:
   elasticsearch-data:
   caddy-data:

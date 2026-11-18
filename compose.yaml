@@ -1,4 +1,11 @@
 services:
+  qdrant:
+    image: qdrant/qdrant:v1.15.5
+    profiles: ["semantic"]
+    volumes: [qdrant-data:/qdrant/storage]
+    restart: unless-stopped
+    ports: ["127.0.0.1:6333:6333"]
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.5.6
     environment:
@@ -26,6 +33,10 @@ services:
     environment:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:?Define ELASTIC_PASSWORD in .env}
       - WIKIMEDIA_USER_AGENT=${WIKIMEDIA_USER_AGENT:-NewsFinder/1.0 (https://github.com/Forest904/wikinews-search-engine/issues)}
+      - SEMANTIC_ENABLED=${SEMANTIC_ENABLED:-0}
+      - SEMANTIC_EXACT=${SEMANTIC_EXACT:-1}
+      - QDRANT_URL=http://qdrant:6333
+      - OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434}
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - ELASTICSEARCH_INDEX=wikinews_standard_v1
       - ANNOTATION_DB=/app/data/annotation/annotation.sqlite3
@@ -37,5 +48,6 @@ services:
       - "127.0.0.1:8000:8000"
 
 volumes:
+  qdrant-data:
   elasticsearch-data:
   annotation-data:

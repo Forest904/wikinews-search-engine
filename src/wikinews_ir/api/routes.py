@@ -2,6 +2,7 @@
 
 import asyncio
 import hashlib
+import os
 import sqlite3
 import time
 from datetime import date
@@ -17,7 +18,7 @@ from pydantic import ValidationError
 from wikinews_ir.adapters.live import continuation
 from wikinews_ir.annotation import database_path
 from wikinews_ir.api.schemas import LiveSearchResponse
-from wikinews_ir.models import Article, SearchRequest, SearchResponse
+from wikinews_ir.models import Article, SearchProfile, SearchRequest, SearchResponse
 from wikinews_ir.operations import check_annotation
 from wikinews_ir.reader import read_page
 from wikinews_ir.retrieval.engine import (
@@ -26,7 +27,7 @@ from wikinews_ir.retrieval.engine import (
     RetrievalUnavailable,
     SearchIndexMissing,
 )
-from wikinews_ir.retrieval.profiles import SUPPORTED_PROFILES, ProfileId
+from wikinews_ir.retrieval.profiles import SUPPORTED_PROFILES
 
 router = APIRouter()
 templates = Jinja2Templates(
@@ -42,6 +43,7 @@ def static_asset(filename: str) -> str:
 
 
 templates.env.globals["static_asset"] = static_asset
+templates.env.globals["semantic_enabled"] = lambda: os.getenv("SEMANTIC_ENABLED") == "1"
 
 
 def engine(request: Request) -> RetrievalEngine:
@@ -123,7 +125,7 @@ def health(backend: RetrievalEngine = Depends(engine)):
 def search(
     backend: RetrievalEngine = Depends(engine),
     q: str = Query(),
-    profile: ProfileId = "E0",
+    profile: SearchProfile = "E0",
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1, le=100),
     year_from: int | None = Query(None, ge=1, le=9999),
@@ -171,7 +173,7 @@ async def live_search(request: Request, q: str = Query(min_length=1, max_length=
 
 
 @router.get("/api/articles/{document_id}", response_model=Article)
-def article(document_id: str, profile: ProfileId = "E0",
+def article(document_id: str, profile: SearchProfile = "E0",
             backend: RetrievalEngine = Depends(engine)):
     try:
         return backend.get_article(document_id, profile)
@@ -184,7 +186,7 @@ def article(document_id: str, profile: ProfileId = "E0",
 @router.get("/articles/{document_id}", response_class=HTMLResponse)
 def article_page(
     request: Request, document_id: str, q: str = "",
-    profile: ProfileId = "E0",
+    profile: SearchProfile = "E0",
     page: int = Query(default=1, ge=1), page_size: int = Query(default=10, ge=1, le=100),
     backend: RetrievalEngine = Depends(engine),
 ):

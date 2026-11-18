@@ -174,7 +174,7 @@ async function search(push = true, applied = null, previousCursors = []) {
           typeof payload.detail === "string"
             ? payload.detail
             : "Controlla la ricerca e le opzioni.",
-        503: "Il servizio di ricerca non è disponibile.",
+        503: profile === "semantic" ? "Ricerca semantica temporaneamente indisponibile." : "Il servizio di ricerca non è disponibile.",
       };
       throw Error(messages[response.status] || "Ricerca non riuscita.");
     }

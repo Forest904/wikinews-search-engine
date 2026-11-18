@@ -1,14 +1,18 @@
 """Stable public schemas shared between Web API and retrieval engine."""
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator, model_validator
 
 from wikinews_ir.retrieval.profiles import ProfileId
+
+SearchProfile = ProfileId | Literal["semantic"]
 
 
 class SearchRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     query: str = Field(min_length=1, max_length=250)
-    profile: ProfileId = "E0"
+    profile: SearchProfile = "E0"
     year_from: int | None = Field(default=None, ge=1, le=9999)
     year_to: int | None = Field(default=None, ge=1, le=9999)
     page: int = Field(default=1, ge=1)

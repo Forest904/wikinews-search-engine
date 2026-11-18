@@ -80,6 +80,35 @@ def test_search_detail_and_empty_state(seeded_backend, browser_page, return_link
         expect(page.locator("#results li")).to_have_count(0)
 
 
+def test_semantic_filter_survives_article_and_back(seeded_backend, browser_page, monkeypatch):
+    monkeypatch.setenv("SEMANTIC_ENABLED", "1")
+    from wikinews_ir import semantic
+
+    def search_fixture(request):
+        assert (request.profile, request.year_from, request.year_to) == ("semantic", 2000, 2030)
+        # The seeded reader fixtures have no publication dates.
+        result = seeded_backend.search(request.model_copy(update={
+            "profile": "E1", "year_from": None, "year_to": None,
+        }))
+        return result.model_copy(update={"profile": "semantic"})
+
+    monkeypatch.setattr(semantic, "search", search_fixture)
+    page = browser_page
+    with serve(seeded_backend) as url:
+        page.goto(url)
+        page.get_by_label("Cerca nelle notizie").fill("terremoto")
+        page.get_by_role("button", name="Filtri").click()
+        page.get_by_label("Modalità di ricerca").select_option("semantic")
+        page.get_by_label("Da anno").fill("2000")
+        page.get_by_label("Ad anno").fill("2030")
+        page.get_by_role("button", name="Cerca", exact=True).click()
+        page.get_by_role("link", name="Terremoto in Abruzzo").click()
+        expect(page.locator("article")).to_contain_text("soccorsi")
+        page.locator("a.back-link").click()
+        expect(page.locator("#profile")).to_have_value("semantic")
+        expect(page.locator("#results li")).to_have_count(1)
+
+
 def test_backend_unavailable(browser_page):
     # A bound, non-listening socket reserves a port without accepting connections.
     with socket.socket() as unavailable:

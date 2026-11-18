@@ -88,7 +88,12 @@ def main() -> None:
     export.add_argument("--top-k", type=int, default=100)
     from wikinews_ir.retrieval.profiles import SUPPORTED_PROFILES
     export.add_argument("--profiles", nargs="+", choices=SUPPORTED_PROFILES, default=SUPPORTED_PROFILES)
+    from wikinews_ir import semantic_cli
+    semantic_cli.configure(sub)
     args = parser.parse_args()
+    if args.command == "semantic":
+        semantic_cli.dispatch(args, parser)
+        return
     if args.command == "annotation":
         import sqlite3
 

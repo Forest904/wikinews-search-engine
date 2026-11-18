@@ -148,9 +148,38 @@ def publication_date(soup):
     return values[0], "validated", evidence
 
 
-def clean_html(html):
+def clean_html(html, *, semantic=False):
     soup = BeautifulSoup(html, "lxml")
     pubdate, status, evidence = publication_date(soup)
+    if semantic:
+        # Parsoid can split a navigation template across several siblings.
+        navigation_groups = set()
+        for wrapper in soup.select("[data-mw][about]"):
+            try:
+                parts = json.loads(wrapper["data-mw"]).get("parts", [])
+            except (ValueError, AttributeError):
+                continue
+            names = [part["template"].get("target", {}).get("wt", "").strip().casefold()
+                     for part in parts if isinstance(part, dict) and "template" in part]
+            if any(name.startswith("infobox") or name in {
+                "vedi anche", "interprogetto", "interprogetto/notizia", "interprogetto1",
+                "wikisource", "commons", "wikiquote",
+            } for name in names):
+                navigation_groups.add(wrapper["about"])
+        for marker in soup.select(".NavHead, .NavFrame, p"):
+            if marker.name == "p" and not marker.get_text(" ", strip=True).casefold().startswith(
+                "tutti gli articoli dello speciale:"
+            ):
+                continue
+            group = marker if marker.has_attr("about") else marker.find_parent(attrs={"about": True})
+            if group and str(group["about"]).startswith("#mwt"):
+                navigation_groups.add(group["about"])
+        for node in soup.select("[about]"):
+            if node.parent and node.get("about") in navigation_groups:
+                node.decompose()
+        for node in soup.select("figure, figcaption, img, .thumb, .gallery, .infobox, [typeof~='mw:File/Thumb']"):
+            if node.parent:
+                node.decompose()
     sources = []
     for node in list(soup.select("table[data-mw],div[data-mw]")):
         if node.parent is None:

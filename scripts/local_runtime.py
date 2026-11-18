@@ -182,6 +182,7 @@ if (-not (Get-Process -Name 'Docker Desktop' -ErrorAction SilentlyContinue)) {
 def start(args):
     env, elastic = configuration()
     if args.mock:
+        env["SEMANTIC_ENABLED"] = "0"
         env["ELASTICSEARCH_INDEX"] = "wikinews_demo_standard_v1"
         env["ELASTICSEARCH_ITALIAN_INDEX"] = "wikinews_demo_italian_v1"
     stop_instance(args.port)
@@ -197,6 +198,9 @@ def start(args):
             run(["docker", "compose", "--project-directory", str(ROOT), "--env-file", str(ROOT / ".env"), "-f", str(ROOT / "compose.yaml"), "up", "-d", "--wait", "elasticsearch"], env)
         except (FileNotFoundError, subprocess.CalledProcessError):
             raise RuntimeError("Avvio Elasticsearch fallito. Controlla l'errore Docker Compose riportato sopra.") from None
+    if env.get("SEMANTIC_ENABLED") == "1" and not env.get("QDRANT_URL"):
+        ensure_docker(env)
+        run(["docker", "compose", "--profile", "semantic", "up", "-d", "qdrant"], env)
     run([str(PYTHON), "-m", "wikinews_ir.cli", "annotation", "init"], env)
     if args.mock:
         run([str(PYTHON), "-m", "wikinews_ir.cli", "seed-demo"], env)
