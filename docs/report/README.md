@@ -1,8 +1,12 @@
 # Relazione NewsFinder
 
+Per leggere la relazione, apri il [PDF](newsfinder.pdf). Per aggiornarla, modifica i [capitoli Markdown](capitoli/) e rigenera il documento.
+
+## Rigenerare il PDF
+
 In VS Code modifica un capitolo Markdown, salvalo e scegli **Terminale → Esegui attività… → Report: rigenera PDF**. Il terminale dedicato mostra l’esito e il numero di pagine. Il file aggiornato è `docs/report/newsfinder.pdf`.
 
-[Leggi il PDF](newsfinder.pdf) · [Consulta il LaTeX generato](newsfinder.tex) · [Modifica i capitoli Markdown](capitoli/)
+[Consulta il LaTeX generato](newsfinder.tex)
 
 Dalla radice del repository eseguire `python docs/report/build.py`. Servono Python 3, Pandoc con citeproc, XeLaTeX e pdfinfo. Lo script usa latexmk quando disponibile e altrimenti esegue due passaggi di XeLaTeX. Servono i pacchetti LaTeX richiamati dal template, compresi Babel italiano, TikZ e xurl. Il PDF viene pubblicato solo dopo aver verificato il limite di 15–20 pagine.
 

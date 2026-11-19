@@ -1,13 +1,22 @@
-# Wikinews Search Engine — Homework 4
+# NewsFinder — Cerca nell’archivio di Wikinotizie
 
-Monorepo sperimentale per un motore di ricerca **lessicale** delle notizie italiane
-Wikinotizie, basato su Elasticsearch, con valutazione IR riproducibile.
+NewsFinder permette di cercare nelle notizie italiane di Wikinotizie con cinque profili lessicali su Elasticsearch e un profilo semantico opzionale con Ollama e Qdrant.
+
+| Cosa vuoi fare? | Da dove iniziare |
+|---|---|
+| Cercare il primo articolo sul tuo computer | [Primo avvio](#primo-avvio) |
+| Riaprire il sito già configurato su Windows | [Avvii successivi](#avvii-successivi-su-windows) |
+| Capire come funziona e come è stato valutato | [Relazione illustrata (PDF)](docs/report/newsfinder.pdf) |
+| Ripetere la dimostrazione | [Scaletta con query e risultati attesi](docs/consegna/demo.md) |
+| Lavorare sul codice | [Test e controlli](#test-e-controlli) |
 
 ## Consegna accademica
 
 [Relazione illustrata su architettura, ricerca e valutazione (PDF)](docs/report/newsfinder.pdf) · [Sorgenti e compilazione](docs/report/README.md)
 
-Il motore cerca in **11.032 articoli** dello snapshot del 20 marzo 2025. Sul test gold di 16 topic il profilo E1, selezionato sul development, raggiunge nDCG@10 **0,6558**. Il campione e la copertura dei giudizi limitano la portata del confronto.
+Il motore cerca in **11.032 articoli** dello snapshot del 20 marzo 2025. Nel benchmark lessicale M6-B, sul test gold di 16 topic il profilo E1, selezionato sul development, raggiunge nDCG@10 **0,6558**. Il campione e la copertura dei giudizi limitano la portata del confronto.
+
+La relazione scritta è disponibile in PDF e la demo ha superato il collaudo locale. Restano da preparare la presentazione orale e le slide e da provare la demo sulla macchina e sulla rete dell’aula. [Stato delle milestone](docs/roadmap.md)
 
 - [Demo e recupero](docs/consegna/demo.md) · [Collaudo](docs/consegna/collaudo.md)
 - [Run, qrels e risultati congelati (ZIP)](https://github.com/Forest904/wikinews-search-engine/releases/download/v1.0.0/risultati-m6b.zip)
@@ -29,26 +38,32 @@ Il motore cerca in **11.032 articoli** dello snapshot del 20 marzo 2025. Sul tes
 - Docker Engine / Docker Desktop con Docker Compose v2
 - Almeno 4 GB consigliati per Docker in locale. Nel collaudo, checkout, ambiente Python e corpus hanno occupato circa 534 MB complessivi, i due indici circa 128 MB nel volume. Durante la preparazione è stato osservato un database temporaneo di 537 MB. Prevedere anche spazio per immagine Docker e cache degli strumenti.
 
-## Avvio su Windows dopo il primo setup
+## Primo avvio
 
-Per il primo avvio seguire la procedura da clone qui sotto. Per gli avvii successivi fare doppio clic su **Avvia-locale.cmd**, oppure task VS Code **Locale: avvia/riavvia**.
-Il sito si apre su `http://127.0.0.1:8000/`; una precedente istanza di questa
-checkout viene riavviata. [Comandi, prerequisiti e primo accesso](docs/local-development.md).
+**1. Apri un terminale nella cartella del progetto.** Se devi ancora scaricarlo, esegui questi comandi. Per riprodurre la consegna accademica puoi scegliere il tag `v1.0.0` aggiungendo `--branch v1.0.0` a `git clone`.
 
-## Avvio rapido in ambiente locale
-
-```bash
-git clone --branch v1.0.0 https://github.com/Forest904/wikinews-search-engine.git
+```sh
+git clone https://github.com/Forest904/wikinews-search-engine.git
 cd wikinews-search-engine
-cp .env.example .env  # PowerShell: Copy-Item .env.example .env
-# Modifica ELASTIC_PASSWORD in .env: usa una password locale non banale.
-uv sync --locked
-# corpus prepare scarica il dump. Se indisponibile, copiare lo snapshot assegnato in data/raw/.
+```
 
+**2. Configura la password e installa le dipendenze.** Copia `.env.example` in un nuovo file `.env` (in PowerShell usa `Copy-Item .env.example .env`, su Linux o macOS usa `cp .env.example .env`). Apri la copia, imposta una password locale per `ELASTIC_PASSWORD` e salva.
+
+```sh
+uv sync --locked
+```
+
+**3. Prepara l’archivio.** Avvia Docker, poi esegui i tre comandi in ordine. Il secondo scarica e prepara gli articoli. Se il download non è disponibile, copia lo snapshot assegnato in `data/raw/` e ripeti il comando. Il terzo costruisce gli indici di ricerca.
+
+```sh
 docker compose up -d --wait elasticsearch
 uv run --locked wikinews-ir corpus prepare
 uv run --locked wikinews-ir index build
-# Verifica che Elasticsearch sia diventato healthy: docker compose ps
+```
+
+**4. Avvia il sito e prova una ricerca.** Lascia aperto il terminale mentre usi il sito.
+
+```sh
 uv run --locked uvicorn wikinews_ir.api.main:app --reload
 ```
 
@@ -64,12 +79,20 @@ Una seconda esecuzione di `index build` verifica e riusa gli indici già pronti.
 `docker compose --profile full up -d --build --wait` avvia anche il servizio Web.
 Questa modalità usa la stessa password di Elasticsearch.
 
-## Qualità del codice
+## Avvii successivi su Windows
+
+Fai doppio clic su **Avvia-locale.cmd** nella cartella del progetto. Il sito si apre su <http://127.0.0.1:8000/>. Da VS Code puoi anche scegliere l’attività **Locale: avvia/riavvia**. [Guida allo sviluppo locale](docs/local-development.md)
+
+## Area valutatori
 
 Per avviare l'area valutatori senza Elasticsearch, creare gli account e importare
 un pacchetto seguendo [la guida M5-B](docs/annotation.md), poi avviare la stessa app
 e aprire `/annotate` o `/coordinate`. Il database SQLite è persistente e distinto
 dagli indici di ricerca. La guida include fixture, backup e ripristino.
+
+## Test e controlli
+
+Dalla radice del progetto, controlla prima lo stile del codice e poi esegui i test.
 
 ```bash
 uv run --locked ruff check .
@@ -100,9 +123,9 @@ Remove-Item Env:RUN_INTEGRATION
 - `src/wikinews_ir/retrieval/`: query builder e client Elasticsearch condivisi
 - `src/wikinews_ir/ingestion/`: pipeline offline, audit e manifest del corpus
 - `src/wikinews_ir/evaluation/`: spazio per metriche, run e pooling
-- `src/wikinews_ir/adapters/`: integrazioni offline LLM/Wikinotizie
+- `src/wikinews_ir/adapters/`: acquisizione e riproduzione delle classifiche di Wikinotizie
 - `configs/`: mapping indice, profili di ricerca, protocollo di valutazione
-- `benchmarks/`: topic, qrels e manifest (ancora vuoti)
+- `benchmarks/`: topic di valutazione e manifest degli esperimenti
 - `data/raw/`, `data/processed/`: dati locali ignorati da Git
 - `experiments/`: risultati locali ignorati da Git
 - `docs/`: documenti di progettazione completi
@@ -194,7 +217,7 @@ I boost si configurano nei YAML E2–E4 di `configs/retrieval/` e nelle copie
 `src/wikinews_ir/resources/retrieval/`: incrementare la versione a ogni modifica
 di ranking e mantenere le copie identiche. Le risorse distribuite sono quelle
 del pacchetto, senza override per richiesta. Default e limiti in
-[ADR 0005](docs/decisions/0005-advanced-retrieval.md). E5 e filtro date rinviati.
+[ADR 0005](docs/decisions/0005-advanced-retrieval.md). In M4 furono rinviati i sinonimi E5 e il filtro per data. Il filtro è ora disponibile e verificato nella [prova locale della demo](docs/consegna/collaudo.md).
 
 ## Export TREC e verifica riproducibile
 

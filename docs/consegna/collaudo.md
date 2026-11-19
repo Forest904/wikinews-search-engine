@@ -24,4 +24,4 @@ Le ricerche di confronto hanno restituito rispettivamente 1.538 e 1.928 risultat
 
 Controllati tutti i 39 SHA-256 del manifest M6-B. Ricostruite le medie gold di entrambi gli split dai file per topic, applicando MRR ai soli topic evento. L’allegato della release contiene 49 file, inclusi manifest, run e qrels. SHA-256 dello ZIP: `c8b16318b31d145883b275a54a2d6e93fbe979f6c39fa9643fd829846d2fa967`. Il pacchetto esclude dump, indici e materiali individuali di annotazione.
 
-Presentazione, PDF e prova orale rinviati su richiesta. La prova della demo sulla rete effettiva dell’aula rimane aperta. [Risultati e limiti del benchmark](../m6b-validation.md)
+La [relazione scritta in PDF](../report/newsfinder.pdf) è disponibile. Le slide e la prova orale sono rinviate. Rimane da eseguire la demo sulla macchina e sulla rete dell’aula. [Stato delle milestone](../roadmap.md) [Risultati e limiti del benchmark](../m6b-validation.md)

@@ -1,4 +1,6 @@
-# Ingestion — M2/M3
+# Dal dump agli articoli ricercabili
+
+Per preparare gli articoli ed eseguire la prima indicizzazione, segui il [primo avvio](../../../README.md#primo-avvio). Qui trovi i comandi per controllare i dati e ripetere i singoli passaggi.
 
 `acquisition.py` aggiunge `wikinews-ir corpus prepare`: download dello snapshot
 fissato, controllo SHA-256 e preparazione. Archivio e corpus già validi sono

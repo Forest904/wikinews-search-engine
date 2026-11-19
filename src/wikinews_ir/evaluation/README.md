@@ -1,4 +1,8 @@
-# Evaluation — export M3/M4 e infrastruttura M5-A
+# Valutare i risultati di ricerca
+
+Per riprodurre il confronto finale, parti dai [risultati e comandi M6-B](../../../docs/m6b-validation.md). Per preparare query e giudizi di rilevanza, segui la [guida alla valutazione](../../../docs/evaluation.md).
+
+## Esportare una classifica
 
 `runs.py` esporta ranking E0–E4 con lo stesso RetrievalEngine di API/UI:
 `wikinews-ir runs export --queries <queries.jsonl> --output <nuova-directory>`.

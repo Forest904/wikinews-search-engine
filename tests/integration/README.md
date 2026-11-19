@@ -1,4 +1,6 @@
-# Test di integrazione M0–M3
+# Verificare la ricerca con Elasticsearch
+
+Dalla radice del progetto, usa un cluster locale di test e il file `.env` preparato durante il [primo avvio](../../README.md#primo-avvio).
 
 Avviare Elasticsearch con `docker compose up -d --wait elasticsearch`.
 Impostare `RUN_INTEGRATION=1` ed eseguire `uv run --locked pytest tests/integration -q`.

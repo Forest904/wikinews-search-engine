@@ -1,4 +1,6 @@
-# Fixture sintetiche M1
+# Articoli di esempio per i test
+
+Usa la tabella per scegliere una query e controllare quale articolo dovrebbe comparire.
 
 `articles.json` contiene cinque brevi testi inventati per lo scaffold del progetto,
 già presenti in M0 e riutilizzati in M1. Non sono estratti dal dump né copie di

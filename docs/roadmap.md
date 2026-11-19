@@ -37,7 +37,7 @@ Regole di esecuzione:
 | M6-A — Implementazione valutazione | Metriche, confronti e generazione report | M5-A | Completata su fixture sintetiche il 18 novembre 2026 |
 | M6-B — Esperimenti reali | Tuning development, confronto finale, error analysis | M4, M6-A; gold development per tuning, M5-D per finale | Completata il 19 novembre 2026. E1 selezionato su development, test gold valutato una volta |
 | M7-A — Pubblicazione operativa | Sito condivisibile con i validatori | M5-B | Sito pubblicato; ricerca e annotazione pronte via HTTPS. Collaudo operativo da confermare |
-| M7-B — Consegna accademica | GitHub, README, slide, demo live | M6-B | Release tecnica v1.0.0 e demo locale collaudata. Presentazione rinviata, rete d’aula da verificare |
+| M7-B — Consegna accademica | GitHub, README, slide, demo live | M6-B | Release tecnica v1.0.0, [relazione PDF](report/newsfinder.pdf) disponibile e demo collaudata localmente. Slide e prova orale rinviate, demo da provare in aula |
 
 **Parallelismo consentito:** dopo M1, la preparazione dei topic e delle linee guida può avanzare insieme al preprocessing. Il pooling definitivo, invece, dipende dalle run candidate disponibili e dall'identità stabile dei documenti.
 
@@ -176,7 +176,7 @@ Ogni profilo produce risultati e run con ID/versione riconoscibili. Le feature n
 **Stato: M4 completata e verificata localmente (2026-11-16).**
 E2/E3/E4 e highlight disponibili in API/UI/Python, con run ripetibili anche dopo
 rebuild. E0/E1 conservano gli hash M3. Nessun cambiamento al corpus; sinonimi e
-filtro date rinviati. Evidenze nel [report M4](m4-validation.md), semantica e
+filtro date rinviati in M4. Il filtro per data è stato poi verificato nel [collaudo locale](consegna/collaudo.md). Evidenze nel [report M4](m4-validation.md), semantica e
 limiti in [ADR 0005](decisions/0005-advanced-retrieval.md). CI remota da verificare
 dopo il push; selezione del profilo finale riservata a M5/M6.
 
@@ -337,7 +337,7 @@ Questa fase dipende da M5-B, non dagli esperimenti finali. Il sito può essere c
 
 ### M7-B — Consegna accademica
 
-M6-B è completata. La consegna del 19 novembre riguarda repository, risultati congelati e demo. Presentazione, PDF e prova orale sono rinviati. [Collaudo e verifiche residue](consegna/collaudo.md)
+M6-B è completata. La consegna del 19 novembre riguarda repository, risultati congelati e demo. La relazione scritta è disponibile in PDF. Le slide e la prova orale sono rinviate. [Collaudo e verifiche residue](consegna/collaudo.md)
 
 #### Release repository
 
@@ -392,20 +392,12 @@ Il progetto è **done** soltanto quando tutti i requisiti HW-01..HW-06 del [PRD]
 | Manifest completi e qrels versionati; profilo e analisi congelati | M6-B | Blocca valutazione finale e riproducibilità delle conclusioni |
 | Installazione da clone pulito | M7-B | Blocca consegna accademica |
 
-## 12. Cosa fare ora: prima iterazione concreta
+## 12. Lavoro residuo per la consegna
 
-M0–M4, M5-A e M5-B sono completate localmente. Il percorso di riferimento è:
+La raccolta gold e silver e la valutazione finale sono concluse. I risultati e i limiti del confronto sono documentati nel [report M6-B](m6b-validation.md).
 
-1. **M5-A — Completata:** topic/rubriche, pooling, giudizi, pacchetti silver Codex ed export verificati su fixture; materiale esplorativo riconciliato.
-2. **M5-B — Completata:** pagina dedicata, assegnazioni, salvataggi persistenti, giudizi indipendenti, adjudication ed export; collaudo multiutente locale superato su fixture.
-3. **M7-A — Sito pubblicato:** ricerca e annotazione raggiungibili via HTTPS; riconciliare le prove di accesso, persistenza e ripristino con il coordinatore.
-4. **M5-C — Pilot:** calibrazione dei tre validatori, misura dei tempi, dimensionamento e congelamento del protocollo e dei pool.
-5. **M5-D e M6-A — Lavoro parallelo:** raccolta gold/silver e implementazione/verifica dei report; preparazione di documentazione e demo. M6-A può iniziare già dopo M5-A.
-6. **M6-B e M7-B — Chiusura scientifica:** tuning sul development disponibile, congelamento del profilo, valutazione finale dopo consolidamento e consegna accademica.
-
-**Lavoro parallelo completato.** La baseline HTTP M4-P è disponibile per E0–E4 e può essere ripetuta durante il pilot e la raccolta gold/silver.
-
-**M5-D completata il 19 novembre 2026.** M6-B completata il 19 novembre 2026. Consegna tecnica M7-B e collaudo locale documentati. [Consolidamento gold e silver](m5d-validation.md).
+1. Preparare le slide a partire dalla [relazione scritta](report/newsfinder.pdf) e provare l’esposizione di circa 20 minuti secondo la scaletta M7-B.
+2. Eseguire la [demo](consegna/demo.md) sulla macchina e sulla rete della presentazione. Registrare l’esito nel [verbale di collaudo](consegna/collaudo.md).
 
 ## 13. Tracciabilità tra requisito e milestone
 
