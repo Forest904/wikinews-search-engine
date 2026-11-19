@@ -157,6 +157,7 @@ def test_article_routes(client, path, failure, expected):
 
 def test_search_article_archive_navigation(client, monkeypatch):
     from bs4 import BeautifulSoup
+
     from wikinews_ir.archive import build_catalog
     from wikinews_ir.models import Article
 
