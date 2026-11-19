@@ -838,3 +838,31 @@ mark {
   .doc-icon.live-icon { width: 48px; }
   .live-thumbnail { height: 48px; }
 }
+
+.temporal-news {
+  margin-block: 1.5rem;
+  padding-block: .75rem;
+  border-block: 1px solid currentColor;
+}
+.temporal-news summary { cursor: pointer; font-weight: 650; }
+.temporal-news summary time { margin-inline-start: .5em; font-weight: normal; }
+.temporal-news time { font-size: .85em; }
+.temporal-news ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: 1rem;
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 .25rem;
+}
+.temporal-news li { min-width: 0; }
+.temporal-news li a {
+  display: block;
+  font-family: Georgia, serif;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.temporal-news li:first-child a { font-size: 1.3em; }
+@media (max-width: 640px) {
+  .temporal-news ul { grid-template-columns: 1fr; }
+}

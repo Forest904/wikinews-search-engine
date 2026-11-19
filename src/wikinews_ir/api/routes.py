@@ -18,6 +18,7 @@ from pydantic import ValidationError
 from wikinews_ir.adapters.live import continuation
 from wikinews_ir.annotation import database_path
 from wikinews_ir.api.schemas import LiveSearchResponse
+from wikinews_ir.archive import italian_date, temporal_selection
 from wikinews_ir.models import Article, SearchProfile, SearchRequest, SearchResponse
 from wikinews_ir.operations import check_annotation
 from wikinews_ir.reader import read_page
@@ -43,6 +44,7 @@ def static_asset(filename: str) -> str:
 
 
 templates.env.globals["static_asset"] = static_asset
+templates.env.filters["italian_date"] = italian_date
 templates.env.globals["semantic_enabled"] = lambda: os.getenv("SEMANTIC_ENABLED") == "1"
 
 
@@ -218,7 +220,7 @@ def article_page(
     context["rich"] = rich
     try:
         catalog = backend.archive()
-    except RetrievalUnavailable:
+    except (RetrievalUnavailable, SearchIndexMissing):
         catalog = {}
     folder = None
     for candidate in catalog.values() if isinstance(catalog, dict) else ():
@@ -229,6 +231,12 @@ def article_page(
     if folder:
         excluded = {"/articles/" + document_id}
         excluded.update(link["href"] for link in (rich or {}).get("related", []))
+        selection = temporal_selection(catalog, current, folder, {
+            url.removeprefix("/articles/") for url in excluded if url and url.startswith("/articles/")
+        })
+        if selection:
+            context["temporal"] = selection
+            excluded.update("/articles/" + row[2] for row in selection["articles"])
         peers = [row for row in folder.articles if "/articles/" + row[2] not in excluded]
         if current[0]:
             today = date.fromisoformat(current[0])

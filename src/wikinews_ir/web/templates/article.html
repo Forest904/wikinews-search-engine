@@ -21,6 +21,15 @@
 {% endfor %}
 {% else %}<div class="article-body">{{ article.body }}</div>{% endif %}
 {% if peers %}<section><h2>Continua nella stessa cartella</h2><ul>{% for date,title,id in peers %}<li><a href="/articles/{{ id|urlencode }}">{{ title }}</a></li>{% endfor %}</ul></section>{% endif %}
+{% if temporal %}
+<details class="temporal-news">
+<summary>{{ temporal.label }} <time datetime="{{ temporal.date }}">{{ temporal.date|italian_date }}</time></summary>
+<ul>{% for stamp, title, id in temporal.articles %}
+<li><time datetime="{{ stamp }}">{{ stamp|italian_date }}</time>
+<a href="/articles/{{ id|urlencode }}">{{ title }}</a></li>
+{% endfor %}</ul>
+</details>
+{% endif %}
 <nav class="reading-actions" aria-label="Navigazione articolo">
 <a href="{{ back_url }}">{{ back_label }}</a> <a href="#article-start">↑ Torna all'inizio</a>
 </nav>

@@ -1,4 +1,23 @@
-from wikinews_ir.archive import build_catalog
+from wikinews_ir.archive import build_catalog, temporal_selection
+
+
+def test_temporal_windows_cross_year_exclusions_and_month_diversity():
+    dates = ["2020-12-31", "2020-12-31", "2021-01-03", "2021-01-04",
+             "2020-12-01", "2020-12-02", "2020-11-01", "2020-10-01", ""]
+    catalog = build_catalog(dict(document_id=str(i), title=str(i), publication_date=d)
+                            for i, d in enumerate(dates))
+    folder = catalog["altri-argomenti"]
+    current = (dates[0], "0", "0")
+
+    def ids(excluded):
+        selection = temporal_selection(catalog, current, folder, excluded)
+        return [row[2] for row in selection["articles"]]
+
+    assert ids(set()) == ["1"]
+    assert ids({"1"}) == ["2"]
+    assert ids({"1", "2"}) == ["4", "6", "7"]
+    assert temporal_selection(catalog, ("", "8", "8"), folder, set()) is None
+    assert temporal_selection(catalog, current, folder, set("124567")) is None
 
 
 def test_exclusive_membership_seasons_fallback_and_order():

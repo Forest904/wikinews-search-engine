@@ -3,6 +3,57 @@
 import re
 import unicodedata
 from dataclasses import dataclass, field
+from datetime import date
+
+MONTH_NAMES = "gennaio febbraio marzo aprile maggio giugno luglio agosto settembre ottobre novembre dicembre".split()
+
+
+def italian_date(value):
+    day = date.fromisoformat(value)
+    return f"{day.day} {MONTH_NAMES[day.month - 1]} {day.year}"
+
+
+def temporal_selection(catalog, current, folder, excluded):
+    """Use one publication window, then diversify equally close headlines."""
+    if not current[0]:
+        return None
+    origin = date.fromisoformat(current[0])
+    groups = [[], [], []]
+    for node in catalog.values():
+        for row in node.articles:
+            stamp, _, document_id = row
+            if not stamp or document_id in excluded or document_id == current[2]:
+                continue
+            day = date.fromisoformat(stamp)
+            distance = abs((day - origin).days)
+            if distance <= 3:
+                group = 0 if distance == 0 else 1
+            elif day.year == origin.year:
+                group = 2
+                distance = abs(day.month - origin.month)
+            else:
+                continue
+            groups[group].append((distance, day.month, node.path.split("/")[0], row))
+
+    topic = folder.path.split("/")[0]
+    for group, candidates in enumerate(groups):
+        if not candidates:
+            continue
+        selected = []
+        topics = {}
+        months = set()
+        while candidates and len(selected) < 3:
+            _, month, branch, row = min(candidates, key=lambda c: (
+                group == 2 and c[1] in months, c[0], c[2] == topic,
+                topics.get(c[2], 0), c[3][2],
+            ))
+            selected.append(row)
+            months.add(month)
+            topics[branch] = topics.get(branch, 0) + 1
+            candidates = [c for c in candidates if c[3][2] != row[2]]
+        return {"label": ("Intanto, quel giorno…", "In quei giorni…", "Nello stesso anno…")[group],
+                "date": current[0], "articles": selected}
+    return None
 
 # A deeper match wins. Within one level, declaration order is editorial priority.
 BRANCHES = [
