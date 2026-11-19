@@ -1,9 +1,9 @@
 """Build from the committed chapter and figure sources. Requires Pandoc and TeX Live/MiKTeX."""
 import csv
 import os
-from pathlib import Path
 import shutil
 import subprocess
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 
