@@ -16,19 +16,19 @@ NewsFinder permette di cercare nelle notizie italiane di Wikinotizie con cinque 
 
 Il motore cerca in **11.032 articoli** dello snapshot del 20 marzo 2025. Nel benchmark lessicale M6-B, sul test gold di 16 topic il profilo E1, selezionato sul development, raggiunge nDCG@10 **0,6558**. Il campione e la copertura dei giudizi limitano la portata del confronto.
 
-La relazione scritta è disponibile in PDF e la demo ha superato il collaudo locale. Restano da preparare la presentazione orale e le slide e da provare la demo sulla macchina e sulla rete dell’aula. [Stato delle milestone](docs/roadmap.md)
+La relazione scritta è disponibile in PDF e la demo ha superato il collaudo locale. Restano da finalizzare le slide, provare l’esposizione e da provare la demo sulla macchina e sulla rete dell’aula. [Stato delle milestone](docs/roadmap.md)
 
-- [Demo e recupero](docs/consegna/demo.md) · [Collaudo](docs/consegna/collaudo.md)
+- [Demo e recupero](docs/consegna/demo.md) · [Collaudo](docs/operazioni.md#collaudo)
 - [Run, qrels e risultati congelati (ZIP)](https://github.com/Forest904/wikinews-search-engine/releases/download/v1.0.0/risultati-m6b.zip)
-- [Risultati e limiti](docs/m6b-validation.md) · [Manifest dei risultati](benchmarks/v1/manifests/m6b-production-1.1.json) · [Commit sperimentale](https://github.com/Forest904/wikinews-search-engine/commit/1c6e51d6cf41a515a9b2986d0f7b31768dfd0bd2)
+- [Risultati e limiti](docs/evaluation.md#risultati-sperimentali) · [Manifest dei risultati](benchmarks/v1/manifests/m6b-production-1.1.json) · [Commit sperimentale](https://github.com/Forest904/wikinews-search-engine/commit/1c6e51d6cf41a515a9b2986d0f7b31768dfd0bd2)
 
 ## Documentazione di progetto
 
-- [Benchmark del motore, del server web e dei percorsi browser](docs/performance.md)
-
-- [PRD — requisiti e criteri di accettazione](docs/prd.md)
-- [Architettura e struttura dei componenti](docs/architeture.md)
-- [Roadmap dalla fase zero alla consegna](docs/roadmap.md)
+- [Roadmap](docs/roadmap.md) — consegna residua e percorso verso CirrusSearch.
+- [Sistema](docs/sistema.md) — requisiti, architettura e interfacce.
+- [Corpus e ricerca](docs/dataset.md) — selezione degli articoli, limiti e profili.
+- [Valutazione](docs/evaluation.md) — giudizi, risultati riproducibili e prestazioni.
+- [Operazioni](docs/operazioni.md) — sviluppo locale, annotazione, ripristino e deployment.
 
 ## Prerequisiti
 
@@ -81,12 +81,12 @@ Questa modalità usa la stessa password di Elasticsearch.
 
 ## Avvii successivi su Windows
 
-Fai doppio clic su **Avvia-locale.cmd** nella cartella del progetto. Il sito si apre su <http://127.0.0.1:8000/>. Da VS Code puoi anche scegliere l’attività **Locale: avvia/riavvia**. [Guida allo sviluppo locale](docs/local-development.md)
+Fai doppio clic su **Avvia-locale.cmd** nella cartella del progetto. Il sito si apre su <http://127.0.0.1:8000/>. Da VS Code puoi anche scegliere l’attività **Locale: avvia/riavvia**. [Guida allo sviluppo locale](docs/operazioni.md#sviluppo-locale)
 
 ## Area valutatori
 
 Per avviare l'area valutatori senza Elasticsearch, creare gli account e importare
-un pacchetto seguendo [la guida M5-B](docs/annotation.md), poi avviare la stessa app
+un pacchetto seguendo [la guida M5-B](docs/operazioni.md#annotazione), poi avviare la stessa app
 e aprire `/annotate` o `/coordinate`. Il database SQLite è persistente e distinto
 dagli indici di ricerca. La guida include fixture, backup e ripristino.
 
@@ -166,8 +166,7 @@ L'audit produce solo diagnostica e manifest; con errori restituisce exit code 1.
 Gli errori strutturali impediscono la pubblicazione della build. I comandi sono
 offline e non richiedono Docker o Elasticsearch. Indicizzare poi con `uv run --locked wikinews-ir index build`.
 
-Policy, schema, checksum e verifiche: [dataset](docs/dataset.md) e
-[ADR 0003](docs/decisions/0003-corpus-pipeline.md).
+Policy, schema, checksum e verifiche: [guida al corpus](docs/dataset.md).
 
 ## Baseline M3 e API
 
@@ -216,8 +215,7 @@ quando mancano. Il frammento non necessariamente mostra tutti i vincoli della qu
 I boost si configurano nei YAML E2–E4 di `configs/retrieval/` e nelle copie
 `src/wikinews_ir/resources/retrieval/`: incrementare la versione a ogni modifica
 di ranking e mantenere le copie identiche. Le risorse distribuite sono quelle
-del pacchetto, senza override per richiesta. Default e limiti in
-[ADR 0005](docs/decisions/0005-advanced-retrieval.md). In M4 furono rinviati i sinonimi E5 e il filtro per data. Il filtro è ora disponibile e verificato nella [prova locale della demo](docs/consegna/collaudo.md).
+del pacchetto, senza override per richiesta. Profili e limiti nella [guida alla ricerca](docs/dataset.md#profili-di-ricerca). In M4 furono rinviati i sinonimi E5 e il filtro per data. Il filtro è ora disponibile e verificato nella [prova locale della demo](docs/operazioni.md#collaudo).
 
 ## Export TREC e verifica riproducibile
 
@@ -239,8 +237,7 @@ Gli script verificano riuso, run ripetute e, con `--rebuild`, ricostruzione degl
 indici. M3 resta limitato a E0/E1; M4 verifica E0–E4 e gli hash baseline M3,
 misura 40 ricerche per profilo dopo warmup e salva i campioni per la review.
 Le query smoke non sono topic del benchmark e non alimentano il tuning.
-Limiti di cleaning e misure: [report M3](docs/m3-validation.md) e
-[report M4](docs/m4-validation.md).
+Limiti di cleaning e misure: [audit del corpus](docs/dataset.md#audit-e-limiti) e [misure di latenza](docs/evaluation.md#prestazioni).
 
 ## Licenze
 
@@ -263,8 +260,7 @@ salvata nel volume: usare le credenziali originarie o la procedura Elastic di re
 `ES_PORT` è una porta numerica (default 9200), sempre pubblicata su 127.0.0.1;
 se cambia, aggiornare anche `ELASTICSEARCH_URL` per l'app eseguita sull'host.
 
-Le decisioni M0 e le evidenze di verifica sono in
-[ADR 0001](docs/decisions/0001-bootstrap.md).
+Per componenti e persistenza consultare la [guida al sistema](docs/sistema.md).
 
 ## Uso Python e fixture isolate
 
@@ -308,8 +304,8 @@ Le verifiche automatiche non richiedono il dump reale.
 ## Pubblicazione M7-A
 
 Configurazione Hetzner/Cloudflare per `newsfinder.win`:
-[decisioni](docs/decisions/0008-operational-deployment.md) e [verifiche](docs/m7a-validation.md).
+[decisioni](docs/operazioni.md#deployment) e [verifiche](docs/operazioni.md#collaudo).
 Usare `compose.production.yaml` separatamente dal Compose locale. Copie manuali
 sul PC, nessun backup conservato sulla VPS. Il gate online resta da collaudare.
 
-Per preparare gli embedding con Ollama, importare il pacchetto in Qdrant e attivare il profilo, consultare la [guida alla ricerca semantica](docs/semantic-search.md).
+Per preparare gli embedding con Ollama, importare il pacchetto in Qdrant e attivare il profilo, consultare la [guida alla ricerca semantica](docs/operazioni.md#ricerca-semantica).

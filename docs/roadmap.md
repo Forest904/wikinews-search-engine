@@ -1,422 +1,77 @@
-# Roadmap end-to-end — Wikinews Search Engine
+# Roadmap di NewsFinder — Verso la ricerca di Wikinotizie
 
-**Versione documento:** 0.2.4 · **Data:** 2026-11-18 · **Stato:** piano approvato come sequenza di riferimento
+## Da chiudere per la consegna
 
-**Documenti correlati:** [PRD](./prd.md) · [Architettura](./architeture.md)
+- [ ] Finalizzare le slide a partire dalla [relazione](report/newsfinder.pdf). In locale è già presente una presentazione PowerPoint. Verificarne contenuto, assenza di codice nelle slide e inclusione nella consegna.
+- [ ] Provare l’esposizione di circa 20 minuti e registrare durata e punti da accorciare. La dimostrazione pratica ha un copione separato.
+- [ ] Eseguire la demo sulla macchina e sulla rete dell’aula, con indice locale pronto. Registrare esito, problemi e ripristino nel verbale. [Copione della demo](consegna/demo.md) · [Verbale di collaudo](operazioni.md#collaudo)
 
-## 1. Finalità e regole di pianificazione
+**Aggiornata il 19 novembre 2026.** La consegna documenta la release v1.0.0. Le sei milestone successive riguardano lo sviluppo futuro su Elasticsearch e possono avanzare indipendentemente dalla prova in aula. [Requisiti dell’homework](sistema.md)
 
-Portare il progetto **da repository vuoto alla consegna completa** dell'Homework 4: ricerca Web sul dump Wikinotizie, test rigorosi, codice GitHub installabile, presentazione di circa 20 minuti e demo live.
+## Base della release
 
-Non è stata indicata una data di consegna; la roadmap è organizzata per **fasi, dipendenze e criteri di uscita**, non per date inventate. Non vengono attribuite responsabilità a persone non definite. Le stime dimensionali (40 topic, ~600 gold, ~1.200 silver) sono target iniziali, non vincoli di completamento se il pilot mostra un diverso fabbisogno.
+Il [sistema](sistema.md) cerca su [11.032 articoli](dataset.md). E1 è il riferimento lessicale selezionato sul development. La [valutazione](evaluation.md#risultati-sperimentali) raccoglie risultati e limiti; le [operazioni](operazioni.md#collaudo) documentano il collaudo.
 
-Regole di esecuzione:
+## Obiettivo e criterio di confronto
 
-- Ogni fase produce un artefatto verificabile, non soltanto codice scritto.
-- Prima un percorso end-to-end minimale, poi qualità dati, poi ranking avanzato, poi studio sperimentale.
-- La progettazione del benchmark inizia presto; **il test set rimane riservato**.
-- Nessuna nuova feature *Could* prima del completamento dei *Must*.
-- Ogni cambiamento di corpus, indice, profilo o protocollo genera una versione/manifest identificabile.
-- La raccolta del gold procede in parallelo allo sviluppo: blocca le conclusioni sperimentali e la release accademica finale, ma non l'implementazione, i test su fixture o la pubblicazione del sito per i validatori.
-- Distinguere sempre gli stati **implementato e verificato su fixture**, **raccolta in corso** e **validato su benchmark reale**. Dati sintetici e risultati provvisori non sono evidenze sperimentali finali.
+Avvicinare la ricerca lessicale di NewsFinder al comportamento verificabile di **Wikinotizie in italiano** e misurare se il risultato resta utile ai lettori. Il confronto storico rende necessarie entrambe le verifiche. Sul test già utilizzato, E1 ha ottenuto una nDCG@10 gold superiore alla run Wikimedia proiettata sul corpus. Campione, pooling e differenze di snapshot limitano l’interpretazione. Somiglianza degli elenchi e rilevanza umana avranno quindi misure distinte. [Risultati per profilo](evaluation.md#risultati-sperimentali)
 
-## 2. Quadro generale delle milestone
+Il riferimento esterno è il sito italiano osservato a una data dichiarata. Lo snapshot locale precede la chiusura di Wikinotizie del maggio 2026. Usare risposte datate del sito per verificare il comportamento del motore e fonti storicamente compatibili per arricchire l’indice locale. Conservare E0–E4, corpus, run e giudizi della release come base riproducibile. [Archivio italiano](https://it.wikinews.org/wiki/Pagina_principale) · [Protocollo di valutazione](evaluation.md)
 
-| Milestone | Risultato dimostrabile | Dipendenze | Gate di uscita |
-|---|---|---|---|
-| M0 — Repo e tecnologia | Progetto Python, Compose, lint, test | Nessuna | Completato: avvio ambiente e CI base verificati |
-| M1 — Vertical slice | UI → API → Elasticsearch → risultati su fixture | M0 | Completato localmente: ricerca browser e Python su fixture |
-| M2 — Corpus pipeline | Dump letto, ripulito, deduplicato e manifestato | M0 | Completato localmente: 11.032 articoli e build riproducibili |
-| M3 — Baseline completa | E0/E1 con corpus reale, API/UI stabile | M1, M2 | Completato localmente: 11.032 articoli per indice e run identiche dopo rebuild |
-| M4 — Retrieval avanzato | E2/E3/E4 e possibili estensioni | M3 | Completato localmente: E2/E3/E4, highlight e baseline invariate |
-| M4-P — Benchmark prestazionale | Latenza di ricerca confrontabile per E0–E4 sul corpus reale | M4 | Completata localmente. Due sessioni, 400 richieste misurate, zero errori |
-| M5-A — Infrastruttura benchmark | Topic, pooling, schema giudizi, pacchetti silver Codex ed export | M3, M4 | Completata localmente su fixture; 48 coppie esterne riconciliate, nessun gold/silver reale |
-| M5-B — Strumento di annotazione | Pagina condivisa, assegnazioni e revisione | M5-A | Completata localmente su fixture: flusso multiutente, persistenza, revisione ed export verificati |
-| M5-C — Pilot e congelamento | Calibrazione, budget, topic e protocollo congelati | M5-A, M5-B; M7-A per pilot online | Completata il 18 novembre: confronto silver 22/24, budget stimato 12 ore, pacchetto congelato |
-| M5-D — Raccolta e consolidamento | Gold/silver separati e pool tracciabili | M5-C; M7-A per raccolta condivisa | Completata il 19 novembre 2026. 190 gold, 982 silver e 190 coppie condivise |
-| M6-A — Implementazione valutazione | Metriche, confronti e generazione report | M5-A | Completata su fixture sintetiche il 18 novembre 2026 |
-| M6-B — Esperimenti reali | Tuning development, confronto finale, error analysis | M4, M6-A; gold development per tuning, M5-D per finale | Completata il 19 novembre 2026. E1 selezionato su development, test gold valutato una volta |
-| M7-A — Pubblicazione operativa | Sito condivisibile con i validatori | M5-B | Sito pubblicato; ricerca e annotazione pronte via HTTPS. Collaudo operativo da confermare |
-| M7-B — Consegna accademica | GitHub, README, slide, demo live | M6-B | Release tecnica v1.0.0, [relazione PDF](report/newsfinder.pdf) disponibile e demo collaudata localmente. Slide e prova orale rinviate, demo da provare in aula |
+## 1. Fissare il comportamento di riferimento
 
-**Parallelismo consentito:** dopo M1, la preparazione dei topic e delle linee guida può avanzare insieme al preprocessing. Il pooling definitivo, invece, dipende dalle run candidate disponibili e dall'identità stabile dei documenti.
+**Dipendenza:** release v1.0.0. Preparare un campione versionato di ricerche su titoli, eventi, termini distribuiti su più campi, frasi, apostrofi, refusi e query senza risultati. Riutilizzare le run esterne disponibili dove contengono già l’evidenza richiesta. Per ogni nuova osservazione conservare data, query, parametri, namespace, ID e ordine dei risultati, revisione quando disponibile, documento indicizzato e richiesta generata. Archiviare anche configurazione e provenienza del codice consultato. [Configurazione locale](https://it.wikinews.org/w/api.php?action=cirrus-config-dump&format=json) · [Profili CirrusSearch](https://www.mediawiki.org/wiki/Extension:CirrusSearch/Profiles)
 
-**Percorso operativo dopo M4:** M5-A → M5-B → M7-A → M5-C → M5-D. Il pilot può essere provato localmente prima della pubblicazione. M6-A e la preparazione di documentazione, slide e demo possono avanzare mentre si costruisce lo strumento o si raccolgono i giudizi. Il tuning M6-B può iniziare su development gold consolidato; la valutazione finale aspetta M5-D e il congelamento del profilo. La numerazione M7 non implica che la pubblicazione operativa debba aspettare M6.
+Usare come caso guida `terremoto Abruzzo`: il dump della richiesta mostra il profilo per campo, il filtro sul namespace principale, i rami di near match, l’highlighting e i riordinamenti. Per ogni funzione indicare se è osservata sul sito, descritta nella documentazione generale o ancora da verificare. Partire dai token italiani e dal percorso effettivo di completamento per chiudere le due incertezze emerse nell’indagine. [Query generata](https://it.wikinews.org/w/api.php?action=query&list=search&srsearch=terremoto%20Abruzzo&cirrusDumpQuery=1&format=json) · [Risultati](https://it.wikinews.org/w/api.php?action=query&list=search&srsearch=terremoto%20Abruzzo&format=json)
 
-## 3. Fase M0 — Bootstrap del repository
+**Criterio di uscita:** un altro sviluppatore può ispezionare offline esempi, risposte e matrice comportamento–evidenza. Ogni lacuna ha una verifica prevista o un limite dichiarato.
 
-**Obiettivo:** avere un progetto coerente, installabile e testabile prima di sviluppare le feature.
+## 2. Ricostruire ciò che il motore può cercare
 
-### Attività
+**Dipendenze:** manifest M2 e casi della milestone 1. Produrre due viste dello stesso snapshot. La prima mantiene gli 11.032 ID accademici. La seconda parte da tutti i record disponibili del namespace principale, riconcilia le revisioni e classifica articoli, speciali, redirect e altre pagine. Un redirect può contribuire come titolo alternativo della destinazione. Conservare la distinzione fra pagina indicizzata e risultato autonomo. [Policy del corpus](dataset.md) · [Filtri applicati dal sito](https://it.wikinews.org/w/api.php?action=query&list=search&srsearch=terremoto%20Abruzzo&cirrusDumpQuery=1&format=json)
 
-- [x] Creare repository GitHub `wikinews-search-engine` (nome di lavoro) e licenza del codice appropriata.
-- [x] Creare struttura `src/wikinews_ir`, `tests`, `configs`, `data`, `benchmarks`, `experiments`, `docs`.
-- [x] Inserire i tre documenti iniziali in `docs/` e collegarli dal README.
-- [x] Inizializzare `pyproject.toml`, ambiente Python 3.12, `uv.lock` e configurazione Ruff/pytest.
-- [x] Scegliere e fissare una patch Elasticsearch 9.x e client Python compatibile; registrare la decisione.
-- [x] Creare `compose.yaml` con Elasticsearch single-node, volume persistente, health check e sicurezza locale.
-- [x] Creare `.env.example`, `.gitignore`, Dockerfile minimo e Makefile con target iniziali.
-- [x] Implementare app FastAPI minimale con `GET /api/health` e pagina iniziale di servizio.
-- [x] Attivare GitHub Actions per lint e unit test su fixture minime.
+Affiancare al corpo giornalistico una vista del testo espanso recuperabile dall’HTML. Estrarre con provenienza titolo, apertura, intestazioni, categorie, template identificabili, collegamenti, fonti e redirect. Tenere distinti data editoriale, data citata dalla fonte, eventuale data dell’evento e timestamp di revisione. Registrare per campo origine, copertura e valori mancanti. Per grafo e dipendenze usare arricchimenti datati e compatibili quando reperibili. Conteggiare link locali, rimandi a Wikipedia e URL di fonte separatamente. [Template Data](https://it.wikinews.org/w/index.php?title=Template:Data&action=raw) · [Template Pubblicato](https://it.wikinews.org/w/index.php?title=Template:Pubblicato&action=raw)
 
-**Stato: M0 completata (2026-11-16).** Tutti i criteri di uscita sono soddisfatti:
-installazione da lockfile, collaudo Docker e health, lint e test locali, CI GitHub
-Actions superata (esito remoto confermato dal maintainer). Evidenze e decisioni in
-[ADR 0001](decisions/0001-bootstrap.md). M1 successivamente completata: vedere la sezione seguente.
+**Criterio di uscita:** due manifest con conteggi e differenze spiegate per ID e revisione. Per la pagina 26053 confrontare sommario dello speciale, primo paragrafo, data del 7 aprile 2009, categoria editoriale e origine dei link con il documento ufficiale. Verificare anche uno speciale e un redirect con destinazione assente o presente nel dump. Documentare i dati irrecuperabili e gli effetti previsti. [Revisione campione](https://it.wikinews.org/w/index.php?title=Nuova_fortissima_scossa_di_terremoto_in_Abruzzo&oldid=964970) · [Documento CirrusSearch](https://it.wikinews.org/w/api.php?action=query&prop=cirrusdoc&pageids=26053&format=json)
 
-### Deliverable
+## 3. Riprodurre il recupero lessicale su Elasticsearch
 
-Repository versionato; `README.md` iniziale; ambiente installabile; servizio Elasticsearch e app avviabili; CI essenziale.
+**Dipendenze:** campione di riferimento e viste del corpus. Introdurre mapping e profilo sperimentale versionati, selezionabili dal medesimo motore usato da Web, API e valutazione. Riprodurre prima l’ammissione dei candidati con AND sul campo aggregato o sulla variante plain e un ramo alternativo di near match per titoli e rimandi. Ricostruire poi il punteggio BM25 per campo, le varianti analizzate e la combinazione fra apertura e corpo. Ricavare i coefficienti dalla query effettiva distinguendo le clausole di ranking da quelle di evidenziazione. [Albero della query italiana](https://it.wikinews.org/w/api.php?action=query&list=search&srsearch=terremoto%20Abruzzo&cirrusDumpQuery=1&format=json)
 
-### Exit criteria
+**Criterio di uscita:** fixture separate per inclusione e ordine. Coprire termini distribuiti tra titolo e testo, titolo alternativo, frase nel box condiviso, accenti, apostrofi tipografici e flessioni. Registrare i token locali e, quando osservabili, quelli di riferimento. Per ogni differenza dovuta ad analyzer, plugin o versione mostrare una query interessata e il risultato ottenuto. [Baseline esistenti](dataset.md) · [Configurazione delle similarità](https://it.wikinews.org/w/api.php?action=cirrus-config-dump&format=json)
 
-1. Un ambiente pulito riesce a installare dipendenze da lockfile.
-2. Docker Compose avvia Elasticsearch e il client applicativo si connette con credenziali configurate.
-3. `/api/health` distingue correttamente componente pronto e backend non raggiungibile.
-4. Lint e test basilari passano localmente e in CI.
+## 4. Riprodurre i tre riordinamenti
 
-## 4. Fase M1 — Vertical slice end-to-end
+**Dipendenza:** profilo lessicale verificato. Implementare e misurare un segnale alla volta nell’ordine osservato. Registrare numero di shard, finestre, copertura dei link, sorgente del timestamp e istante fissato per le run. [Sezione rescore della richiesta](https://it.wikinews.org/w/api.php?action=query&list=search&srsearch=terremoto%20Abruzzo&cirrusDumpQuery=1&format=json)
 
-**Obiettivo:** verificare subito la comunicazione completa tra browser, FastAPI ed Elasticsearch, su dati controllati.
-
-### Attività
-
-- [x] Preparare 5–20 documenti **fixture** sintetici o campione riutilizzabile con provenienza nota.
-- [x] Definire un mapping semplice titolo/corpo e indicizzare le fixture.
-- [x] Implementare `SearchRequest`, `SearchHit`, `SearchResponse` e `RetrievalEngine`.
-- [x] Implementare query builder BM25 di base; validare i parametri.
-- [x] Esporre `/api/search` e `/api/articles/{document_id}`.
-- [x] Creare form Jinja2 e lista risultati con titolo, snippet, link e empty state.
-- [x] Eseguire test end-to-end e gestione di Elasticsearch non disponibile.
-
-### Exit criteria
-
-Una query digitata nel browser recupera dal motore Elasticsearch il risultato atteso su fixture; lo stesso `RetrievalEngine` può essere chiamato da Python senza browser. La vertical slice deve funzionare **prima** della pipeline definitiva del dump.
-
-**Stato: M1 completata e verificata localmente (2026-11-16).**
-Ricerca browser e uso Python verificati con Elasticsearch reale; 56 test superati,
-inclusi E2E Chromium. Il nuovo job CI remoto resta da verificare dopo il push.
-Decisioni ed evidenze in [ADR 0002](decisions/0002-vertical-slice.md).
-
-## 5. Fase M2 — Corpus audit, ingestion e data quality
-
-**Obiettivo:** trasformare lo snapshot fornito in un corpus ricercabile, documentato e versionato.
-
-### Attività
-
-- [x] Acquisire il file del 20/03/2025 nella cartella ignorata `data/raw/`; verificare il checksum SHA-256.
-- [x] Implementare reader streaming archivio/JSON con validazione dello schema osservato.
-- [x] Riprodurre e verificare i conteggi dell'audit preliminare: 12.261 record, 12.213 identificativi distinti, categoria `Pubblicati` da verificare.
-- [x] Definire policy di ammissibilità: namespace, lingua, categoria `Pubblicati`, pagine speciali/redirect e casi incerti.
-- [x] Definire policy deterministica di deduplicazione e selezione revisione (`identifier`, `version.identifier`).
-- [x] Analizzare campioni di HTML prima/dopo cleaning: navigazione, template, fonti, tabelle e testo giornalistico.
-- [x] Implementare cleaner testato su casi rappresentativi e casi limite.
-- [x] Validare l'estrazione di date e distinguere pubblicazione, evento e metadati editoriali; mantenere `null` quando incerta.
-- [x] Produrre `processed` e manifest con righe lette, tenute, scartate per causa, checksum e versione pipeline.
-- [x] Eseguire audit post-processing: ID univoci, testi vuoti/corti, lunghezze anomale, sample review e conteggi.
-- [x] Documentare scelte e limiti in `docs/dataset.md` (da creare in questa fase).
-
-### Exit criteria
-
-Ogni documento processed ha ID stabile, revisione, titolo, testo, URL e provenienza. Il numero finale di documenti è giustificato dagli scarti. La stessa versione della pipeline sullo stesso dump produce contenuti equivalenti e identificabili.
-
-**Stato: M2 completata e verificata localmente (2026-11-16).**
-Il percorso autonomo è disponibile con `uv run --locked wikinews-ir corpus prepare`:
-download con checksum atteso, preparazione e riuso verificato degli artefatti.
-12.261 record riconciliati in 48 revisioni superate, 1.181 esclusi e 11.032 articoli.
-Due build indipendenti producono gli stessi hash; campione di 40 pagine revisionato.
-Ruff superato, 72 test superati e 6 integration/E2E saltati nella verifica offline.
-CI remota da verificare dopo il push. Policy, checksum e limiti in
-[dataset.md](dataset.md), [revisione campione](dataset-review.md) e
-[ADR 0003](decisions/0003-corpus-pipeline.md). Indicizzazione del corpus reale in M3.
-
-## 6. Fase M3 — Baseline sul corpus reale
-
-**Obiettivo:** rendere operativo il sistema completo sul corpus preparato e fissare le baseline di recupero.
-
-### Attività
-
-- [x] Creare mapping e configurazioni versionate per `wikinews_standard_v1` e `wikinews_italian_v1`.
-- [x] Implementare indicizzazione bulk idempotente, controllo di conteggio ed esito.
-- [x] Introdurre profili `E0` (standard BM25) e `E1` (italian BM25).
-- [x] Realizzare ricerca su titolo/corpo, paginazione e dettaglio articolo.
-- [x] Aggiungere tiebreak deterministico per ranking sperimentali e metadata indice/profilo nelle risposte.
-- [x] Misurare tempi indicizzazione, conteggi e latenza orientativa sul target di demo.
-- [x] Verificare qualità di alcuni risultati manualmente e documentare errori di ingestion distinguendoli da problemi di ranking.
-
-### Exit criteria
-
-Il dump assegnato è cercabile dalla Web UI. E0 ed E1 interrogano lo stesso corpus logico; esiste una procedura ripetibile per ricostruire gli indici. Nessuna modifica al ranking viene spacciata per miglioramento senza benchmark.
-
-**Stato: M3 completata e verificata localmente (2026-11-16).**
-Entrambi gli indici contengono gli stessi 11.032 articoli M2. UI E0/E1, paginazione,
-dettaglio, export TREC e ricostruzione sono verificati. Hash delle run identici
-prima e dopo rebuild. Limiti del cleaning distinti dal ranking nel
-[report M3](m3-validation.md); decisioni in [ADR 0004](decisions/0004-baseline-corpus.md).
-CI remota da verificare dopo il push.
-
-## 7. Fase M4 — Ricerca classica avanzata
-
-**Obiettivo:** introdurre le feature selezionate, ciascuna con configurazione indipendente e test.
-
-### Attività
-
-- [x] Implementare `E2`: boosting del titolo rispetto al corpo; parametro configurabile.
-- [x] Implementare `E3`: fuzzy matching controllato; scegliere se basso boost, fallback o entrambe le varianti testate.
-- [x] Implementare `E4`: phrase search; chiarire semantica delle virgolette e comportamento UI.
-- [x] Valutare `E5`: sinonimi controllati rinviati, con motivazione in ADR 0005.
-- [x] Valutare miglioramenti UI: highlight e filtro per intervallo date **solo** quando affidabile.
-- [x] Scrivere test unitari del query builder e test integrazione con coppie query-documento difficili.
-- [x] Evitare la combinazione indiscriminata di feature: E3/E4/E5 devono confrontarsi singolarmente con E2.
-
-### Exit criteria
-
-Ogni profilo produce risultati e run con ID/versione riconoscibili. Le feature non interrompono la UI baseline; eventuali regressioni sono misurabili e documentate. La selezione del profilo finale **non** usa il test gold.
-
-**Stato: M4 completata e verificata localmente (2026-11-16).**
-E2/E3/E4 e highlight disponibili in API/UI/Python, con run ripetibili anche dopo
-rebuild. E0/E1 conservano gli hash M3. Nessun cambiamento al corpus; sinonimi e
-filtro date rinviati in M4. Il filtro per data è stato poi verificato nel [collaudo locale](consegna/collaudo.md). Evidenze nel [report M4](m4-validation.md), semantica e
-limiti in [ADR 0005](decisions/0005-advanced-retrieval.md). CI remota da verificare
-dopo il push; selezione del profilo finale riservata a M5/M6.
-
-### M4-P — Benchmark prestazionale del motore di ricerca
-
-**Stato e obiettivo.** Completata localmente il 18 novembre 2026. Misurare la latenza interattiva a cache calda sulla macchina della demo, a partire dalle prove dei [report M3](m3-validation.md) e [M4](m4-validation.md).
-
-- [x] Versionare un insieme di query tratte dalle prove esistenti che includa ricerca semplice, refuso, frase tra virgolette e ricerca senza risultati. Usare le stesse query, nello stesso ordine e con la stessa paginazione, per tutti i profili E0–E4.
-- [x] Inviare richieste sequenziali a `/api/search`. Dopo un warmup escluso dalle statistiche, misurare dal client il tempo dall’invio alla ricezione della risposta completa. Registrare per ogni richiesta anche il tempo riportato da Elasticsearch, quando disponibile, e l’esito.
-- [x] Conservare i campioni grezzi e riportare per profilo richieste totali, errori, mediana e p95 delle latenze delle richieste riuscite, distinguendo le misure del client da quelle di Elasticsearch. Registrare macchina, versioni software, corpus, indici, profili, versione delle query, warmup e ripetizioni.
-
-**Criterio di completamento.** Un comando documentato esegue la prova sugli 11.032 articoli e genera il report per E0–E4. Due esecuzioni sulla stessa macchina e con la stessa configurazione permettono di confrontare mediana e p95 e descrivere la variabilità osservata. Questa baseline precede l’eventuale definizione di una soglia di latenza, come previsto dal [PRD](prd.md).
-
-Evidenze e comando di replica nel [report M4-P](m4p-validation.md).
-
-## 8. Fase M5 — Benchmark e ground truth multi-sorgente
-
-**Obiettivo:** implementare il benchmark e lo strumento collaborativo prima della raccolta massiva, poi produrre giudizi tracciabili mentre il progetto continua ad avanzare.
-
-**Budget umano:** tre validatori, ciascuno con 4–6 ore disponibili: **12–18 ore complessive**, incluse calibrazione, annotazione e risoluzione dei disaccordi. Nessuna scadenza introdotta. I target ~600 gold e ~1.200 silver saranno rivalutati sui tempi del pilot; il numero di coppie distinte va separato dal numero di annotazioni, che include le doppie letture.
-
-**Riferimento esplorativo:** il lavoro in `C:\Users\lucap\Downloads\itwikinews-NS0-20250320-ENTERPRISE-HTML.json\evaluation\pilot` contiene quattro topic, 48 coppie e proposte dell'assistente, con zero revisioni umane dichiarate. Riutilizzare bisogni informativi, rubriche e casi limite come conoscenza da verificare. La selezione esterna conta 11.031 documenti contro gli 11.032 del progetto: riconciliare ID, revisioni e testi con M2, senza importare automaticamente policy, pool o etichette. Le proposte non costituiscono gold né silver controllato; i casi usati per calibrazione non entrano nel test finale. Il percorso locale è un riferimento di provenienza, non una dipendenza di installazione.
-
-### M5-A — Infrastruttura benchmark
-
-#### Topic e rubriche
-
-- [x] Formalizzare formato topic: query, information need, inclusioni/esclusioni, tipologia, tema, periodo, famiglia evento.
-- [x] Implementare validazione della rubrica `0/1/2`, astensioni e split per famiglie, evitando eventi quasi duplicati tra development e test.
-- [x] Predisporre varianti con refusi come proprietà del topic originale, non topic indipendenti; compilazione reale in M5-C.
-
-#### Candidate generation e pooling
-
-- [x] Predisporre esecuzione delle run E0–E4 con top-k documentato e salvataggio TREC; verificare il flusso su fixture prima delle run definitive.
-- [x] Realizzare adapter per ricerca Wikinotizie e salvare ranking con timestamp e parametri; verifica HTTP simulata, live rinviato.
-- [x] Mappare risultati esterni al `document_id` del dump; registrare quelli assenti dallo snapshot.
-- [x] Unire e deduplicare i candidati per topic, preservando provenienza/rank delle run.
-- [x] Implementare selezione separata dal pool, quote per run e seed registrati; budget reale da fissare in M5-C prima dei giudizi.
-- [x] Registrare numero di candidati, copertura per run e casi non mappati.
-
-#### Giudizi, silver ed export
-
-- [x] Implementare schema unificato per giudizi, motivazioni, evidenza, metadati dell'annotatore e versioni di topic, rubrica e testo.
-- [x] Preparare silver tramite **nuova chat Codex in VS Code**: workspace autonomo, prompt/schema versionati, validatore Python standalone, import degli output originali e corretti; nessun client API LLM.
-- [x] Predisporre lo stesso pacchetto di criteri e testo pulito per umani e LLM, senza rank o etichette precedenti.
-- [x] Implementare export gold/silver separati, checksum e manifest; astensioni e coppie non giudicate non diventano grado `0`.
-- [x] Testare deduplicazione del pool, split per famiglia, citazioni, astensioni, separazione delle fonti ed export su fixture.
-
-**Gate M5-A:** contratti e pipeline funzionano su fixture senza gold reale. La prima esecuzione silver reale è successivamente documentata nel [diario M5-C](m5c-validation.md); il benchmark definitivo resta pendente.
-
-**Stato: M5-A completata e verificata localmente (2026-11-16).** Quattro topic adattati come bozze di calibrazione; 48/48 coppie presenti con revisione corrispondente, ma testo pulito diverso in tutti i casi. Nessuna etichetta importata. Workflow e limiti in [evaluation.md](evaluation.md); evidenze in [m5a-validation.md](m5a-validation.md). UI successivamente completata in M5-B; raccolta reale ancora da eseguire.
-
-### M5-B — Strumento condiviso di annotazione
-
-- [x] Integrare nell'app una pagina con query, bisogno informativo, inclusioni/esclusioni e rubrica del topic sempre visibili accanto a titolo e testo completo congelato.
-- [x] Aggiungere ricerca nel testo ed evidenziazione lessicale facoltativa, senza suggerimenti automatici del grado.
-- [x] Offrire scorciatoie `0/1/2`, astensione e “riprendi dopo” come stati distinti; causali rapide e nota libera per motivare il giudizio.
-- [x] Acquisire citazioni selezionando passaggi del testo, con riferimenti verificabili alla versione annotata.
-- [x] Implementare salvataggio confermato, ripresa della sessione, modifica dell'ultimo giudizio e cronologia delle revisioni; non avanzare silenziosamente se il salvataggio fallisce.
-- [x] Assegnare blocchi per topic, con ordine dei documenti indipendente dal ranking e sovrapposizioni programmate per la doppia annotazione.
-- [x] Escludere origine, rank, silver e giudizi altrui dai dati restituiti all'annotatore durante la valutazione indipendente, non soltanto dalla visualizzazione.
-- [x] Predisporre ruoli di annotatore e coordinatore, coda dei dubbi e adjudication da parte del terzo revisore; conservare entrambe le valutazioni iniziali e la decisione finale separatamente.
-- [x] Esporre interfacce per assegnazioni, salvataggio/versionamento dei giudizi, adjudication ed export, con autorizzazioni e gestione dei salvataggi concorrenti.
-- [x] Mostrare avanzamento personale e complessivo, astensioni e revisioni pendenti; mantenere giudizi e risultati test fuori dagli strumenti di tuning. L'accesso per annotare il test non autorizza il suo uso sperimentale anticipato.
-- [x] Rendere la raccolta indipendente da chiamate live a Elasticsearch, Web o LLM, leggendo topic e documenti dai pacchetti congelati.
-- [x] Verificare il flusso multiutente: isolamento dei giudizi, autorizzazioni, salvataggi simultanei, interruzione/ripresa, modifica e adjudication.
-
-**Gate M5-B:** il percorso completo funziona localmente con più utenti e dati persistenti. È possibile procedere alla pubblicazione M7-A senza attendere annotazioni reali.
-
-**Stato: M5-B completata e verificata localmente (2026-11-16).** UI dedicata desktop/mobile,
-account locali, SQLite persistente, blocchi congelati, finalizzazione automatica,
-revisione indipendente ed export per split. 173 test superati, incluse tre sessioni
-browser e regressioni retrieval; backup/ripristino locale verificato. Nessun giudizio
-reale raccolto. Guida in [annotation.md](annotation.md), evidenze in
-[m5b-validation.md](m5b-validation.md) e decisioni in
-[ADR 0006](decisions/0006-collaborative-annotation.md). CI remota da verificare dopo il push.
-
-### M5-C — Pilot, budget e congelamento
-
-- [x] Prima prova silver indipendente su 24 coppie di calibrazione: GPT-6.0-Astra
-  dichiarato, validazione/import/export completati il 16 novembre 2026; 13 gradi 2,
-  2 gradi 1, 9 gradi 0, nessuna astensione. [Diario](m5c-validation.md).
-  Questo risultato non completa la raccolta di produzione M5-D.
-
-- [x] Costruire **pilot di 4 topic**, uno per tipologia, usando strategia ibrida corpus/user-driven e riconciliando gli spunti esterni con il corpus M2.
-- [x] Raccogliere i giudizi dei tre valutatori sulle 24 coppie comuni e documentare le decisioni del coordinatore sui disaccordi.
-- [x] Recepire nel protocollo la modalità di revisione adottata e confermare la rubrica prima della produzione.
-- [x] Adottare la stima retrospettiva di due minuti per lettura e dimensionare coppie distinte e quota doppia nel budget di 12–18 ore, riservando tempo per calibrazione e adjudication.
-- [x] Portare il benchmark al target di **40 topic**: 10 evento, 10 tema, 10 entità, 10 multi-vincolo. Stratificare temi e periodi; non copiare automaticamente query dai titoli.
-- [x] Congelare split **24 development / 16 test** per famiglie, escludendo dal test i casi di calibrazione; documentare eventuali variazioni motivate dal pilot.
-- [x] Fissare top-k, budget, quote di campionamento, copertura gold e doppia annotazione prima di osservare i giudizi di produzione; preservare gold su parte development e **tutti i topic di test**.
-- [x] Eseguire e conservare run E0–E4 e ricerca Wikinotizie per i topic definitivi; congelare pool, testi, assegnazioni e manifest prima della raccolta.
-- [x] Scegliere il modello nella chat Codex e congelare prompt e pacchetti sulla sola calibrazione/development prima del silver di produzione; registrare modello dichiarato o `unknown`, senza inventare un identificatore.
-
-**M5-C completata il 18 novembre 2026.** Budget stimato, 190 coppie gold e 982 coppie nel pacchetto di produzione. Il congelamento è stato verificato sulle sei run reali. [Risultati e manifest](m5c-validation.md#congelamento-di-produzione-del-18-novembre-2026).
-
-### M5-D — Raccolta e consolidamento in parallelo
-
-- [x] Annotare manualmente gold secondo assegnazioni e campionamento congelati, mentre proseguono M6-A e la preparazione della consegna.
-- [x] Eseguire il silver in una nuova chat Codex e workspace dedicato ai pacchetti selezionati, senza fornire gold, rank o giudizi altrui; validare e importare gli output con metadati. Separazione organizzativa, non sandbox tecnica; riproducibili gli artefatti, non garantite identiche etichette fra chat.
-- [x] Controllare qualità con doppie annotazioni programmate e revisione dei disaccordi da parte del terzo validatore; documentare accordo umano e casi irrisolti.
-- [x] Gestire esplicitamente `unjudged`, rinvii e astensioni: nessuna conversione automatica in non rilevanza e nessuna media tra gold, silver e ranking esterno.
-- [x] Versionare separatamente gold e silver, con checksum e protocolli del benchmark.
-- [x] Verificare copertura prevista, evidenze, integrità degli export e disponibilità delle stesse coppie per il confronto gold/silver.
-
-### Exit criteria M5 complessiva
-
-Esistono topic, split, candidate pools, qrels gold e silver separati, ranking Wikinotizie come **run esterna** e manifest di provenienza. Il benchmark è utilizzabile da script senza consultazione live del Web/LLM. Non è necessario rispettare numeri arbitrari se il pilot giustifica un diverso budget; la scelta va documentata.
-
-## 9. Fase M6 — Valutazione, selezione e analisi degli errori
-
-**Obiettivo:** dimostrare sperimentalmente quali configurazioni funzionano meglio e quanto è affidabile il giudice automatico.
-
-### M6-A — Implementazione valutazione senza attendere il gold
-
-- [x] Implementare report `ir-measures`: nDCG@10, P@5 (soglia di rilevanza dichiarata), eventuale MRR@10.
-- [x] Implementare copertura in top-k, analisi degli unjudged, confronto gold/silver sulle stesse coppie e generazione di tabelle/grafici con manifest.
-- [x] Verificare calcoli e report con fixture sintetiche dai risultati attesi, inclusi giudizi mancanti e astensioni; distinguere chiaramente questi output dagli esperimenti reali.
-
-**Gate M6-A superato il 18 novembre 2026.** Pipeline verificata su fixture sintetiche. [Risultati del collaudo](m6a-validation.md).
-
-### M6-B — Esperimenti reali e valutazione finale
-
-- [x] Calcolare metriche per query e medie sulle run usando **development gold** per selezione/tuning.
-- [x] Effettuare confronto E0 → E1 → E2 e ablation di E3/E4/(E5).
-- [x] Misurare effetto delle varianti di refuso e delle query più vincolate.
-- [x] Quantificare copertura dei giudizi in top-k e sensibilità agli unjudged; non interpretare recall completo come noto.
-- [x] Confrontare gold e silver sulle **stesse** coppie: matrice di confusione, macro-F1, weighted kappa e disaccordi.
-- [x] Determinare se silver produce lo stesso ordinamento dei sistemi del gold; descrivere eventuale bias del giudice.
-- [x] Congelare profilo candidato e protocollo di analisi **prima** di aprire il test gold.
-- [x] Eseguire valutazione finale su 16 test topic e registrare risultati, limiti e interpretazione.
-- [x] Salvare run, manifest, tabelle, grafici e testo di error analysis; non scegliere ex post la metrica più favorevole.
-
-### Exit criteria
-
-Risultati riproducibili e interpretati correttamente: miglioramenti/regressioni documentati; confronto gold/silver; analisi degli errori; nessuna affermazione forte basata su pool incompleti o differenze statisticamente non supportate.
-
-**Gate M6-B superato il 19 novembre 2026.** E1 congelato su development e valutato sui 16 topic test. [Risultati, limiti e riproduzione](m6b-validation.md).
-
-## 10. Fase M7 — Pubblicazione operativa e consegna accademica
-
-**Obiettivo:** soddisfare integralmente la consegna del professore con un repository leggibile e una dimostrazione affidabile.
-
-### M7-A — Pubblicazione operativa per i validatori
-
-Questa fase dipende da M5-B, non dagli esperimenti finali. Il sito può essere condiviso per il pilot e per raccogliere le validazioni mentre il resto del progetto prosegue.
-
-- [x] Definire deployment Hetzner + Cloudflare per `newsfinder.win`, SQLite e budget indicativo di 10 euro/mese per circa due mesi: [ADR 0008](decisions/0008-operational-deployment.md). Procedura operativa fornita in chat; modello disponibile e costo finale da verificare prima dell'acquisto.
-- [x] Pubblicare il sito con HTTPS. Il 18 novembre 2026 i controlli pubblici di ricerca e annotazione hanno restituito HTTP 200. [Verbale di verifica](m7a-validation.md).
-- [x] Confermare gli accessi individuali dei tre validatori e i permessi di annotatore e coordinatore.
-- [x] Configurare archivio persistente per assegnazioni e giudizi, segreti tramite configurazione e copia manuale sul PC, senza backup sul server o S3; mantenere Elasticsearch non esposto pubblicamente.
-- [x] Verificare accesso da computer distinti, salvataggi concorrenti e ripresa delle sessioni; l'annotazione deve funzionare anche quando i servizi di ricerca o LLM non sono disponibili.
-- [x] Eseguire una copia manuale sul PC e una prova di ripristino locale; verificare online che aggiornamento o riavvio non cancellino giudizi e cronologia.
-- [x] Documentare avvio, monitoraggio degli errori di salvataggio, recupero dei dati e procedura di aggiornamento. [Deployment](deployment.md) e [gestione delle annotazioni](annotation.md).
-- [x] Condividere istruzioni per accesso, rubrica, scorciatoie, astensioni e segnalazione dei problemi; verificare il percorso prima di iniziare la raccolta reale.
-
-**Gate M7-A:** sito raggiungibile dai colleghi, autorizzazioni e persistenza verificate online, copia manuale sul PC e ripristino locale verificati. Nessun backup persistente sul server o S3; nessuna frequenza automatica garantita. Esportare gli artefatti finali prima della dismissione. La pubblicazione operativa non certifica il completamento del benchmark o della consegna accademica.
-
-### M7-B — Consegna accademica
-
-M6-B è completata. La consegna del 19 novembre riguarda repository, risultati congelati e demo. La relazione scritta è disponibile in PDF. Le slide e la prova orale sono rinviate. [Collaudo e verifiche residue](consegna/collaudo.md)
-
-#### Release repository
-
-- [x] Aggiornare `README.md`: panoramica, requisiti hardware/software, setup, download dump, `.env`, `make up`, ingest, run, test, benchmark, troubleshooting.
-- [x] Documentare architettura reale e decisioni finali; rimuovere voci obsolete dal blueprint.
-- [x] Aggiornare `docs/dataset.md`, `docs/evaluation.md` e ADR effettivamente necessari.
-- [x] Inserire link alla fonte e indicazioni corrette su copyright/licenza dei contenuti; non committare l'intero dump.
-- [x] Verificare che non siano presenti segreti, file temporanei, indici Elasticsearch o gigabyte di raw data.
-- [x] Pubblicare release/tag e commit di riferimento dei risultati sperimentali.
-- [x] Provare installazione da clone pulito con i soli prerequisiti dichiarati.
-
-#### Presentazione di circa 20 minuti
-
-Struttura orientativa, da adattare ai risultati disponibili:
-
-| Segmento | Durata indicativa | Contenuto |
-|---|---:|---|
-| Problema e vincoli | 2 min | Homework, corpus, obiettivi |
-| Sfide dati/architettura | 4 min | Parsing, pulizia, index design, stack |
-| Retrieval e scelte | 4 min | BM25, analyzer, boosting, fuzzy/phrase |
-| Ground truth e metodologia | 5 min | Pooling, gold/silver, baseline esterna, metriche |
-| Risultati e limiti | 5 min | Tabelle/grafici, trade-off, errori |
-
-Totale ~20 minuti; **nessun codice nelle slide**, come richiesto. La demo live è un deliverable separato e va collocata nei tempi richiesti dal docente, non forzatamente dentro questi 20 minuti.
-
-#### Demo live e contingency
-
-- [x] Avviare Elasticsearch con indice già persistito, backend e UI prima della prova.
-- [x] Preparare 3–5 query rappresentative (semplice, avanzata, typo/phrase, no-results), senza selezionarle per simulare metriche.
-- [x] Verificare `/api/health`, conteggio indice, funzionamento dei link e filtro data se presente.
-- [x] Mostrare almeno un confronto controllato di profilo, senza dipendere da chiamate LLM in tempo reale.
-- [x] Preparare istruzioni di ripristino rapide per container/indice/app.
-- [ ] Fare prova completa su macchina e rete della presentazione, preferendo demo che funzioni offline dal sito Wikinotizie e dai servizi LLM.
-
-### Exit criteria / Definition of Done
-
-Il progetto è **done** soltanto quando tutti i requisiti HW-01..HW-06 del [PRD](./prd.md) sono verificati, il repository può essere seguito da terzi, la ricerca Web lavora sul dump assegnato, gli esperimenti sono riproducibili, la presentazione è pronta e la demo è stata provata end-to-end.
-
-## 11. Verifiche trasversali e stop condition
-
-| Controllo | Quando | Impatto se fallisce |
+| Segnale | Comportamento osservato da riprodurre | Controllo mirato |
 |---|---|---|
-| Versioni compatibili Python/client/ES | M0 | Blocca integrazione |
-| Identificativi stabili e dedup coerente | M2 | Blocca pooling e qrels affidabili |
-| Cleaning preserva la notizia | M2 | Blocca valutazione di qualità |
-| Stesso engine per Web ed evaluation | M3 | Blocca validità delle metriche rispetto alla demo |
-| Topic/rubrica, pool e quote congelati prima dei giudizi di produzione | M5-C | Blocca produzione massiva gold/silver, non sviluppo su fixture |
-| Isolamento dei giudizi e salvataggi multiutente affidabili | M5-B, M7-A | Blocca raccolta condivisa |
-| Accessi/persistenza online, copia PC e ripristino locale verificati | M7-A | Blocca apertura del sito ai validatori |
-| Test set segregato dal tuning | M5–M6 | Blocca credibilità della comparazione finale |
-| Gold in raccolta o copertura non ancora raggiunta | M5-D | Blocca esperimenti finali M6-B, non M6-A o pubblicazione M7-A |
-| Manifest completi e qrels versionati; profilo e analisi congelati | M6-B | Blocca valutazione finale e riproducibilità delle conclusioni |
-| Installazione da clone pulito | M7-B | Blocca consegna accademica |
+| Prossimità | Per 2–10 token, frase con slop 1, peso esterno 10 e finestra di 512 candidati per shard. | Confrontare parole adiacenti, distanti e query oltre il limite. |
+| Link entranti | Bonus additivo pari a 13 × L^0,7 / (L^0,7 + 30^0,7), finestra 8.192 per shard. Ricostruire il conteggio considerando le destinazioni dei redirect. | A zero link il bonus è zero, a 30 è 6,5. Distinguere uno zero osservato da un dato mancante. |
+| Freschezza della revisione | Moltiplicatore 0,4 + 0,6 × 2^(−d/160), con d in giorni e finestra 8.192 per shard. | A 0, 160 e 320 giorni attendere 1,00, 0,70 e 0,55. Provare una notizia antica modificata di recente. |
 
-## 12. Lavoro residuo per la consegna
+**Criterio di uscita:** test numerici, run ripetibili e confronto dell’ordine dopo ogni aggiunta. Spiegare almeno uno spostamento reale e quantificare quante pagine hanno link o date insufficienti per un confronto fedele. [Costruzione dei link entranti](https://github.com/wikimedia/mediawiki-extensions-CirrusSearch/blob/master/includes/BuildDocument/RedirectsAndIncomingLinks.php)
 
-La raccolta gold e silver e la valutazione finale sono concluse. I risultati e i limiti del confronto sono documentati nel [report M6-B](m6b-validation.md).
+## 5. Completare l’esperienza di ricerca
 
-1. Preparare le slide a partire dalla [relazione scritta](report/newsfinder.pdf) e provare l’esposizione di circa 20 minuti secondo la scaletta M7-B.
-2. Eseguire la [demo](consegna/demo.md) sulla macchina e sulla rete della presentazione. Registrare l’esito nel [verbale di collaudo](consegna/collaudo.md).
+**Dipendenze:** campi verificati nella milestone 2 e recupero della milestone 3. Per ogni funzione descrivere input e risposta API, comportamento visibile dalla UI e copertura del dato sottostante. Conservare il dettaglio articolo con il suo testo redazionale anche quando la corrispondenza deriva dal testo espanso. [Sintassi CirrusSearch](https://www.mediawiki.org/wiki/Help:CirrusSearch)
 
-## 13. Tracciabilità tra requisito e milestone
+| Funzione | Prova di accettazione |
+|---|---|
+| Snippet e highlight | Confrontare frammenti dal corpo, dal titolo e da un box. Controllare evidenziazione anche quando i termini cercati compaiono in parti distinte. |
+| Virgolette e operatori | Provare frase esatta, titolo, categoria, template e sorgente. Per insource dichiarare quali revisioni hanno wikitesto disponibile e rendere esplicita in UI/API l’eventuale copertura parziale. |
+| Correzione dopo l’invio | Su un refuso osservare separatamente risultati originali e proposta correttiva. Verificare anche il caso senza proposta. |
+| Completamento durante la digitazione | Verificare sul sito prefisso, titolo alternativo e ordine dei suggerimenti. Confrontarli con il completamento locale e misurare la latenza di questo percorso. |
 
-| Requisito PRD | Milestone di implementazione | Evidenza finale |
-|---|---|---|
-| HW-01 / FR-01–03 | M2, M3 | Corpus importato, indice e manifest |
-| HW-02 / FR-04, FR-07 | M1, M3 | Web UI funzionante |
-| FR-05–06 | M3, M4 | Profili retrieval ed esperimenti |
-| HW-03 / FR-08–10 | M5-A/C/D, M6-A/B | Protocollo, qrels, run, metriche e analisi |
-| Supporto alla validazione FR-08–10 | M5-B, M7-A | Strumento condiviso, giudizi indipendenti, cronologia ed export |
-| HW-04 / FR-11 | M0, M7-A/B | GitHub, README, setup e deployment ripetibili |
-| HW-05 | M7-B | Presentazione ~20 min senza codice |
-| HW-06 | M7-B | Demo live validata |
+**Criterio di uscita:** prove API e browser per ciascuna riga con esempi riproducibili. Allegare le divergenze osservate rispetto al sito, incluse le funzioni verificabili solo in parte. [Descrizione del completamento](https://www.mediawiki.org/wiki/Extension:CirrusSearch/CompletionSuggester/en)
 
-## 14. Criteri per gestire modifiche e scope
+## 6. Valutare il profilo e decidere il rilascio
 
-- Una scelta che modifica il **corpus** aggiorna versione della pipeline, manifest e potenzialmente tutti gli indici/run/qrels collegati.
-- Una scelta che modifica un **analyzer** richiede nuovo indice; una modifica dei **boost** richiede nuova run e profilo versionato.
-- Un cambiamento a **topic/rubrica/split** dopo la produzione di giudizi richiede una nuova versione benchmark e un'analisi d'impatto.
-- Una nuova feature viene approvata solo se ha ipotesi sperimentale, costo previsto e non ritarda la consegna dei Must.
-- Tutte le decisioni non definitive vanno chiuse con un risultato di pilot o un ADR, non tramite cambiamenti silenziosi nel codice.
-- Gli aggiornamenti del software durante la raccolta devono preservare giudizi e pacchetti congelati; cambiamenti di corpus, topic o rubrica richiedono versionamento e revisione esplicita delle annotazioni interessate.
+**Dipendenze:** profili versionati e riferimenti congelati. Avviare la progettazione del protocollo dalla prima milestone. Prima del confronto finale preregistrare topic, profondità, criterio di riconciliazione, parametro della Rank-Biased Overlap (RBO), margine accettabile sulla rilevanza, guadagno di fedeltà richiesto e budget di latenza. Motivare le soglie su development e sul costo operativo della demo. [Protocollo storico](evaluation.md) · [Misure di prestazione](evaluation.md#prestazioni)
+
+- **Fedeltà.** Confrontare E1 e il candidato con la stessa run ufficiale datata. Riportare copertura degli ID, sovrapposizione in top 10 e RBO. Pubblicare sia la misura end-to-end sia quella dopo proiezione sulle pagine comuni, dichiarando dove una lista ha meno di dieci risultati. Separare differenze di snapshot e revisioni da ammissione dei candidati e ordine.
+- **Rilevanza.** Eseguire il tuning su development. Ampliare il pool con i risultati introdotti dal candidato, giudicarli alla cieca e usare un nuovo campione indipendente per la decisione finale. Riportare almeno nDCG@10 e P@5 gold, copertura dei giudizi e variabilità per topic. Mantenere identificabili qrels, run e test storico già consultato.
+- **Prestazioni e diagnosi.** Ripetere il protocollo di latenza a parità di macchina, query e condizioni di cache. Riportare p50, p95 ed errori. Per le divergenze maggiori risalire alla prima causa verificabile fra corpus, revisione, testo espanso, analisi linguistica e ranking.
+- **Promozione.** Rendere il profilo predefinito quando supera la soglia di fedeltà e rispetta margine di rilevanza e budget di latenza. Con evidenza insufficiente lasciarlo selezionabile come sperimentale. Mantenere E1 disponibile e verificare il ritorno al profilo precedente da Web e API.
+
+**Criterio di uscita:** rapporto riproducibile con manifest di corpus, indici, profili, query, giudizi e ambiente, risultati per entrambi i perimetri e decisione motivata sul profilo predefinito. La riproduzione offline usa il riferimento archiviato; una successiva osservazione del sito apre un confronto datato distinto. [Risultati congelati della release](evaluation.md#risultati-sperimentali) · [Architettura attuale](sistema.md)

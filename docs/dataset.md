@@ -1,32 +1,4 @@
-# Dataset Wikinotizie — M2
-
-## Percorso autonomo
-
-Dalla radice della checkout, dopo `uv sync --locked`, eseguire
-`uv run --locked wikinews-ir corpus prepare`. Default: archivio in `data/raw/`,
-corpus in `data/processed/m2-v1/`. Opzioni: `--raw-dir DIR`, `--output DIR`.
-URL, dimensione e checksum attesi sono fissati nel package ingestion; non occorrono
-configurazioni esterne al wheel. Il riferimento SHA-256 resta quello locale
-verificato, non un'attestazione pubblicata dal provider.
-
-L'acquisizione usa HTTPS, User-Agent identificativo, timeout di connessione 15s
-e timeout di inattività 60s. Sono previsti tre tentativi totali per errori di
-trasporto, 429 e 5xx, con attese di 1 e 2 secondi. Nessun retry per altri errori
-HTTP o checksum errato. Il download riparte dall'inizio; il temporaneo viene
-rimosso anche in caso di interruzione e pubblicato solo dopo verifica.
-
-Un archivio presente viene verificato e riusato offline. Se diverso dal riferimento,
-il comando fallisce senza sostituirlo. Un corpus già popolato è riutilizzato solo
-con manifest build valido, snapshot/checksum/versioni compatibili, stesso hash
-del sorgente di preprocessing, stesse dipendenze e hash degli artefatti corretti.
-Timestamp e stato Git non invalidano il riuso. Output incompleti o alterati richiedono
-una nuova directory; nessuna sovrascrittura automatica. Non eseguire preparazioni
-concorrenti sulle stesse directory.
-
-Il comando aggiunge l'acquisizione davanti alla pipeline M2 senza cambiarne gli
-articoli o il manifest. `corpus audit` e `corpus build` restano disponibili per
-l'uso offline esplicito. Non sono previsti mirror o sostituzioni dello snapshot:
-se Wikimedia non è disponibile, serve una copia locale corrispondente al checksum.
+# Corpus e ricerca
 
 ## Input e provenienza
 
@@ -119,9 +91,9 @@ I dati raw/processed restano ignorati da Git. Si conservano URL, revisione e lic
 dichiarata dai record; il repository contiene solo fixture sintetiche. La licenza
 del codice è distinta dai metadati di licenza dei contenuti.
 
-Comandi operativi nel [README](../README.md); motivazioni in [ADR 0003](decisions/0003-corpus-pipeline.md).
+Il [README](../README.md) contiene i comandi di acquisizione e indicizzazione.
 
-Esiti per documento nella [revisione del campione](dataset-review.md). Il controllo
+Esiti per documento nella [revisione storica dei 40 casi](https://github.com/Forest904/wikinews-search-engine/blob/11577cdc898add969a5ab3ce9551f8cf8bdec511/docs/dataset-review.md). Il controllo
 testuale assistito ha portato a rimuovere gli avvisi del template Notizia originale,
 i rimandi standard ai calendari e i marcatori delle note, preservando i dati sportivi.
 Restano possibili rimandi editoriali nella prosa e nomi file di immagini mancanti.
@@ -169,24 +141,12 @@ non abilitati in questa verifica offline. I 22 test nuovi coprono la pipeline.
 La CI remota non è stata eseguita in questa sessione. Evidenza locale aggiuntiva:
 `output/m2-verification.json`.
 
-## Collaudo dell'acquisizione autonoma
-
-Il 16 novembre 2026 `corpus prepare` è stato eseguito su directory nuove
-(`output/m2-acquisition/raw` e `output/m2-acquisition/processed`), scaricando
-effettivamente l'archivio da Wikimedia. Il checksum coincide con il riferimento;
-la build produce 11.032 articoli e gli stessi hash di `articles.ndjson`,
-`audit.json` e `decisions.ndjson` riportati sopra.
-
-La seconda esecuzione è stata verificata con client HTTP e funzione di build
-disabilitati tramite mock: il comando verifica e riusa gli artefatti senza rete
-né rielaborazione. Verificato anche il comando con i percorsi predefiniti.
-Evidenza locale: `output/m2-acquisition/verification.json`.
-
-Suite aggiornata: **93 test superati, 6 integration/E2E saltati**, Ruff superato.
-I 21 test di acquisizione coprono HTTP simulato, retry, redirect HTTPS, checksum,
-dimensioni, interruzioni, preservazione dei file e riuso offline. Nessun download
-reale è richiesto in CI; la CI remota resta da verificare dopo il push.
-
 ## Attribuzione nella consegna
 
 Per citare una notizia conservare il collegamento alla pagina originale, la revisione e la licenza indicata nel record. Wikinotizie indica CC BY per i testi dal 25 settembre 2005 e pubblico dominio per quelli precedenti salvo eccezioni. La pagina corrente rimanda a CC BY 4.0. Tutti gli 11.032 record del dump assegnato riportano invece CC-BY-SA-4.0 nel campo license. La pipeline conserva questa dichiarazione originale. Per redistribuire testi o immagini verificare la licenza e i crediti della singola revisione. La licenza software del repository riguarda il codice. [Copyright di Wikinotizie](https://it.wikinews.org/wiki/Wikinotizie:Copyright)
+
+## Profili di ricerca
+
+E0 usa BM25 con analyzer standard ed E1 con analyzer italiano. E2 aumenta il peso del titolo, E3 gestisce refusi e E4 aggiunge una clausola di frase. Gli ultimi tre condividono l’indice italiano. I sinonimi E5 furono rinviati per evitare espansioni prive di validazione. La UI espone il filtro temporale per le date supportate. Per configurazioni e pesi vedere i [profili versionati](../src/wikinews_ir/resources/retrieval/).
+
+Il profilo semantico opzionale recupera vicini vettoriali con Qdrant ed embedding Ollama. La preparazione, la calibrazione e il ritorno alla collezione precedente sono descritti nelle [operazioni](operazioni.md#ricerca-semantica). La [roadmap](roadmap.md) descrive il futuro confronto con CirrusSearch.

@@ -1,6 +1,4 @@
-# Benchmark M5-A — preparazione offline e silver Codex
-
-Il benchmark di produzione M5-C è congelato. Il pilot comprende 24 riferimenti di calibrazione e 24 giudizi silver. La raccolta di produzione appartiene a M5-D e la valutazione sperimentale a M6. [Risultati e manifest del congelamento](m5c-validation.md#congelamento-di-produzione-del-18-novembre-2026).
+# Valutazione e risultati
 
 ## Identità e formati
 
@@ -80,43 +78,6 @@ un pool con quelle sole due run. Le quote sono **per topic e run**; campionament
 senza rimpiazzo, deduplicazione successiva, nessun riempimento implicito. Il report
 registra quote richieste/disponibili/estratte e numero finale di coppie distinte.
 
-## Pacchetto comune e workspace Codex
-
-```powershell
-uv run --locked wikinews-ir benchmark packet --topics benchmarks/topics/calibration-draft.jsonl --protocol configs/evaluation/protocol.yaml --selection experiments/runs/m5-selection --corpus data/processed/m2-v1 --output experiments/runs/m5-packet
-uv run --locked wikinews-ir benchmark silver prepare --packet experiments/runs/m5-packet --output output/codex-batch-001 --batch-id batch-001
-```
-
-Il pacchetto comune contiene topic, rubrica, testi completi e coppie, senza ranking,
-provenienze del retrieval o altre etichette. `silver prepare` crea un workspace
-autonomo con `PROMPT.md`, `README.md`, schema JSON, esempio sintetico e `validate.py`.
-Il validatore richiede solo Python 3. Per un batch test il protocollo deve essere
-`frozen`; il congelamento formale di prompt e selezione è responsabilità M5-C.
-
-L'utente apre **solo il workspace del batch** in VS Code, avvia una chat nuova,
-seleziona il modello e incolla il prompt. Non allega gold o report precedenti.
-La separazione è organizzativa e dei dati forniti, **non una sandbox degli accessi**.
-L'agente deve leggere solo i materiali del batch, trattare gli articoli come dati,
-non usare Web o conoscenze esterne, salvare progressivamente e conservare gli output
-precedenti prima di correggere i risultati. Nessun client API LLM è implementato.
-
-Il validatore controlla formato, coppie, revisioni, hash, evidenze e completezza.
-Gli errori tecnici non sono astensioni; un test superato non certifica la correttezza
-semantica. `--allow-partial` serve solo per il lavoro in corso, non per importare.
-
-```powershell
-python output/codex-batch-001/validate.py --packet output/codex-batch-001 --judgments output/codex-batch-001/judgments.jsonl
-uv run --locked wikinews-ir benchmark silver validate --packet output/codex-batch-001 --judgments output/codex-batch-001/judgments.jsonl
-uv run --locked wikinews-ir benchmark silver import --packet output/codex-batch-001 --judgments output/codex-batch-001/judgments.jsonl --output experiments/runs/m5-silver-001 --operator revisore-1 --execution-id chat-001 --model unknown
-uv run --locked wikinews-ir benchmark export-qrels --packet output/codex-batch-001 --judgments experiments/runs/m5-silver-001 --source silver --output experiments/runs/m5-qrels-silver
-```
-
-Il coordinatore usa il pacchetto originale verificato. `--model` è una dichiarazione
-dell'operatore, non una verifica del modello: usare `unknown` se non noto. L'import
-conserva output originale, versione normalizzata, report e metadati; `--prior-output`
-accetta le precedenti versioni da archiviare. Non si dichiara la riproducibilità
-esatta del ragionamento o delle etichette, ma quella degli artefatti e dei controlli.
-
 ## Gold e qrels
 
 `export-qrels --source gold --judgments <human.jsonl>` accetta giudizi umani e
@@ -135,57 +96,50 @@ coppie e le rispettive finali. Singoli/accordi vengono consolidati automaticamen
 con provenienza esplicita; i disaccordi richiedono il revisore indipendente.
 Gli export sono separati per split e il test richiede rilascio esplicito registrato.
 
-## Verifica offline
+## Raccolta
 
-### Riprodurre il report M6-A
+Nel pilot 22 giudizi silver su 24 coincidevano con il riferimento di calibrazione. Il pacchetto di produzione ha separato development e test prima della raccolta. I valutatori hanno prodotto 190 giudizi gold, il percorso silver 982; 190 coppie sono condivise. Conservare la provenienza dei giudizi e trattare le coppie prive di valutazione come tali. I file versionati identificano split, pool e pacchetti. [Manifest](../benchmarks/v1/manifests/)
 
-Dalla radice del repository, in PowerShell, scegliere directory di destinazione nuove.
+## Risultati sperimentali
 
-```powershell
-$fixture = "output/m6a-fixture"
-uv run --locked python scripts/m6a_fixture.py $fixture
-uv run --locked wikinews-ir benchmark evaluate --topics "$fixture/topics.jsonl" --split development `
-  --runs "$fixture/profile" "$fixture/external" --gold "$fixture/gold" --silver "$fixture/silver" `
-  --fixture --output experiments/reports/m6a-fixture
-```
+Il 19 novembre 2026 E1 (BM25 con analyzer italiano) è stato selezionato sui 24 topic development. La regola congelata massimizza nDCG@10 gold sulle query canoniche, poi P@5 e infine preferisce il primo profilo nell’ordine E0–E4. Il registro contiene un avvio e un completamento del test sui 16 topic. Lo snapshot comprende 11.032 documenti e la profondità disponibile è 100. Wikimedia usa la proiezione sul corpus della run archiviata in M5. [Indice degli artefatti](../benchmarks/v1/manifests/m6b-production-1.1.json)
 
-Aprire `report.md` nella directory di output. Il comando accetta una o entrambe le fonti.
-Per gli esperimenti M6-B usare i topic completi corrispondenti alle run, scegliere lo split,
-passare le directory degli export consolidati e omettere `--fixture`. Per Wikimedia si valuta
-la proiezione TREC sul corpus già prodotta dall’esportatore. Per tutti i profili vale il rank
-esportato, anche quando più documenti hanno lo stesso score.
+| Sistema | Dev nDCG@10 | Dev P@5 | Test nDCG@10 | Test P@5 | Test MRR@10 |
+|---|---:|---:|---:|---:|---:|
+| E0 · standard | 0,5785 | 0,2333 | 0,5963 | 0,2250 | 0,7500 |
+| **E1 · italiano** | **0,6659** | **0,2833** | **0,6558** | **0,2500** | 0,6250 |
+| E2 · boost titolo | 0,5771 | 0,2333 | 0,5022 | 0,1625 | 0,3333 |
+| E3 · fuzzy | 0,5653 | 0,2250 | 0,5022 | 0,1625 | 0,3333 |
+| E4 · frase | 0,5771 | 0,2333 | 0,5022 | 0,1625 | 0,3333 |
+| Wikimedia | 0,5212 | 0,2417 | 0,5414 | 0,1750 | 0,7500 |
 
-- `metrics.tsv` contiene una riga per run, fonte e query. nDCG@10 usa i gradi 0–2.
-  P@5 divide sempre per 5 e considera rilevanti i gradi 1 e 2. MRR@10 considera gli stessi
-  gradi sui soli topic di tipo `event-specific`.
-- `summary.tsv` espone il denominatore di ogni macro-media. Un topic con almeno un grado
-  valido entra nel calcolo anche se la run è vuota. Un topic senza gradi ha metriche N/D.
-- `coverage.tsv` conta i risultati restituiti, giudicati e unjudged a 5 e 10. Le astensioni
-  identificabili sono un sottoinsieme degli unjudged. Per i qrels M5-A è disponibile solo
-  il totale delle astensioni dell’intero bundle. Il grafico divide il totale dei risultati
-  giudicati per il totale restituito a ciascun cutoff. Una lista vuota ha copertura N/D.
-- `confusion.tsv` usa righe gold e colonne silver. Il confronto considera l’intersezione
-  delle coppie con grado in entrambe le fonti. La macro-F1 media le tre classi con F1 zero
-  per una classe assente da entrambe. La kappa usa pesi lineari. `disagreements.tsv`
-  elenca le singole coppie discordanti.
-- `manifest.json` conserva checksum, fonti, split, versione di ir-measures, soglia,
-  cutoff e denominatori. Gli export originali mantengono la provenienza dei giudizi.
+Le metriche primarie comprendono tutti i topic di ciascuno split. MRR considera i quattro topic test di tipo evento. P@5 e MRR usano la soglia di rilevanza 1. E1 migliora in media su E0 nelle due metriche primarie, ma il primo risultato rilevante sui topic evento favorisce E0 e Wikimedia. Le differenze sono descrittive. Il campione e il pooling limitano la generalizzabilità.
 
-### Controlli del repository
+## Ablation ed errori
 
-```powershell
-uv run --locked ruff check .
-uv run --locked pytest -m "not integration and not e2e"
-```
+- **Analyzer.** Nel test Q37, sugli incidenti ferroviari in Giappone, E1 porta due articoli di grado 2 (1374 e 2273) ai primi due posti. E0 presenta un articolo di grado 1 al secondo posto e nove risultati senza giudizio in top 10. Il guadagno nDCG è 0,6994. Su Q09 il documento 4230 di grado 2 scende dal primo al secondo posto e nDCG cala di 0,3691.
+- **Titolo.** Su Q09 E2 spinge 4230 fuori dai primi dieci e perde altri 0,6309 rispetto a E1. Su Q29, relativo a Michael Schumacher, conserva il primo risultato di grado 2 e porta un secondo articolo dello stesso grado (5090) all’ottavo posto, con un guadagno di 0,1934.
+- **Refusi.** Ciascun topic ha una variante congelata. Sul development la perturbazione riduce nDCG di 0,1138 per E2 e di 0,0827 per E3. Sul test le perdite sono 0,1434 e 0,1401. Il vantaggio fuzzy nella tenuta ai refusi scende quindi da circa 0,031 a 0,003. Le perdite test di P@5 sono 0,0500 e 0,0375. Sulle query canoniche E3 può anche peggiorare il ranking. Nella query development sui rover marziani l’articolo 21965 di grado 1 esce dalla top 10 e 17915 passa dalla quinta alla sesta posizione.
+- **Vincoli multipli.** Le sei query development e le quattro test di questo tipo attivano la clausola di frase opzionale di E4. Nessuna contiene una frase esplicitamente virgolettata. Tutti e dieci i ranking esportati coincidono con E2, con differenze nulle per entrambe le metriche primarie. L’esperimento non misura il comportamento delle frasi obbligatorie.
 
-I test includono una catena completa con corpus sintetico, run e HTTP simulati,
-pacchetto Codex, esecuzione del validatore in Python isolato, import e qrels.
-Le directory `experiments/runs`, `experiments/reports` e `output` restano ignorate;
-topic adattati e contratti sono versionati. Nessuna dipendenza dal percorso Downloads.
+## Copertura e sensibilità
+
+Per E1 il gold copre 43/120 risultati development a 5 e 68/240 a 10. Sul test copre 31/80 a 5 e 43/160 a 10. Nella valutazione primaria i risultati senza giudizio conservano il rank con guadagno nullo. Rimuovendoli dai primi 100 prima del cutoff, nDCG test di E1 passa da 0,6558 a 0,7842. E1 resta primo, mentre Wikimedia scende dietro E2–E4 nel ranking condensato. La differenza mostra quanto la posizione dei documenti senza giudizio pesi sul confronto. Il recall assoluto rimane sconosciuto.
+
+## Gold e silver
+
+| Split | Coppie condivise | Macro-F1 | Kappa lineare | Silver inferiore / superiore al gold |
+|---|---:|---:|---:|---:|
+| Development | 116 | 0,6810 | 0,7964 | 11 / 9 |
+| Test | 74 | 0,8357 | 0,8803 | 6 / 0 |
+
+Sulle coppie condivise E1 resta primo per nDCG in entrambi gli split. Nel development cambiano verso 6 confronti su 15 fra sistemi. Nel test tutti i 15 confronti nDCG conservano ordine o parità, mentre in P@5 cambiano tre relazioni di parità. Sul test i sei disaccordi assegnano tutti un grado silver inferiore. Questo andamento riguarda le 74 coppie osservate. Sul silver completo (595 coppie development e 387 test), E1 ottiene nDCG 0,5739 e 0,5939. I due insiemi hanno copertura diversa.
+
+
 
 ## Risultati della consegna
 
-Il commit sperimentale è `1c6e51d`. Per ricostruire la tabella principale leggere i due file `canonical/summary.tsv` sotto `experiments/reports/m6b-production-1.1/{development,final}`, filtrare source=gold e arrotondare mean a quattro decimali. I denominatori sono nella colonna topics. La release distribuisce i file del manifest M6-B insieme alle sei run canoniche e ai qrels gold/silver in un [archivio ZIP](https://github.com/Forest904/wikinews-search-engine/releases/download/v1.0.0/risultati-m6b.zip) da estrarre nella radice del clone. Verificarli con il comando del report prima di usarli. Gli input privati di raccolta rimangono presso il coordinatore. [Rapporto sperimentale](m6b-validation.md)
+Il commit sperimentale è `1c6e51d`. Per ricostruire la tabella principale leggere i due file `canonical/summary.tsv` sotto `experiments/reports/m6b-production-1.1/{development,final}`, filtrare source=gold e arrotondare mean a quattro decimali. I denominatori sono nella colonna topics. La release distribuisce i file del manifest M6-B insieme alle sei run canoniche e ai qrels gold/silver in un [archivio ZIP](https://github.com/Forest904/wikinews-search-engine/releases/download/v1.0.0/risultati-m6b.zip) da estrarre nella radice del clone. Verificarli con il comando del report prima di usarli. Gli input privati di raccolta rimangono presso il coordinatore. [Risultati sperimentali](#risultati-sperimentali)
 
 Da PowerShell, nella radice di un clone della release, salvare lo ZIP scaricato nella directory superiore ed eseguire:
 
@@ -198,3 +152,91 @@ Import-Csv experiments/reports/m6b-production-1.1/final/canonical/summary.tsv -D
 ```
 
 L’estrazione ripristina anche i byte originali del manifest M5-D per la verifica SHA-256 su sistemi con conversione automatica dei fine riga. Per confrontare entrambe le partizioni, ripetere la lettura della tabella sostituendo `final` con `development`.
+
+## Prestazioni
+
+La misura M4-P comprende due sessioni e 400 richieste senza errori. L’ordine fisso dei profili e il carico locale limitano il confronto. Distinguere latenza del client, tempo interno di Elasticsearch e capacità della Web UI. [Misure storiche per profilo](https://github.com/Forest904/wikinews-search-engine/blob/11577cdc898add969a5ab3ce9551f8cf8bdec511/docs/m4p-validation.md)
+
+Eseguire dalla radice del repository. Il runner Python usa l'ambiente del progetto. Il generatore web richiede k6 sul PATH oppure il percorso del binario in `--k6`. La sonda browser usa Chromium installato con `uv run playwright install chromium`. Gli esempi usano PowerShell. Scegliere una directory nuova per ogni esecuzione.
+
+## Motore e qualità
+
+```powershell
+uv run python scripts/performance/engine.py output/perf-engine
+uv run --with matplotlib==3.11.2 python scripts/performance/report.py output/perf-quality --engine output/perf-engine --silver experiments/reports/m6b-production-1.1/final/silver
+```
+
+La configurazione predefinita misura E0–E4 sui topic di test e sui dieci casi prestazionali versionati. Ogni blocco ruota l'ordine dei profili e rimescola le query con un seed ripetibile. In ogni blocco il passaggio zero riscalda il servizio. Seguono tre passaggi misurati. I blocchi condividono il processo. Per stimare la dispersione fra avvii ripetere il comando in tre processi indipendenti. Conservare il manifest, i campioni JSONL e i percentili per blocco, profilo e classe. Per il primo avvio controllato riavviare soltanto i servizi della replica previsti dal protocollo e descrivere cache OS, modello e indice in `--cache-state`. Per confrontare query nuove e ripetute usare un solo profilo, `--sessions 1 --distinct-warmup` e confrontare i campioni first_pass e repeat a parità di query.
+
+Aggiungere `--gold DIRECTORY_EXPORT` al report per ottenere risultati gold in una figura e un JSON dedicati. I bundle di giudizi si verificano mediante manifest. Conservare con la campagna l'identità del corpus sul quale sono stati raccolti. Il report usa le misure del progetto e calcola un bootstrap appaiato con 5.000 ricampionamenti dei topic rispetto a E1. MRR segue il criterio storico dei topic event-specific. La lista unjudged contiene coppie topic/documento da sottoporre a giudizio cieco. Per un nuovo test congelare i profili prima di raccogliere un nuovo insieme di topic e giudizi. Passare lo stesso file con `--topics` al runner e al report.
+
+Per includere la ricerca semantica usare `--profiles E0 E1 E2 E3 E4 semantic --semantic-manifest PERCORSO` con la collezione completa attiva. Per il confronto su un sottoinsieme candidato comune, eseguire `scripts/benchmark_semantic.py --queries FILE --qrels FILE --natural DIR --stem DIR --output FILE`. Registra sovrapposizione dei top 10 fra ricerca esatta e indicizzata, copertura, tempo embedding e tempo Qdrant per conteggio e ricerca.
+
+Nel confronto semantico `--stem` è facoltativo. Il report conserva lo stato Qdrant prima e dopo, inclusi punti e vettori indicizzati. Per una prova sull'approssimazione usare `--require-indexed` e controllare copertura dell'indice e stabilità dei segmenti. Con zero vettori indicizzati anche la ricerca con exact=false può fare una scansione esatta. La media nDCG storica di questo runner considera solo i topic con almeno un giudizio positivo nel sottoinsieme candidato; usare il report gold della suite per il confronto sullo split completo.
+
+## Scalabilità e risorse
+
+```powershell
+uv run python scripts/performance/scale.py data/processed/m2-v1 output/perf-scale --build
+```
+
+Il seed determina campioni annidati al 10%, 50% e 100%. Senza flag vengono solo preparati i corpus. `--build` crea indici E1 con nomi univoci e conserva tempi di build verificata, documenti/s, dimensione Elasticsearch e tempi di query. I nomi degli indici creati sono in scale.json. `--embeddings` misura separatamente la generazione dei pacchetti, inclusi preparazione e scrittura. Richiede encoder e dump originale. Riutilizzare lo stesso hardware per tutti i campioni.
+
+Avviare su ciascun host Docker il raccoglitore durante build o carico, indicando i nomi dei container su quell'host. Per ES includere `--es`. I record riportano timestamp, CPU, memoria, rete, block I/O e, con ES, heap, GC e thread pool search. Il massimo dei campioni di memoria è un picco osservato alla risoluzione scelta. Sincronizzare gli orologi del generatore e della replica. Controllare CPU e rete del generatore durante gli step.
+
+```powershell
+uv run python scripts/performance/resources.py output/resources.jsonl nome-app nome-es --es --seconds 900 --interval 5
+```
+
+## Web e browser
+
+Usare una replica con worker, limiti memoria, indici, modello e topologia uguali al target. Registrare questi dati e la posizione del generatore in `--topology`. Ripetere la campagna verso l'applicazione e verso il proxy con gli stessi dati congelati. Le sessioni k6 verificano risultati, paginazione e identità dell'articolo. Chromium misura submit–risultato visibile, clic–testo leggibile, TTFB del lettore e stato cache della home.
+
+```powershell
+$base = 'http://127.0.0.1:8000'
+uv run python scripts/performance/freeze.py $base output/oracle.json
+$env:ORACLE = (Resolve-Path output/oracle.json).Path
+uv run python scripts/performance/browser.py $base output/browser.jsonl --location locale
+uv run python scripts/performance/campaign.py output/web-baseline --mode baseline --url $base --topology 'replica locale, un worker'
+uv run python scripts/performance/campaign.py output/web-step --mode step --rate 2 --duration 5m --url $base --topology 'replica locale, un worker'
+```
+
+Generare l'oracolo sulla versione di riferimento e riusarlo per verificare esattamente gli ID su entrambe le versioni. Se una modifica intenzionale cambia il ranking, valutarla con i giudizi prima di congelare un nuovo oracolo. `QUERIES` accetta un array JSON di stringhe e deve corrispondere a `freeze.py --queries`. Scegliere query con almeno due pagine valide per lo scenario filter. Per provare più profili congelarli con `--profiles E1 semantic`.
+
+| Mix | Percorso e configurazione |
+| --- | --- |
+| lexical | Home, ricerca E1, apertura del primo articolo. |
+| mixed | Stesso percorso con quota semantica controllata da SEMANTIC_PERCENT. Ripetere con 0, 25, 50 e 100 e confrontare p95 E1 nel breakdown. |
+| filter | Ricerca con intervallo anni, pagina 2 e controllo di duplicati, date e ID attesi. |
+| archive | Archivio, cartella, articolo. FOLDERS contiene un array JSON di percorsi relativi di cartelle foglia popolati sulla replica, selezionati da cartelle piccole e grandi. |
+| live | Ricerca e continuazione su replay. Per la fixture inclusa usare QUERIES uguale a ["Roma"]. |
+| annotation | Su copia del DB usare DISPOSABLE=1, VUS e ACCOUNTS con percorso di un array JSON di account di prova con user_id e password. Predisporre un incarico attivo distinto per utente, uno per VU. Il runner salva un giudizio e rilegge versione, grado ed evidenza. Per account coordinatore legge anche la dashboard. |
+
+Per la **capacità** usare `--mode capacity --rate 1 --max-rate 64 --p95-ms 800 --error-budget 0.01`. 800 ms e 1% sono esempi da sostituire con gli obiettivi concordati prima della campagna. Il runner raddoppia gli arrivi ogni cinque minuti, restringe l'intervallo fino a un arrivo/s e conferma i due estremi per 15 minuti ciascuno. Se raggiunge il limite configurato lo registra come massimo testato. Esaminare le serie temporali per code crescenti e i contatori del generatore prima di qualificare il risultato come capacità sostenibile. Ogni arrivo è un percorso, anche quando genera più richieste HTTP.
+
+Per lo **spike** usare `--mode spike --rate N` con N uguale alla capacità misurata. Le fasi sono 5 minuti al 50%, 2 al 150% e 5 al 50%. Per la **durata** usare `--mode soak --rate N` per due ore al 70%. I tassi vengono arrotondati ad arrivi interi al secondo. Eseguire ogni mix separatamente, con directory distinte. Dimensionare VUS sul generatore e registrare le iterazioni scartate. I campioni HTTP sono inclusi nei file compressi k6.
+
+## Dipendenze e recupero
+
+Per il replay della fixture sintetica avviare la replica con l'entrypoint seguente. Per risposte registrate eseguire una sola volta `record_live.py output/live.json Roma` e specificare quel file in REPLAY_FILE. Conservare il suo hash. REPLAY_DELAY_MS controlla la latenza per chiamata upstream. Impostare 6000 per esercitare la scadenza del servizio. Riavviare il processo replay per svuotare la cache live prima di ogni confronto su un guasto.
+
+```powershell
+$env:REPLAY_FILE = 'configs/evaluation/live-replay.json'
+uv run uvicorn scripts.performance.replay:app --port 8000
+```
+
+Per testare encoder o backend vettoriale, mantenere un carico mixed sulla replica dedicata e avviare sul relativo host `fault.py NOME_CONTAINER output/fault.jsonl --before 60 --seconds 30`. Il runner sospende quel container e lo riattiva dopo l'intervallo. Confrontare errori e p95 E1 e semantic prima, durante e dopo i timestamp registrati. Per il live lento affiancare un carico lexical separato e confrontare la sua latenza. Per il sito pubblico usare la sonda browser a basso volume.
+
+## Lettura del report
+
+Sul generatore si possono raccogliere CPU, memoria disponibile e contatori di rete con `uv run --with psutil python scripts/performance/resources.py output/generator.jsonl --host --seconds 900`. Sul server il file delle risorse va acquisito durante lo stesso intervallo del carico. Passare anche `--fault output/fault.jsonl` per evidenziare sospensione e ripristino sul grafico temporale.
+
+```powershell
+uv run --with matplotlib==3.11.2 python scripts/performance/report.py output/perf-web-report --web output/web-step/step.json.gz --resources output/resources.jsonl
+```
+
+Passare tutti gli step della campagna a `--web`. Il report produce la curva capacità–throughput utile–p95–errori, la serie temporale di recupero, i conteggi in finestre da 10 secondi e i percentili per endpoint e profilo. Le finestre parziali iniziale e finale restano nei campioni grezzi e sono escluse dalla curva. Il p99 viene pubblicato da 1.000 osservazioni per gruppo. Per dichiarare recupero confrontare finestre consecutive a carico equivalente con la distribuzione pre-guasto e verificare che il throughput utile torni al livello precedente. Per la decisione sul ranking affiancare quality-gold.png e i delta per topic ai p95 del motore.
+
+## Provenienza storica
+
+I protocolli congelati citano il PRD e i nomi dei verbali originali. Per interpretarli consultare il [PRD della revisione di riferimento](https://github.com/Forest904/wikinews-search-engine/blob/11577cdc898add969a5ab3ce9551f8cf8bdec511/docs/prd.md) e il [registro delle decisioni](https://github.com/Forest904/wikinews-search-engine/tree/11577cdc898add969a5ab3ce9551f8cf8bdec511/docs/decisions).
