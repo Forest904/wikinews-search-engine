@@ -52,6 +52,7 @@ class HighlightSegment(BaseModel):
 
 
 class SearchHit(BaseModel):
+    missing_terms: list[str] = Field(default_factory=list)
     document_id: str
     rank: int
     score: float

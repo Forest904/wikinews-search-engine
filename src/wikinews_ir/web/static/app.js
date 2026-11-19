@@ -220,6 +220,11 @@ async function search(push = true, applied = null, previousCursors = []) {
         copy.append(date);
       }
       copy.append(a, p);
+      if (!live && hit.missing_terms?.length) {
+        const note = document.createElement("small");
+        note.textContent = `Non contiene: ${hit.missing_terms.join(", ")}`;
+        copy.append(note);
+      }
       if (live) {
         const destination = document.createElement("small");
         destination.textContent = hit.local_url ? "Apri la copia in archivio" : "Apri su Wikinotizie";

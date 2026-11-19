@@ -56,6 +56,29 @@ def browser_page(request):
         browser.close()
 
 
+def test_missing_terms_below_local_excerpt(browser_page):
+    page = browser_page
+    def results(route):
+        terms = [] if "page=2" in route.request.url else ["Milano", "tram"]
+        route.fulfill(json={
+            "total": 11, "elapsed_ms": 0, "page": 2 if not terms else 1, "page_size": 10,
+            "hits": [{"document_id": "1", "title": "Roma", "snippet": "Cronaca",
+                      "url": "/articles/1", "missing_terms": terms}],
+        })
+
+    page.route("**/api/search**", results)
+    with serve(None) as url:
+        page.goto(url + "/?q=Roma+Milano+tram")
+        note = page.locator("#results p + small")
+        expect(note).to_have_text("Non contiene: Milano, tram")
+        page.goto(url + "/?q=Roma+Milano+tram&page=2")
+        expect(page.locator("#results p")).to_have_text("Cronaca")
+        expect(note).to_have_count(0)
+        page.goto(url + "/?q=Roma+Milano+tram&mode=live")
+        expect(page.locator("#results p")).to_have_text("Cronaca")
+        expect(page.get_by_text("Non contiene:", exact=False)).to_have_count(0)
+
+
 def test_inline_publication_period(seeded_backend, browser_page):
     page = browser_page
     with serve(seeded_backend) as url:

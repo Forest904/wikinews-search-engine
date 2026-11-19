@@ -20,6 +20,7 @@ from wikinews_ir.models import Article, SearchHit, SearchRequest, SearchResponse
 from wikinews_ir.retrieval.highlight import HIGHLIGHT, segments
 from wikinews_ir.retrieval.profiles import SUPPORTED_PROFILES, digest, index_name, profile_config
 from wikinews_ir.retrieval.query_builder import build_query
+from wikinews_ir.retrieval.terms import missing_terms, query_words
 
 
 class RetrievalUnavailable(RuntimeError):
@@ -105,9 +106,23 @@ class RetrievalEngine:
         if request.query and request.profile == "semantic":
             from wikinews_ir.semantic import search
             try:
-                return search(request)
+                response = search(request)
             except (httpx.HTTPError, ValueError, KeyError) as exc:
                 raise RetrievalUnavailable("Ricerca semantica temporaneamente indisponibile") from exc
+            words = query_words(request.query)
+            if words and response.hits:
+                try:
+                    docs = self.client.mget(
+                        index=index_name(self.settings, "E0"),
+                        ids=[hit.document_id for hit in response.hits],
+                        source_includes=["title", "body"],
+                    )["docs"]
+                except (ElasticsearchConnectionError, ConnectionTimeout, ApiError):
+                    return response
+                sources = {doc["_id"]: doc["_source"] for doc in docs if doc.get("found")}
+                for hit in response.hits:
+                    hit.missing_terms = missing_terms(words, sources.get(hit.document_id, {}))
+            return response
         index_profile = "E0" if request.profile == "semantic" else request.profile
         body = build_query(request.query, index_profile) if request.query else {"match_all": {}}
         bounds = {}
@@ -138,8 +153,10 @@ class RetrievalEngine:
                 raise SearchIndexMissing("Indice mancante: esegui index build") from exc
             raise RetrievalUnavailable("Elasticsearch ha restituito un errore") from exc
 
+        words = query_words(request.query)
         hits = [
             SearchHit(
+                missing_terms=missing_terms(words, item.get("_source", {})),
                 document_id=str(item["_id"]),
                 rank=i,
                 score=float(item.get("_score") or 0),
