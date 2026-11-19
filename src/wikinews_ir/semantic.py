@@ -203,7 +203,7 @@ def collection_for(db, alias):
     raise ValueError("Indice semantico non attivo")
 
 
-def search(request, *, variant="natural", exact=None):
+def search(request, *, variant="natural", exact=None, timings=None):
     started = time.monotonic()
     if exact is None:
         exact = os.getenv("SEMANTIC_EXACT", "1") == "1"
@@ -214,7 +214,11 @@ def search(request, *, variant="natural", exact=None):
         prefix = f"news-{digest(encoder)[:24]}-{variant}-"
         if not name.startswith(prefix):
             raise ValueError("Modello e indice semantico incompatibili")
+        embed_start = time.perf_counter()
         (vector,) = embed(model, [QUERY_PREFIX + transform(request.query, variant)])
+        vector_start = time.perf_counter()
+        if timings is not None:
+            timings["embedding_ms"] = (vector_start - embed_start) * 1000
         bounds = {k: v for k, v in (("gte", request.year_from), ("lte", request.year_to)) if v}
         filters = {"filter": {"must": [{"key": "year", "range": bounds}]}} if bounds else {}
         base = "/collections/" + name + "/points"
@@ -246,6 +250,8 @@ def search(request, *, variant="natural", exact=None):
             ):
                 break
             limit = min(total, limit * 2)
+        if timings is not None:
+            timings["count_and_query_ms"] = (time.perf_counter() - vector_start) * 1000
     hits = [
         SearchHit(**p["payload"], score=p["score"], rank=i)
         for i, p in enumerate(points[start:end], start + 1)

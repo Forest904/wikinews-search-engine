@@ -289,7 +289,7 @@ Testo naturale, ricerca indicizzata & 0,8183 & 17,547 \\
 \end{longtable}
 }
 
-La media usa i casi con nDCG definita. Il profilo lessicale conserva le statistiche del corpus completo. La modalità esatta confronta i vettori direttamente, mentre quella indicizzata chiede a Qdrant una ricerca approssimata; su una raccolta così piccola il servizio può comunque scegliere una scansione completa. L'uguaglianza delle due medie sul testo naturale non stabilisce quale strategia convenga per 11.032 vettori. Servirebbe un confronto sul corpus intero, con giudizi e condizioni di misura comuni.
+La media usa i casi con nDCG definita. Il profilo lessicale conserva le statistiche del corpus completo. La modalità esatta confronta i vettori direttamente, mentre quella indicizzata chiede a Qdrant una ricerca approssimata; su una raccolta così piccola il servizio può comunque scegliere una scansione completa. L'uguaglianza delle due medie sul testo naturale non stabilisce quale strategia convenga per 11.032 vettori. Il capitolo sui risultati sperimentali estende il confronto all'intero corpus e riporta lo stato dell'indice vettoriale durante la misura.
 
 \clearpage
 
@@ -384,6 +384,8 @@ Il valutatore seleziona un passaggio, lo associa al giudizio e ne motiva il grad
 
 Il coordinatore assegna blocchi e doppie letture, segue le richieste di revisione ed esporta i giudizi finali. Le \emph{qrels} associano topic, documento e grado. Il riferimento umano, detto \emph{gold}, copre 190 coppie. Un secondo processo, svolto senza mostrare al modello classifiche e gold, produce giudizi \emph{silver} per tutte le 982 coppie. Sulle 74 coppie condivise del test il confronto dà macro-F1 pari a 0,8357 e kappa con pesi lineari pari a 0,8803. Nei sei disaccordi il silver assegna sempre il grado inferiore. L'ampliamento della copertura porta dunque anche una diversa fonte di errore.
 
+\textbf{Protocollo delle misure locali.} Sul corpus di 11.032 articoli abbiamo affiancato ai 16 topic di test dieci casi prestazionali, tra cui filtri temporali, paginazione e ricerche senza esito. Per ciascun profilo lessicale abbiamo eseguito tre blocchi di 26 richieste di riscaldamento e tre passaggi misurati per blocco. Il confronto diretto fra E1 e il profilo semantico usa un blocco e un passaggio misurato sugli stessi 26 input. Il tempo del motore va dalla chiamata del client alla restituzione dei risultati. Per il sito misuriamo l'intero percorso HTTP; nel browser cronometriamo anche la comparsa dei contenuti visibili.
+
 \clearpage
 
 \section{Risultati sperimentali}\label{risultati-sperimentali}
@@ -467,6 +469,65 @@ Nella misura principale un documento senza giudizio mantiene la sua posizione e 
 
 \clearpage
 
+\subsection{Qualità e latenza sull'intero archivio}\label{qualituxe0-e-latenza-sullintero-archivio}
+
+Sui 16 topic con giudizi umani E1 raggiunge 0,6558 in nDCG@10 e il profilo semantico 0,5967. Passando da E1 al semantico, quattro topic migliorano, otto mantengono lo stesso punteggio e quattro peggiorano. La differenza media è −0,0591. L'intervallo bootstrap appaiato al 95\%, ottenuto ricampionando 5.000 volte i topic, va da −0,2286 a +0,0859 e comprende lo zero. Anche la copertura pesa sul confronto: dei 160 risultati restituiti nei primi dieci posti, il gold ne copre 43 per E1 e 23 per il semantico.
+
+\tabletitle{latenze-locali}{Latenza del motore sul corpus completo. Tempi in millisecondi, riscaldamento escluso}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}llrrr@{}}
+\toprule\noalign{}
+Campagna & Profilo & Richieste misurate & Mediana (ms) & P95 (ms) \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Lessicale & E0 & 234 & 9,7 & 24,9 \\
+Lessicale & E1 & 234 & 10,3 & 16,4 \\
+Lessicale & E2 & 234 & 10,5 & 15,7 \\
+Lessicale & E3 & 234 & 63,8 & 109,6 \\
+Lessicale & E4 & 234 & 11,6 & 19,9 \\
+Confronto diretto & E1 & 26 & 10,5 & 14,5 \\
+Confronto diretto & Semantico & 26 & 460,5 & 490,1 \\
+\end{longtable}
+}
+
+Nella Tab.~\ref{tab:latenze-locali} E3, il profilo che gestisce i refusi, presenta la mediana più alta fra i cinque lessicali. La campagna ha completato senza errori 1.560 richieste, di cui 390 di riscaldamento e 1.170 misurate. Nel confronto diretto lo stesso insieme di input richiede circa 450 ms in più alla mediana per la ricerca semantica, che comprende la generazione dell'embedding della query.
+
+Il confronto vettoriale sui 16 topic restituisce gli stessi insiemi di dieci documenti con ricerca esatta e con l'opzione di ricerca approssimata. Prima e dopo la prova, Qdrant registra 11.032 punti e zero vettori indicizzati. Per stimare il richiamo di HNSW occorre ripetere il confronto dopo aver verificato la costruzione dell'indice.
+
+\clearpage
+
+\subsection{Dal motore al percorso del lettore}\label{dal-motore-al-percorso-del-lettore}
+
+Il generatore k6 ha eseguito il percorso home, ricerca e apertura del primo articolo, verificando l'identità del documento e la presenza del testo. Il carico misto alternava E1 e ricerca semantica, con un tasso programmato di un percorso al secondo per 31 s. Generatore, applicazione ed encoder operavano sulla stessa macchina; Elasticsearch e Qdrant erano in container locali.
+
+\tabletitle{percorso-web}{Percorso HTTP completo sotto carico misto locale}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}lr@{}}
+\toprule\noalign{}
+Misura & Valore osservato \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Percorsi avviati e completati correttamente & 32 su 32 \\
+Richieste HTTP / arrivi scartati dal generatore & 96 / 0 \\
+Tempo del percorso, mediana & 32 ms \\
+Tempo del percorso, P95 & 514 ms \\
+\end{longtable}
+}
+
+La Tab.~\ref{tab:percorso-web} descrive un singolo livello di carico. Con soli 32 percorsi, il P95 dipende da poche osservazioni nella coda della distribuzione. La capacità sostenibile richiede più livelli di traffico e un generatore su un host separato.
+
+\textbf{Tempo percepito nel browser.} In una singola osservazione Chromium sulla query «Roma», con E1, il primo risultato è diventato visibile 110 ms dopo l'invio. Dal clic sul risultato alla visualizzazione del testo dell'articolo sono trascorsi 748 ms. Sono due intervalli distinti della stessa navigazione; le 32 sessioni HTTP della tabella misurano invece il completamento delle richieste di rete.
+
+I collaudi funzionali hanno inoltre verificato il filtro per anno e la seconda pagina dei risultati, la navigazione da una cartella dell'archivio a un articolo, la continuazione della ricerca live su risposte riprodotte localmente e la rilettura di un giudizio salvato in un database temporaneo.
+
+\clearpage
+
 \section{Distribuzione e verifica}\label{distribuzione-e-verifica}
 
 La Fig.~\ref{fig:deploy} riassume il percorso di accesso al servizio distribuito.
@@ -505,13 +566,13 @@ Ripetizione sperimentale & Le classifiche di otto query di controllo coincidono 
 
 \section{Conclusioni}\label{conclusioni}
 
-Siamo partiti da una ricerca sugli incidenti ferroviari in Giappone. Su Q37 l'analizzatore italiano porta ai primi due posti due cronache di grado 2. Su Q09, con lo stesso analizzatore, un articolo di grado 2 scende dal primo al secondo posto. Abbiamo scelto E1 sulla base del risultato medio di sviluppo. I due casi di test ci aiutano a capire come quella scelta cambia ciò che il lettore trova per primo. Per decidere se estendere la preferenza al recupero semantico, il passo sperimentale più informativo sarebbe giudicare anche i suoi primi risultati sullo stesso insieme di topic. L'architettura consente questo confronto; la copertura osservata quantifica il lavoro di annotazione ancora necessario.
+Su Q37 E1 porta ai primi due posti due cronache di grado 2; su Q09 un articolo di grado 2 scende al secondo posto. Sui 16 topic il vantaggio medio di E1 sul semantico è di 0,0591 in nDCG@10. L'intervallo appaiato comprende lo zero. Giudicare i risultati semantici ancora scoperti renderebbe il confronto più informativo. Restano da misurare il richiamo con indice HNSW attivo e la capacità web su replica con generatore separato.
 
 \subsection{Fonti e riproducibilità}\label{fonti-e-riproducibilituxe0}
 
-Il codice descritto corrisponde alla revisione \texttt{8fe85c8} del repository. I risultati congelati si riferiscono alla revisione sperimentale \texttt{1c6e51d}. La release pubblica riunisce classifiche, giudizi e risultati. Per verificare i numeri si confrontano prima le impronte SHA-256 con il manifest archiviato, poi si ricostruiscono le medie per sistema mantenendo fonte, profondità e insieme dei topic. La tabella del test è generata dal riepilogo tabulare originale.
+La descrizione iniziale del servizio si riferisce alla revisione \texttt{8fe85c8}, i risultati congelati alla \texttt{1c6e51d}. La release pubblica contiene classifiche, giudizi e manifest SHA-256. Per le successive campagne locali, il file \texttt{benchmark-locale.json} raccoglie gli identificativi delle esecuzioni, i denominatori e le statistiche delle tabelle.
 
-\textbf{Riprodurre il servizio.} Con Python 3.12 e le dipendenze fissate nel lockfile, la sequenza comprende l'avvio di Elasticsearch tramite Docker Compose, la preparazione del corpus, la costruzione degli indici e l'avvio dell'applicazione FastAPI. La componente semantica richiede anche il modello e la collezione vettoriale. La postazione di giudizio richiede un account e un pacchetto importato. I comandi completi e i prerequisiti sono nella documentazione associata alla revisione del progetto.
+\textbf{Riprodurre il servizio.} La procedura documentata avvia Elasticsearch con Docker Compose, verifica il dump e prepara gli indici per FastAPI. Il recupero semantico richiede anche encoder e collezione vettoriale. Le postazioni di giudizio richiedono un account e un pacchetto importato.
 
 \textbf{Nota sulle immagini.} I diagrammi rappresentano i percorsi del codice. I ritagli delle interfacce provengono dal collaudo con dati dimostrativi. L'esempio documentale deriva dalla revisione di Wikinotizie indicata fra le fonti, distribuita con licenza \href{https://creativecommons.org/licenses/by-sa/4.0/}{Creative Commons Attribuzione-Condividi allo stesso modo 4.0}.
 

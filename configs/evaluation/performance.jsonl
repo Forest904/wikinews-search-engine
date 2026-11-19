@@ -1,0 +1,10 @@
+{"id":"title","class":"titolo","query":"Terremoto in Abruzzo"}
+{"id":"name","class":"nome-ambiguo","query":"Roma"}
+{"id":"common","class":"frequente","query":"Italia"}
+{"id":"rare","class":"raro","query":"Eyjafjallajökull"}
+{"id":"para","class":"parafrasi","query":"quali aiuti sono arrivati dopo il sisma in Abruzzo"}
+{"id":"none","class":"assente","query":"zzqwbenchmarkassente"}
+{"id":"year","class":"filtro-stretto","query":"elezioni","year_from":2013,"year_to":2013}
+{"id":"range","class":"filtro-ampio","query":"elezioni","year_from":2005,"year_to":2021}
+{"id":"page","class":"paginazione","query":"Italia","page":5}
+{"id":"size","class":"pagina-grande","query":"Italia","page_size":100}

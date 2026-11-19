@@ -15,6 +15,8 @@ Il motore cerca in **11.032 articoli** dello snapshot del 20 marzo 2025. Sul tes
 
 ## Documentazione di progetto
 
+- [Benchmark del motore, del server web e dei percorsi browser](docs/performance.md)
+
 - [PRD — requisiti e criteri di accettazione](docs/prd.md)
 - [Architettura e struttura dei componenti](docs/architeture.md)
 - [Roadmap dalla fase zero alla consegna](docs/roadmap.md)

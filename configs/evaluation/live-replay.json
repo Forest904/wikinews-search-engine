@@ -1,0 +1,9 @@
+{
+  "search": {
+    "Roma": {
+      "0": {"query":{"searchinfo":{"totalhits":2},"search":[{"pageid":1,"title":"Roma","snippet":"Pagina di prova"}]},"continue":{"continue":"-||","sroffset":1}},
+      "1": {"query":{"searchinfo":{"totalhits":2},"search":[{"pageid":2,"title":"Roma seconda pagina","snippet":"Seconda pagina di prova"}]}}
+    }
+  },
+  "pageimages":{"query":{"pages":[]}}
+}

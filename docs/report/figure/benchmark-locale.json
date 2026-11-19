@@ -1,0 +1,130 @@
+{
+  "perf-lexical-full-01": {
+    "sha256": "19ca4b72c8fe052ab01840994b5552d3c60637e0a4ca07ffadbcfa96862c31f1",
+    "source": "samples.jsonl",
+    "warmup": 390,
+    "errors": 0,
+    "latency_ms": {
+      "E0": {
+        "n": 234,
+        "p50": 9.72439999168273,
+        "p95": 24.87370000744704
+      },
+      "E1": {
+        "n": 234,
+        "p50": 10.315199993783608,
+        "p95": 16.414000012446195
+      },
+      "E2": {
+        "n": 234,
+        "p50": 10.542600000917446,
+        "p95": 15.671900007873774
+      },
+      "E3": {
+        "n": 234,
+        "p50": 63.76455000281567,
+        "p95": 109.61840000527445
+      },
+      "E4": {
+        "n": 234,
+        "p50": 11.634449998382479,
+        "p95": 19.866500006173737
+      }
+    }
+  },
+  "perf-semantic-01": {
+    "sha256": "e936db84858794eb2dfe18c183005c3a463526461f844fef6b18441b9826f070",
+    "source": "samples.jsonl",
+    "warmup": 52,
+    "errors": 0,
+    "latency_ms": {
+      "E1": {
+        "n": 26,
+        "p50": 10.510350002732594,
+        "p95": 14.479999998002313
+      },
+      "semantic": {
+        "n": 26,
+        "p50": 460.481099995377,
+        "p95": 490.0863000075333
+      }
+    }
+  },
+  "perf-semantic-quality-01/quality-gold.json": {
+    "E1": {
+      "ndcg@10": 0.6558099788064481,
+      "judged": 43,
+      "returned": 160,
+      "delta_mean": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ],
+      "improved": 0,
+      "tied": 16,
+      "worse": 0
+    },
+    "semantic": {
+      "ndcg@10": 0.5967085387295296,
+      "judged": 23,
+      "returned": 160,
+      "delta_mean": -0.0591014400769186,
+      "ci95": [
+        -0.22864502226416103,
+        0.08587769330674201
+      ],
+      "improved": 4,
+      "tied": 8,
+      "worse": 4
+    }
+  },
+  "perf-semantic-exact-02.json": {
+    "queries": 16,
+    "mean_recall_exact@10": 1.0,
+    "points_count": 11032,
+    "indexed_vectors_count": 0
+  },
+  "perf-mixed-01/step-summary.json": {
+    "journey_ms": {
+      "p(90)": 483.1,
+      "p(95)": 514.45,
+      "avg": 157.625,
+      "min": 28,
+      "med": 32,
+      "max": 875
+    },
+    "iterations": {
+      "count": 32,
+      "rate": 1.0312108266773132
+    },
+    "useful_journeys": {
+      "count": 32,
+      "rate": 1.0312108266773132
+    },
+    "dropped_iterations": {
+      "count": 0,
+      "rate": 0,
+      "thresholds": {
+        "count==0": false
+      }
+    },
+    "http_reqs": {
+      "count": 96,
+      "rate": 3.0936324800319395
+    }
+  },
+  "perf-browser-smoke-01.jsonl": {
+    "iteration": 0,
+    "location": "localhost",
+    "url": "http://127.0.0.1:18943",
+    "query": "Roma",
+    "profile": "E1",
+    "epoch": 1795053790.098374,
+    "chromium": "159.0.8154.6",
+    "first_result_ms": 109.93950000556652,
+    "reader_ms": 747.7759999892442,
+    "article": "47837",
+    "reader_ttfb_ms": 686.1999999880791,
+    "home_cache": null
+  }
+}

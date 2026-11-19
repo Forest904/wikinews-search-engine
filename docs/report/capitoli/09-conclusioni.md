@@ -22,13 +22,13 @@ La Tab. \ref{tab:verifiche} associa ogni livello di verifica a una proprietà o
 \clearpage
 # Conclusioni
 
-Siamo partiti da una ricerca sugli incidenti ferroviari in Giappone. Su Q37 l’analizzatore italiano porta ai primi due posti due cronache di grado 2. Su Q09, con lo stesso analizzatore, un articolo di grado 2 scende dal primo al secondo posto. Abbiamo scelto E1 sulla base del risultato medio di sviluppo. I due casi di test ci aiutano a capire come quella scelta cambia ciò che il lettore trova per primo. Per decidere se estendere la preferenza al recupero semantico, il passo sperimentale più informativo sarebbe giudicare anche i suoi primi risultati sullo stesso insieme di topic. L’architettura consente questo confronto; la copertura osservata quantifica il lavoro di annotazione ancora necessario.
+Su Q37 E1 porta ai primi due posti due cronache di grado 2; su Q09 un articolo di grado 2 scende al secondo posto. Sui 16 topic il vantaggio medio di E1 sul semantico è di 0,0591 in nDCG@10. L’intervallo appaiato comprende lo zero. Giudicare i risultati semantici ancora scoperti renderebbe il confronto più informativo. Restano da misurare il richiamo con indice HNSW attivo e la capacità web su replica con generatore separato.
 
 ## Fonti e riproducibilità
 
-Il codice descritto corrisponde alla revisione \texttt{8fe85c8} del repository. I risultati congelati si riferiscono alla revisione sperimentale \texttt{1c6e51d}. La release pubblica riunisce classifiche, giudizi e risultati. Per verificare i numeri si confrontano prima le impronte SHA-256 con il manifest archiviato, poi si ricostruiscono le medie per sistema mantenendo fonte, profondità e insieme dei topic. La tabella del test è generata dal riepilogo tabulare originale.
+La descrizione iniziale del servizio si riferisce alla revisione \texttt{8fe85c8}, i risultati congelati alla \texttt{1c6e51d}. La release pubblica contiene classifiche, giudizi e manifest SHA-256. Per le successive campagne locali, il file \texttt{benchmark-locale.json} raccoglie gli identificativi delle esecuzioni, i denominatori e le statistiche delle tabelle.
 
-**Riprodurre il servizio.** Con Python 3.12 e le dipendenze fissate nel lockfile, la sequenza comprende l’avvio di Elasticsearch tramite Docker Compose, la preparazione del corpus, la costruzione degli indici e l’avvio dell’applicazione FastAPI. La componente semantica richiede anche il modello e la collezione vettoriale. La postazione di giudizio richiede un account e un pacchetto importato. I comandi completi e i prerequisiti sono nella documentazione associata alla revisione del progetto.
+**Riprodurre il servizio.** La procedura documentata avvia Elasticsearch con Docker Compose, verifica il dump e prepara gli indici per FastAPI. Il recupero semantico richiede anche encoder e collezione vettoriale. Le postazioni di giudizio richiedono un account e un pacchetto importato.
 
 **Nota sulle immagini.** I diagrammi rappresentano i percorsi del codice. I ritagli delle interfacce provengono dal collaudo con dati dimostrativi. L’esempio documentale deriva dalla revisione di Wikinotizie indicata fra le fonti, distribuita con licenza [Creative Commons Attribuzione-Condividi allo stesso modo 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
 
