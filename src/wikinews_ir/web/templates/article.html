@@ -2,7 +2,7 @@
 {% block title %}{{ article.title if article else 'Articolo non disponibile' }} · NewsFinder{% endblock %}
 {% block crumbs %}
 {% for parent in crumbs %}<a href="{{ back_url if loop.last else parent.url }}">{{ parent.label }}</a><span>›</span>{% endfor %}
-{% if saved_origin or query %}<a href="{{ back_url }}">{{ 'Salvati' if saved_origin else 'Risultati' }}</a>
+{% if saved_origin or search_origin %}<a href="{{ back_url }}">{{ 'Salvati' if saved_origin else 'Risultati' }}</a>
 <span>›</span>{% endif %}<span aria-current="page" title="{{ article.title if article else 'Articolo non disponibile' }}">{{ article.title if article else 'Articolo non disponibile' }}</span>{% endblock %}
 {% block main %}<main id="main" class="content article-content">
 <div class="article-tools">

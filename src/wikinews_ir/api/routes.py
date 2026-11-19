@@ -124,7 +124,7 @@ def health(backend: RetrievalEngine = Depends(engine)):
 @router.get("/api/search", response_model=SearchResponse)
 def search(
     backend: RetrievalEngine = Depends(engine),
-    q: str = Query(),
+    q: str = Query(default=""),
     profile: SearchProfile = "E0",
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1, le=100),
@@ -191,18 +191,18 @@ def article_page(
     backend: RetrievalEngine = Depends(engine),
 ):
     saved_origin = request.query_params.get("view") == "saved"
+    years = {k: request.query_params[k] for k in ("year_from", "year_to") if request.query_params.get(k)}
     back_url = "/"
     back_label = "Home"
     if saved_origin:
         back_url, back_label = "/?view=saved", "Torna ai salvati"
-    elif q:
-        years = {k: request.query_params[k] for k in ("year_from", "year_to") if request.query_params.get(k)}
+    elif q or years:
         back_url = "/?" + urlencode(dict(q=q, profile=profile, page=page, page_size=page_size, **years))
         if request.query_params.get("mode") == "live":
             back_url = "/?" + urlencode({k: request.query_params[k] for k in
                 ("q", "mode", "cursor", "page") if k in request.query_params})
         back_label = "Torna ai risultati"
-    context = dict(back_url=back_url, back_label=back_label, query=q,
+    context = dict(back_url=back_url, back_label=back_label, search_origin=bool(q or years),
                    profile=profile, saved_origin=saved_origin)
     try:
         item = backend.get_article(document_id, profile)
@@ -232,7 +232,7 @@ def article_page(
             today = date.fromisoformat(current[0])
             peers.sort(key=lambda row: abs((date.fromisoformat(row[0]) - today).days) if row[0] else float("inf"))
         context["peers"] = peers[:3]
-        if origin == folder.path and not (q or saved_origin):
+        if origin == folder.path and not (q or years or saved_origin):
             context.update(crumbs=ancestors(catalog, origin) + [folder],
                            back_url=folder.url + "?" + urlencode({"page": page}),
                            back_label="Torna a " + folder.label)

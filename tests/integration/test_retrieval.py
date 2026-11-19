@@ -12,6 +12,25 @@ from wikinews_ir.retrieval.engine import ArticleNotFound, RetrievalEngine, Searc
 pytestmark = pytest.mark.integration
 
 
+def test_period_only_api(seeded_backend):
+    backend = seeded_backend
+    index = backend.settings.elasticsearch_index
+    backend.client.indices.put_settings(index=index, settings={"index.blocks.write": False})
+    dates = ["2005-01-01", "2021-12-31", "2021-12-31", "2004-12-31", "2022-01-01"]
+    for number, date in enumerate(dates, start=1):
+        backend.client.update(index=index, id=f"demo-{number:02d}", doc={"publication_date": date})
+    backend.client.indices.put_settings(index=index, settings={"index.blocks.write": True})
+    backend.client.indices.refresh(index=index)
+    app = create_app()
+    app.dependency_overrides[engine] = lambda: backend
+    with TestClient(app) as client:
+        for extra in [{}, {"q": "", "profile": "semantic"}]:
+            response = client.get("/api/search", params={"year_from": 2005, "year_to": 2021, **extra})
+            assert response.status_code == 200, response.text
+            assert [hit["document_id"] for hit in response.json()["hits"]] == ["demo-02", "demo-03", "demo-01"]
+        assert client.get("/api/search").status_code == 422
+
+
 def test_fixture_search_and_lookup(seeded_backend):
     backend = seeded_backend
     response = backend.search(SearchRequest(query="  terremoto  "))

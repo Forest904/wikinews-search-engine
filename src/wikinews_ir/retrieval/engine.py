@@ -102,13 +102,14 @@ class RetrievalEngine:
 
     def search(self, request: SearchRequest) -> SearchResponse:
         request = SearchRequest.model_validate(request.model_dump())
-        if request.profile == "semantic":
+        if request.query and request.profile == "semantic":
             from wikinews_ir.semantic import search
             try:
                 return search(request)
             except (httpx.HTTPError, ValueError, KeyError) as exc:
                 raise RetrievalUnavailable("Ricerca semantica temporaneamente indisponibile") from exc
-        body = build_query(request.query, request.profile)
+        index_profile = "E0" if request.profile == "semantic" else request.profile
+        body = build_query(request.query, index_profile) if request.query else {"match_all": {}}
         bounds = {}
         if request.year_from:
             bounds["gte"] = f"{request.year_from:04d}-01-01"
@@ -117,14 +118,14 @@ class RetrievalEngine:
         if bounds:
             body = {"bool": {"must": [body], "filter": [{"range": {"publication_date": bounds}}]}}
         try:
-            metadata = self.metadata(request.profile)
+            metadata = self.metadata(index_profile)
             result = self.client.search(
-                index=index_name(self.settings, request.profile),
+                index=index_name(self.settings, index_profile),
                 query=body,
                 highlight=HIGHLIGHT,
                 size=request.page_size,
                 from_=(request.page - 1) * request.page_size,
-                sort=[{"_score": "desc"}, {"document_id": "asc"}],
+                sort=[{"_score" if request.query else "publication_date": "desc"}, {"document_id": "asc"}],
                 track_total_hits=True,
                 allow_partial_search_results=False,
             )
@@ -154,7 +155,7 @@ class RetrievalEngine:
         return SearchResponse(
             query=request.query,
             profile=request.profile,
-            index=index_name(self.settings, request.profile),
+            index=index_name(self.settings, index_profile),
             page=request.page, page_size=request.page_size, metadata=metadata,
             hits=hits,
             total=int(result["hits"]["total"]["value"]),

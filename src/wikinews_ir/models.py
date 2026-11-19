@@ -11,7 +11,7 @@ SearchProfile = ProfileId | Literal["semantic"]
 
 class SearchRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    query: str = Field(min_length=1, max_length=250)
+    query: str = Field(default="", max_length=250)
     profile: SearchProfile = "E0"
     year_from: int | None = Field(default=None, ge=1, le=9999)
     year_to: int | None = Field(default=None, ge=1, le=9999)
@@ -20,11 +20,13 @@ class SearchRequest(BaseModel):
 
     @model_validator(mode="after")
     def window(self):
+        if not self.query and not (self.year_from or self.year_to):
+            raise ValueError("Inserisci parole chiave o un periodo di pubblicazione")
         if self.year_from and self.year_to and self.year_from > self.year_to:
             raise ValueError("L’anno iniziale supera quello finale")
         if self.page * self.page_size > 10_000:
             raise ValueError("Paginazione limitata ai primi 10.000 risultati")
-        if self.profile == "E4":
+        if self.query and self.profile == "E4":
             from wikinews_ir.retrieval.query_builder import parse_phrases
             parse_phrases(self.query)
         return self

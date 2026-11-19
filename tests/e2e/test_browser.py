@@ -56,6 +56,55 @@ def browser_page(request):
         browser.close()
 
 
+def test_inline_publication_period(seeded_backend, browser_page):
+    page = browser_page
+    with serve(seeded_backend) as url:
+        page.goto(url)
+        q = page.locator("#q")
+        start, end = page.locator("[name=year_from]"), page.locator("[name=year_to]")
+        for literal in ["evento 12/06/2006", "modello X2006", "confronto 2005 e 2021", "ricerca [2005,"]:
+            q.fill(literal)
+            expect(start).to_have_value("")
+            expect(end).to_have_value("")
+        for expression in ["2005-2021", "2005 / 2021", "[2005, 2021]"]:
+            q.fill(f"Ricerca {expression} antibiotici")
+            expect(start).to_have_value("2005")
+            expect(end).to_have_value("2021")
+            with page.expect_request(lambda r: "/api/search?" in r.url) as search:
+                q.press("Enter")
+            assert "q=Ricerca+antibiotici" in search.value.url
+            assert "year_from=2005&year_to=2021" in search.value.url
+            expect(q).to_have_value("Ricerca antibiotici")
+        q.fill("La Roma vince 2006")
+        expect(start).to_have_value("2006")
+        expect(end).to_have_value("2006")
+        q.fill("La Roma vince")
+        expect(start).to_have_value("2005")
+        expect(end).to_have_value("2021")
+        q.fill("La Roma vince 2006")
+        page.locator("#filters").click()
+        end.fill("2008")
+        q.press("Enter")
+        expect(q).to_have_value("La Roma vince")
+        expect(end).to_have_value("2008")
+        q.fill("2008-2006")
+        q.press("Enter")
+        assert not end.evaluate("el => el.validity.valid")
+        page.locator("#profile").select_option("live")
+        assert q.input_value() == "2008-2006"
+        expect(start).to_be_disabled()
+        for path in ["/archivio", "/"]:
+            page.goto(url + path)
+            q.fill("2006")
+            q.press("Enter")
+            expect(page.locator("#results-title")).to_contain_text("2006")
+            page.reload()
+            expect(q).to_have_value("")
+            expect(start).to_have_value("2006")
+            expect(end).to_have_value("2006")
+            expect(page.locator("#results-title")).to_contain_text("2006")
+
+
 @pytest.mark.parametrize("return_link", [".back-link", ".reading-actions"])
 def test_search_detail_and_empty_state(seeded_backend, browser_page, return_link):
     page = browser_page

@@ -101,6 +101,7 @@ function selectedProfile(params) {
   return params.get("mode") === "live" ? "live" : params.get("profile") || "E0";
 }
 function restore() {
+  inferredPeriod = null;
   controller?.abort();
   controller = null;
   const p = new URLSearchParams(location.search);
@@ -114,16 +115,18 @@ function restore() {
   page = Math.max(1, Number(p.get("page")) || 1);
   profileHelp();
   if (p.get("view") === "saved") savedView();
-  else if (form.elements.q.value.trim()) search(false, p);
+  else if (form.elements.q.value.trim() || p.get("year_from") || p.get("year_to")) search(false, p);
   else show("home");
 }
 async function search(push = true, applied = null, previousCursors = []) {
-  const q = applied?.get("q") || form.elements.q.value.trim();
+  const q = applied ? applied.get("q") || "" : form.elements.q.value.trim();
   const profile = applied
     ? selectedProfile(applied)
     : form.elements.profile.value;
   const live = profile === "live";
-  if (!q) {
+  const start = applied ? applied.get("year_from") : form.elements.year_from.value;
+  const end = applied ? applied.get("year_to") : form.elements.year_to.value;
+  if (!q && (live || !(start || end))) {
     show("home");
     if (push) history.pushState(null, "", "/");
     return;
@@ -138,10 +141,8 @@ async function search(push = true, applied = null, previousCursors = []) {
     page: String(page),
     page_size: new URLSearchParams(location.search).get("page_size") || "10",
   });
-  for (const name of ["year_from", "year_to"]) {
-    const value = applied ? applied.get(name) : form.elements[name].value;
-    if (!live && value) params.set(name, value);
-  }
+  if (!live && start) params.set("year_from", start);
+  if (!live && end) params.set("year_to", end);
   if (live) {
     params.delete("profile");
     params.delete("page_size");
@@ -153,7 +154,9 @@ async function search(push = true, applied = null, previousCursors = []) {
     history.pushState(live ? {years, previousCursors} : null, "", `/?${params}`);
   }
   const heading = live ? "Risultati da Wikinotizie" : "Risultati";
-  document.querySelector("#results-title").textContent = `${heading} per “${q}”`;
+  const period = start && end ? (start === end ? start : `${start}–${end}`) :
+    start ? `dal ${start}` : `fino al ${end}`;
+  document.querySelector("#results-title").textContent = q ? `${heading} per “${q}”` : `${heading} · ${period}`;
   document.querySelector("#foot-status").textContent = "";
   status.textContent = "Ricerca in corso…";
   results.replaceChildren();
@@ -269,8 +272,8 @@ form.addEventListener("submit", (e) => {
 document.querySelectorAll("[data-query]").forEach((b) =>
   b.addEventListener("click", () => {
     form.elements.q.value = b.dataset.query;
-    page = 1;
-    search();
+    form.elements.q.dispatchEvent(new Event("input", {bubbles: true}));
+    form.requestSubmit();
   }),
 );
 fetch("/archivio/cartelle-home")
@@ -297,9 +300,8 @@ document.querySelector("#retry").onclick = () => search(false, new URLSearchPara
 document.querySelector("#edit-search").onclick = () => form.elements.q.focus();
 document.querySelector("#standard-search").onclick = () => {
   form.elements.profile.value = "E0";
-  profileHelp();
-  page = 1;
-  search();
+  form.elements.profile.dispatchEvent(new Event("change"));
+  form.requestSubmit();
 };
 window.addEventListener("popstate", restore);
 restore();
