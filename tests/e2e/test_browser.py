@@ -312,7 +312,7 @@ def test_search_history_recovery_and_responsive_layout(seeded_backend, browser_p
         expect(page.locator("#profile-help")).to_contain_text("Profilo E4")
 
 
-@pytest.mark.parametrize("width", [390, 1280])
+@pytest.mark.parametrize("width", [320, 390, 1280])
 def test_live_results_and_navigation(browser_page, width):
     page = browser_page
     page.set_viewport_size({"width": width, "height": 850})
@@ -339,7 +339,17 @@ def test_live_results_and_navigation(browser_page, width):
             page.locator("#q").press("Enter")
             expect(page.locator("#results li")).to_have_count(2)
             expect(page.locator("#status")).to_have_text("12 risultati in 0.007 secondi")
-            expect(page.locator(".live-figure")).to_be_visible()
+            thumbnail = page.locator(".live-icon > img")
+            expect(thumbnail).to_be_visible()
+            box = thumbnail.bounding_box()
+            assert box["width"] == box["height"] == (48 if width <= 700 else 64)
+            assert box["x"] + box["width"] <= page.locator(".result-copy").first.bounding_box()["x"]
+            assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+            page.get_by_text("Crediti immagine").click()
+            expect(page.get_by_text("Scheda del file")).to_be_visible()
+            thumbnail.dispatch_event("error")
+            expect(page.locator(".live-icon .icon")).to_have_count(2)
+            expect(page.locator(".image-credits")).to_have_count(0)
             expect(page.locator(".result-copy > a").first).to_have_attribute("href", re.compile("/articles/42.*mode=live"))
             expect(page.locator(".result-copy > a").last).to_have_attribute("href", hit["url"])
             page.locator("#next").click()

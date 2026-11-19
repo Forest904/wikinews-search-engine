@@ -32,10 +32,25 @@ def test_reader_preserves_editorial_structure_and_resolves_related():
                     "LicenseUrl": "https://creativecommons.org/licenses/by/4.0/",
                 }.items()})
     image = credit(info)
-    result = str(render(page["blocks"], image))
+    result = str(render(page["blocks"], {"Foto.jpg": image}))
     assert result.count("<figure") == 1 and "Piazza" in result and "A. Rossi" in result
     del info["extmetadata"]["Artist"]
     assert credit(info) is None
+
+
+def test_repeated_figure_keeps_position_width_and_caption():
+    def figure(align, width, caption):
+        return f'<figure typeof="mw:File/Thumb" class="{align}"><img resource="./File:A.jpg" ' \
+               f'src="//upload.wikimedia.org/A.jpg" width="{width}" height="80">' \
+               f'<figcaption>{caption}</figcaption></figure>'
+
+    markup = figure("", 120, "Prima") + "<p>Testo</p>" + figure("mw-halign-left", 180, "Seconda")
+    page = extract(markup, "https://it.wikinews.org/wiki/Test", {})
+    first, paragraph, second = page["blocks"]
+    assert page["files"] == ["A.jpg"]
+    assert paragraph["children"] == ["Testo"]
+    assert (first["kind"], first["align"], first["width"], first["caption"]) == ("thumb", "right", 120, "Prima")
+    assert (second["kind"], second["align"], second["width"], second["caption"]) == ("thumb", "left", 180, "Seconda")
 
 
 def test_reader_fallback_for_other_snapshot_or_revision(tmp_path, monkeypatch):

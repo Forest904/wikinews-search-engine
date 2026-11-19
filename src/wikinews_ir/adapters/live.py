@@ -115,6 +115,6 @@ class LiveSearch:
         )["query"]["pages"]
         names = {p["pageid"]: p["pageimage"] for p in pages if p.get("pageimage")}
         if names:
-            images = fetch_images(self.api, list(dict.fromkeys(names.values())), 320, deadline)
+            images = fetch_images(self.api, list(dict.fromkeys(names.values())), 128, deadline)
             return {pid: images.get(name) for pid, name in names.items()}
         return {}

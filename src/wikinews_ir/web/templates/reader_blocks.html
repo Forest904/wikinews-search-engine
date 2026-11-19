@@ -1,11 +1,12 @@
-{% macro render(nodes, image) -%}
+{% macro render(nodes, images) -%}
 {% for node in nodes -%}
 {% if node is string %}{{ node }}{% elif node.tag == 'figure' %}
-{% if node.selected and image %}<figure><img src="{{ image.url }}" width="{{ image.width }}" height="{{ image.height }}" alt="{{ node.alt }}" loading="lazy"><figcaption>{{ node.caption }}
+{% set image = images.get(node.file) if images else none %}
+{% if image %}<figure class="wiki-figure wiki-{{ node.kind|default('plain') }} align-{{ node.align|default('none') }}{% if node.border %} with-border{% endif %}"><img src="{{ image.url }}" width="{{ node.width|default(image.width) }}" height="{{ node.height|default(image.height) }}" alt="{{ node.alt }}" loading="lazy"><figcaption>{{ node.caption }}
 <small>{{ image.artist }} · {% if image.license_url %}<a href="{{ image.license_url }}">{{ image.license }}</a>{% else %}{{ image.license }}{% endif %} · <a href="{{ image.source }}">Scheda del file</a></small></figcaption></figure>{% endif %}
 {% elif node.tag == 'br' %}<br>{% else %}
 {%- if node.tag == 'table' %}<div class="reader-table" tabindex="0" role="region" aria-label="Tabella dell’articolo">{% endif -%}
-<{{ node.tag }}{{ node.attrs|xmlattr }}>{{ render(node.children, image) }}</{{ node.tag }}>
+<{{ node.tag }}{{ node.attrs|xmlattr }}>{{ render(node.children, images) }}</{{ node.tag }}>
 {%- if node.tag == 'table' %}</div>{% endif -%}
 {% endif -%}
 {% endfor -%}

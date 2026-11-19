@@ -112,7 +112,7 @@ Il catalogo viene pubblicato in `data/reader/catalog.sqlite3`. Usare `--pilot --
 python -m wikinews_ir.reader_build --enrich-only --user-agent "NewsFinder/1.0 (contatto del gestore)"
 ```
 
-La preparazione riporta il numero di pagine strutturate, figure candidate e immagini con crediti. Le richieste Wikimedia fallite restano da recuperare. Il lettore mostra una figura solo quando dispone dei suoi crediti. Il browser recupera la miniatura da Wikimedia. In produzione collocare il catalogo in `/opt/newsfinder/imports/reader/catalog.sqlite3`; per altre installazioni configurare `READER_CATALOG`. Il lettore usa il testo indicizzato se il catalogo manca o appartiene a un’altra revisione del corpus.
+Per recuperare posizione, formato e dimensioni di tutte le figure da un catalogo precedente, rieseguire la preparazione dal dump. Il comando riutilizza i crediti esistenti e pubblica il catalogo con sostituzione atomica. Il riepilogo conta le pagine strutturate, i file candidati distinti e quelli con crediti. Le richieste Wikimedia fallite restano da recuperare. Il lettore mostra una figura solo quando dispone dei suoi crediti. Il browser recupera la miniatura da Wikimedia. In produzione collocare il catalogo in `/opt/newsfinder/imports/reader/catalog.sqlite3`; per altre installazioni configurare `READER_CATALOG`. Il lettore usa il testo indicizzato se il catalogo manca o appartiene a un’altra revisione del corpus.
 
 
 ## Ricerca live e accesso a Wikimedia

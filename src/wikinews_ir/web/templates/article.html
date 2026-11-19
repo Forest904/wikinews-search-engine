@@ -15,7 +15,7 @@
 <h1>{{ article.title }}</h1>
 {% if rich %}
 {% from "reader_blocks.html" import render %}
-<div class="article-body rich-body">{{ render(rich.blocks, rich.image) }}</div>
+<div class="article-body rich-body">{{ render(rich.blocks, rich.images) }}</div>
 {% for label, links in [('Fonti',rich.sources),('Articoli correlati',rich.related)] %}
 {% if links %}<section><h2>{{ label }}</h2><ul>{% for link in links %}<li>{% if link.href %}<a href="{{ link.href }}">{{ link.label }}</a>{% else %}{{ link.label }}{% endif %}</li>{% endfor %}</ul></section>{% endif %}
 {% endfor %}

@@ -30,12 +30,19 @@ function searchExcerpt(parts = []) {
   const context = prefix.slice(-36).replace(/^\S*\s+/, "");
   return [{text: "? " + context, highlighted: false}, ...parts.slice(match)];
 }
-function liveFigure(image) {
-  const figure = document.createElement("figure"), img = document.createElement("img");
-  const caption = document.createElement("figcaption"), source = document.createElement("a");
-  figure.className = "live-figure";
+function addLiveThumbnail(icon, copy, image) {
+  const img = document.createElement("img"), credits = document.createElement("details");
+  const caption = document.createElement("div"), source = document.createElement("a");
+  const summary = document.createElement("summary");
+  summary.textContent = "Crediti immagine";
+  credits.className = "image-credits";
+  credits.append(summary, caption);
+  img.className = "live-thumbnail";
+  img.addEventListener("error", () => {
+    icon.replaceChildren(explorerIcon("doc"));
+    credits.remove();
+  });
   Object.assign(img, {src: image.url, width: image.width, height: image.height, alt: "", loading: "lazy"});
-  img.addEventListener("error", () => { figure.hidden = true; });
   source.href = image.source;
   source.textContent = "Scheda del file";
   if (image.artist) caption.append(image.artist + " · ");
@@ -46,8 +53,8 @@ function liveFigure(image) {
     caption.append(license);
   } else caption.append(image.license);
   caption.append(" · ", source);
-  figure.append(img, caption);
-  return figure;
+  icon.replaceChildren(img);
+  copy.append(credits);
 }
 function show(mode) {
   document.querySelector("#foot-status").textContent = "";
@@ -235,7 +242,8 @@ async function search(push = true, applied = null, previousCursors = []) {
           destination.append(" · ", current);
         }
         copy.append(destination);
-        if (hit.image) copy.append(liveFigure(hit.image));
+        icon.classList.add("live-icon");
+        if (hit.image) addLiveThumbnail(icon, copy, hit.image);
       }
       li.append(icon, copy);
       if (!live || hit.local_url) li.append(b);

@@ -61,6 +61,7 @@ def build(db, corpus, dump, pilot):
     db.executescript("""
         CREATE TABLE manifest(checksum TEXT PRIMARY KEY);
         CREATE TABLE pages(id TEXT PRIMARY KEY, revision TEXT, file TEXT, payload TEXT);
+        CREATE TABLE page_files(page_id TEXT, name TEXT, PRIMARY KEY(page_id,name));
         CREATE TABLE media(name TEXT PRIMARY KEY, data TEXT);
     """)
     db.execute("INSERT INTO manifest VALUES (?)", (identity["corpus_sha256"],))
@@ -72,14 +73,23 @@ def build(db, corpus, dump, pilot):
         name = page["file"] if page else None
         db.execute("INSERT OR IGNORE INTO pages VALUES (?,?,?,?)", (ident, docs[ident]["revision_id"],
                    name, json.dumps(page, ensure_ascii=False) if page else None))
+        if page:
+            db.executemany("INSERT OR IGNORE INTO page_files VALUES (?,?)",
+                           [(ident, file) for file in page["files"]])
     if db.execute("SELECT count(*) FROM pages").fetchone()[0] != len(docs):
         raise ValueError("Revisioni mancanti nel catalogo")
+
+
+def candidate_files(db):
+    return ("SELECT name AS file FROM page_files" if db.execute(
+        "SELECT 1 FROM sqlite_master WHERE name='page_files'").fetchone()
+        else "SELECT file FROM pages")
 
 
 def enrich(db, user_agent):
     db.execute("""CREATE TABLE IF NOT EXISTS media_checks
                   (name TEXT PRIMARY KEY, status TEXT, checked INTEGER)""")
-    names = [r[0] for r in db.execute("""SELECT DISTINCT p.file FROM pages p
+    names = [r[0] for r in db.execute(f"""SELECT DISTINCT p.file FROM ({candidate_files(db)}) p
         LEFT JOIN media m ON m.name=p.file LEFT JOIN media_checks c ON c.name=p.file
         WHERE p.file IS NOT NULL AND m.data IS NULL AND
         (c.checked IS NULL OR c.status NOT IN ('credited','no_credit') OR c.checked <= unixepoch()-604800)
@@ -142,9 +152,11 @@ def main():
             except (httpx.HTTPError, ValueError) as exc:
                 print("Wikimedia indisponibile; riprendere con --enrich-only:", exc.__class__.__name__,
                       getattr(getattr(exc, "response", None), "status_code", ""))
-            print(dict(zip(("pages","structured","candidates","credited"), db.execute(
-                "SELECT count(*),count(payload),count(file),count(media.data) FROM pages LEFT JOIN media ON file=name"
-            ).fetchone())))
+            pages, structured = db.execute("SELECT count(*),count(payload) FROM pages").fetchone()
+            candidates, credited = db.execute(
+                f"SELECT count(*),count(media.data) FROM (SELECT DISTINCT file FROM ({candidate_files(db)}) "
+                "WHERE file IS NOT NULL) files LEFT JOIN media ON files.file=media.name").fetchone()
+            print(dict(pages=pages, structured=structured, candidates=candidates, credited=credited))
         os.replace(stage, args.output)
 
 

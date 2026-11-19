@@ -123,6 +123,17 @@ def extract(markup, base, titles):
                 return []
             caption = " ".join(el.xpath("string(figcaption)").split())
             figure = dict(tag="figure", file=name, caption=caption, alt=img.get("alt", ""))
+            formats = set(el.get("typeof", "").split())
+            kind = next((kind for kind in ("Thumb", "Frame", "Frameless")
+                         if "mw:File/" + kind in formats), "plain").lower()
+            align = next((side for side in ("left", "right", "center", "none")
+                          if "mw-halign-" + side in el.classes),
+                         "right" if kind in ("thumb", "frame") else "none")
+            figure.update(kind=kind, align=align, border="mw-image-border" in el.classes)
+            for axis in ("width", "height"):
+                value = img.get(axis, "")
+                if re.fullmatch(r"[1-9][0-9]{0,5}", value):
+                    figure[axis] = int(value)
             figures.append(figure)
             return [figure]
         if tag == "table":
@@ -167,7 +178,8 @@ def extract(markup, base, titles):
     selected = next((f for f in figures if f["caption"]), figures[0] if figures else None)
     if selected:
         selected["selected"] = True
-    return dict(blocks=blocks, related=related, sources=sources, file=selected["file"] if selected else None)
+    return dict(blocks=blocks, related=related, sources=sources,
+                files=list(dict.fromkeys(f["file"] for f in figures)), file=selected["file"] if selected else None)
 
 
 def read_page(doc, revision, checksum):
@@ -179,8 +191,15 @@ def read_page(doc, revision, checksum):
             row = db.execute("SELECT payload, media.data FROM pages JOIN manifest ON checksum=? "
                              "LEFT JOIN media ON pages.file=media.name WHERE id=? AND revision=?",
                              (checksum, doc, revision)).fetchone()
-        if row and row[0]:
-            return {**json.loads(row[0]), "image": json.loads(row[1]) if row[1] else None}
+            if row and row[0]:
+                page = json.loads(row[0])
+                if "files" in page:
+                    credited = db.execute("SELECT name,data FROM page_files JOIN media USING(name) "
+                                          "WHERE page_id=? AND data IS NOT NULL", (doc,))
+                    page["images"] = {name: json.loads(data) for name, data in credited}
+                else:
+                    page["images"] = {page["file"]: json.loads(row[1])} if row[1] else {}
+                return page
     except (sqlite3.Error, OSError, ValueError):
         pass
     return None
