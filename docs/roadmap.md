@@ -35,7 +35,7 @@ Regole di esecuzione:
 | M5-C — Pilot e congelamento | Calibrazione, budget, topic e protocollo congelati | M5-A, M5-B; M7-A per pilot online | Completata il 18 novembre: confronto silver 22/24, budget stimato 12 ore, pacchetto congelato |
 | M5-D — Raccolta e consolidamento | Gold/silver separati e pool tracciabili | M5-C; M7-A per raccolta condivisa | Completata il 19 novembre 2026. 190 gold, 982 silver e 190 coppie condivise |
 | M6-A — Implementazione valutazione | Metriche, confronti e generazione report | M5-A | Completata su fixture sintetiche il 18 novembre 2026 |
-| M6-B — Esperimenti reali | Tuning development, confronto finale, error analysis | M4, M6-A; gold development per tuning, M5-D per finale | Test gold usato una volta secondo protocollo congelato |
+| M6-B — Esperimenti reali | Tuning development, confronto finale, error analysis | M4, M6-A; gold development per tuning, M5-D per finale | Completata il 19 novembre 2026. E1 selezionato su development, test gold valutato una volta |
 | M7-A — Pubblicazione operativa | Sito condivisibile con i validatori | M5-B | Sito pubblicato; ricerca e annotazione pronte via HTTPS. Collaudo operativo da confermare |
 | M7-B — Consegna accademica | GitHub, README, slide, demo live | M6-B | Installazione pulita e presentazione provate |
 
@@ -300,19 +300,21 @@ Esistono topic, split, candidate pools, qrels gold e silver separati, ranking Wi
 
 ### M6-B — Esperimenti reali e valutazione finale
 
-- [ ] Calcolare metriche per query e medie sulle run usando **development gold** per selezione/tuning.
-- [ ] Effettuare confronto E0 → E1 → E2 e ablation di E3/E4/(E5).
-- [ ] Misurare effetto delle varianti di refuso e delle query più vincolate.
-- [ ] Quantificare copertura dei giudizi in top-k e sensibilità agli unjudged; non interpretare recall completo come noto.
-- [ ] Confrontare gold e silver sulle **stesse** coppie: matrice di confusione, macro-F1, weighted kappa e disaccordi.
-- [ ] Determinare se silver produce lo stesso ordinamento dei sistemi del gold; descrivere eventuale bias del giudice.
-- [ ] Congelare profilo candidato e protocollo di analisi **prima** di aprire il test gold.
-- [ ] Eseguire valutazione finale su 16 test topic e registrare risultati, limiti e interpretazione.
-- [ ] Salvare run, manifest, tabelle, grafici e testo di error analysis; non scegliere ex post la metrica più favorevole.
+- [x] Calcolare metriche per query e medie sulle run usando **development gold** per selezione/tuning.
+- [x] Effettuare confronto E0 → E1 → E2 e ablation di E3/E4/(E5).
+- [x] Misurare effetto delle varianti di refuso e delle query più vincolate.
+- [x] Quantificare copertura dei giudizi in top-k e sensibilità agli unjudged; non interpretare recall completo come noto.
+- [x] Confrontare gold e silver sulle **stesse** coppie: matrice di confusione, macro-F1, weighted kappa e disaccordi.
+- [x] Determinare se silver produce lo stesso ordinamento dei sistemi del gold; descrivere eventuale bias del giudice.
+- [x] Congelare profilo candidato e protocollo di analisi **prima** di aprire il test gold.
+- [x] Eseguire valutazione finale su 16 test topic e registrare risultati, limiti e interpretazione.
+- [x] Salvare run, manifest, tabelle, grafici e testo di error analysis; non scegliere ex post la metrica più favorevole.
 
 ### Exit criteria
 
 Risultati riproducibili e interpretati correttamente: miglioramenti/regressioni documentati; confronto gold/silver; analisi degli errori; nessuna affermazione forte basata su pool incompleti o differenze statisticamente non supportate.
+
+**Gate M6-B superato il 19 novembre 2026.** E1 congelato su development e valutato sui 16 topic test. [Risultati, limiti e riproduzione](m6b-validation.md).
 
 ## 10. Fase M7 — Pubblicazione operativa e consegna accademica
 
@@ -403,7 +405,7 @@ M0–M4, M5-A e M5-B sono completate localmente. Il percorso di riferimento è:
 
 **Lavoro parallelo completato.** La baseline HTTP M4-P è disponibile per E0–E4 e può essere ripetuta durante il pilot e la raccolta gold/silver.
 
-**M5-D completata il 19 novembre 2026.** Prossimo passo M6-B: tuning su sviluppo e congelamento del profilo prima della valutazione finale. [Consolidamento gold e silver](m5d-validation.md).
+**M5-D completata il 19 novembre 2026.** M6-B completata il 19 novembre 2026. Prossimo passo M7-B. [Consolidamento gold e silver](m5d-validation.md).
 
 ## 13. Tracciabilità tra requisito e milestone
 

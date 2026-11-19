@@ -15,6 +15,7 @@ def configure(subparsers):
         return p
 
     command("validate", ("topics", "protocol"))
+    command("m6b").add_argument("phase", choices=("development", "freeze", "final"))
     p = command("evaluate", ("topics", "output"))
     p.add_argument("--runs", nargs="+", type=Path, required=True)
     p.add_argument("--split", choices=("calibration", "development", "test"), required=True)
@@ -66,6 +67,9 @@ def dispatch(args):
     from wikinews_ir.evaluation import silver as s
 
     cmd = args.benchmark_command
+    if cmd == "m6b":
+        from .m6b import experiment
+        return experiment(args.phase)
     if cmd == "evaluate":
         from wikinews_ir.evaluation.report import evaluate
         return evaluate(args.topics, args.split, args.runs, args.output,
