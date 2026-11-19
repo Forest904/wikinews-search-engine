@@ -5,6 +5,8 @@ Wikinotizie, basato su Elasticsearch, con valutazione IR riproducibile.
 
 ## Consegna accademica
 
+[Relazione illustrata su architettura, ricerca e valutazione (PDF)](docs/report/newsfinder.pdf) · [Sorgenti e compilazione](docs/report/README.md)
+
 Il motore cerca in **11.032 articoli** dello snapshot del 20 marzo 2025. Sul test gold di 16 topic il profilo E1, selezionato sul development, raggiunge nDCG@10 **0,6558**. Il campione e la copertura dei giudizi limitano la portata del confronto.
 
 - [Demo e recupero](docs/consegna/demo.md) · [Collaudo](docs/consegna/collaudo.md)

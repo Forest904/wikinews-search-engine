@@ -1,0 +1,19 @@
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=.77cm,font=\small\sffamily,
+ actor/.style={draw=ink,fill=pale,minimum height=.75cm,text width=2.25cm,align=center},
+ msg/.style={->,thick,draw=ink},reply/.style={msg,dashed},
+ note/.style={midway,above,font=\footnotesize\sffamily}]
+\foreach \x/\name in {0/Browser,3.3/FastAPI,6.6/Ollama,9.9/Qdrant}{
+  \node[actor] at (\x,0) {\name};
+  \draw[gray,dotted] (\x,-.5)--(\x,-8.7);
+}
+\draw[msg] (0,-1.2)--node[note]{query, filtri}(3.3,-1.2);
+\draw[msg] (3.3,-2.2)--node[note]{risoluzione dell’alias}(9.9,-2.2);
+\draw[reply] (9.9,-3.2)--node[note]{nome della collezione}(3.3,-3.2);
+\draw[msg] (3.3,-4.2)--node[note]{testo della query}(6.6,-4.2);
+\draw[reply] (6.6,-5.2)--node[note]{vettore}(3.3,-5.2);
+\draw[msg] (3.3,-6.2)--node[note]{conteggio e ricerca con filtro temporale opzionale}(9.9,-6.2);
+\draw[reply] (9.9,-7.2)--node[note]{documenti e punteggi}(3.3,-7.2);
+\draw[reply] (3.3,-8.2)--node[note]{pagina di risultati}(0,-8.2);
+\end{tikzpicture}
+\end{center}

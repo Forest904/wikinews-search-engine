@@ -2,6 +2,15 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Report: rigenera PDF",
+      "type": "process",
+      "command": "python",
+      "args": ["docs/report/build.py"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
       "label": "Locale: avvia/riavvia",
       "type": "process",
       "command": "powershell.exe",

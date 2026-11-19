@@ -1,0 +1,17 @@
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm,font=\small\sffamily,
+ box/.style={draw=ink,fill=pale,align=center,minimum height=.85cm,text width=2.4cm},
+ link/.style={->,thick,draw=ink}]
+\node[box] (browser) at (0,0) {Browser};
+\node[box] (proxy) at (3.7,0) {Caddy};
+\node[box] (app) at (7.4,0) {FastAPI};
+\node[box] (es) at (11,1.25) {Elasticsearch};
+\node[box] (sem) at (11,0) {Qdrant\\Ollama};
+\node[box] (sql) at (11,-1.25) {Catalogo\\e annotazioni};
+\draw[link] (browser)--node[above,font=\footnotesize]{HTTPS}(proxy);
+\draw[link] (proxy)--node[above,font=\footnotesize]{HTTP}(app);
+\draw[link] (app.east)--++(.4,0) |- (es.west);
+\draw[link,dashed] (app.east)--(sem.west);
+\draw[link] (app.east)--++(.4,0) |- (sql.west);
+\end{tikzpicture}
+\end{center}

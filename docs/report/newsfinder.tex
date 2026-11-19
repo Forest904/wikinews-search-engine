@@ -1,0 +1,543 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[a4paper,top=27mm,bottom=24mm,left=28mm,right=28mm]{geometry}
+\usepackage{fontspec}
+\IfFontExistsTF{Georgia}{\setmainfont{Georgia}}{\setmainfont{Latin Modern Roman}}
+\IfFontExistsTF{Arial}{\setsansfont{Arial}}{\setsansfont{Latin Modern Sans}}
+\usepackage[italian]{babel}
+\usepackage[protrusion=true,expansion=false]{microtype}
+\usepackage{graphicx,booktabs,longtable,array,calc,xurl,tikz,fancyhdr,hyperref}
+\definecolor{ink}{HTML}{232A2C}
+\definecolor{accent}{HTML}{37474B}
+\definecolor{pale}{HTML}{F1F3F3}
+\hypersetup{colorlinks=true,linkcolor=ink,urlcolor=accent,citecolor=ink,pdftitle={NewsFinder — Architettura e valutazione},pdfsubject={Ricerca nelle notizie italiane}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.68em}
+\setlength{\emergencystretch}{2em}
+\linespread{1.10}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\small\sffamily NewsFinder}\fancyhead[R]{\small\sffamily Wikinotizie in italiano}
+\fancyfoot[R]{\sffamily\thepage}
+\setlength{\headheight}{15pt}
+\setcounter{tocdepth}{1}
+\setcounter{secnumdepth}{2}
+\renewcommand{\thetable}{\Roman{table}}
+\newcommand{\tabletitle}[2]{\refstepcounter{table}\label{tab:#1}\par\noindent{\small\sffamily\color{ink}\textbf{Tabella \thetable.} #2\par}\nopagebreak}
+\newcounter{none}
+\newcommand{\legendnote}[2]{\refstepcounter{figure}\label{fig:#1}\par{\small\sffamily\color{ink}\textbf{Fig. \thefigure.} #2\par}}
+\newcommand{\flowrow}[3]{\begin{tikzpicture}[x=1cm,y=1cm,box/.style={rounded corners=3pt,draw=accent,fill=pale,align=center,text width=3.8cm,minimum height=1.42cm,font=\small\sffamily}]
+\node[box] (a) at (0,0) {#1};\node[box] (b) at (5,0) {#2};\node[box] (c) at (10,0) {#3};
+\draw[->,thick,color=ink] (a)--(b);\draw[->,thick,color=ink] (b)--(c);\end{tikzpicture}\par}
+\newcommand{\branchrow}[2]{\par\noindent\colorbox{pale}{\parbox{0.27\linewidth}{\strut\sffamily\bfseries\color{ink} #1}}\hfill\parbox{0.67\linewidth}{\sffamily\small #2}\par}
+\newcommand{\shot}[1]{\begin{center}\includegraphics[width=.96\linewidth,height=52mm,keepaspectratio]{figure/#1.png}\end{center}}
+\newenvironment{CSLReferences}[2]{\begingroup\small\raggedright\renewcommand{\bibitem}[2][]{\par\hypertarget{##2}{}}\setlength{\parskip}{.55em}}{\endgroup}
+\newcommand{\citeproc}[2]{\hyperlink{#1}{#2}}
+\newcommand{\CSLLeftMargin}[1]{\hangindent=2em\noindent\makebox[2em][l]{#1}}
+\newcommand{\CSLRightInline}[1]{#1}
+
+\begin{document}
+\thispagestyle{empty}
+\vspace*{12mm}
+{\large Relazione tecnica e sperimentale\par}
+\vspace{6mm}
+{\LARGE\bfseries NewsFinder\par}
+\vspace{2mm}
+{\Large Architettura e valutazione di un motore di ricerca per Wikinotizie in italiano\par}
+\vspace{8mm}
+
+\textbf{Abstract.} Una notizia può essere pertinente anche quando il titolo usa parole diverse da quelle del lettore. Può anche condividere quasi tutte le parole della ricerca e descrivere un evento diverso. NewsFinder permette di osservare entrambi i fenomeni in un archivio di 11.032 articoli italiani. Il progetto comprende la preparazione dei dati, due percorsi di ricerca, un lettore web e una postazione con cui più valutatori giudicano i risultati sulla stessa revisione del testo.
+
+Il confronto principale misura cinque configurazioni lessicali e una classifica esterna di Wikimedia. La configurazione scelta sui dati di sviluppo usa BM25 con analisi linguistica italiana. Su 16 bisogni informativi di test raggiunge 0,6558 in nDCG@10, una misura che premia i documenti pertinenti nelle prime posizioni. Solo 43 delle sue 160 posizioni esaminate hanno un giudizio umano. La copertura parziale dei giudizi limita l'interpretazione del confronto.
+
+\vfill
+{\small\sffamily Sistemi di recupero dell’informazione \hfill 19 novembre 2026}
+
+\clearpage
+\tableofcontents
+
+\section{Introduzione}\label{introduzione}
+
+«Incidenti ferroviari Giappone 2005» è la query del topic Q37. Il lettore cerca cronache di incidenti avvenuti in quel paese e in quell'anno. La data dei fatti può differire da quella di pubblicazione e il singolare \emph{incidente} può esprimere lo stesso bisogno del plurale \emph{incidenti}. Il caso collega tre scelte che altrimenti sembrerebbero indipendenti: quale testo conservare, come ordinarlo e quali prove chiedere a chi ne giudica la pertinenza.
+
+Nel seguito il termine \textbf{documento} indica una pagina dell'archivio e la \textbf{revisione} identifica la versione del suo contenuto. Un \textbf{topic} comprende la domanda, i vincoli e i criteri per assegnare un giudizio. Questa distinzione consente di ripetere un confronto anche quando il sito pubblico cambia. Il riferimento per l'implementazione è la versione del repository indicata in bibliografia \citeproc{ref-repo}{{[}1{]}}.
+
+\clearpage
+
+\section{Architettura e responsabilità}\label{architettura-e-responsabilituxe0}
+
+Il browser offre tre punti di vista sullo stesso progetto. Il lettore cerca e consulta le notizie, il valutatore legge un articolo alla luce di un bisogno informativo e il coordinatore assegna il lavoro e chiude le revisioni. L'applicazione Python espone pagine HTML e API con FastAPI. I template Jinja costruiscono le pagine e JavaScript aggiorna risultati, filtri e moduli. I dati consultati cambiano con il compito.
+
+La Fig.~\ref{fig:componenti} mostra le dipendenze dei tre ambienti di lavoro.
+
+\input{figure/architettura.tex}
+\legendnote{componenti}{Dipendenze del servizio web. La richiesta determina il ramo da seguire. I due archivi SQLite hanno cicli di vita distinti: il catalogo del lettore si ricostruisce dal dump, i giudizi nascono dal lavoro dei valutatori.}
+
+\subsection{Preparazione e interrogazione}\label{preparazione-e-interrogazione}
+
+La preparazione del corpus avviene da riga di comando. Leggere il dump, verificare i dati e costruire gli indici richiede accesso a file di grandi dimensioni. Al momento della ricerca questi lavori sono già conclusi. Il servizio riceve una richiesta breve, sceglie il percorso e restituisce una pagina di risultati. La distinzione permette di riavviare il sito senza ricostruire l'archivio e di valutare una nuova configurazione sullo stesso insieme di articoli.
+
+\clearpage
+
+\subsection{Identità, contratti e guasti}\label{identituxe0-contratti-e-guasti}
+
+Il collegamento tra i componenti poggia su tre identificatori con scopi diversi. L'ID della pagina identifica l'articolo nell'archivio. La revisione stabilisce quale testo viene mostrato o giudicato. L'impronta del corpus identifica l'insieme completo su cui è stata costruita una configurazione. Un uguale numero di documenti, da solo, consentirebbe di confondere due raccolte con una pagina sostituita.
+
+\textbf{Richiesta di ricerca.} L'API riceve testo, profilo e parametri di navigazione. Per l'archivio può applicare un intervallo di anni di pubblicazione. La risposta contiene elementi ordinati che la pagina presenta come schede. Il clic apre il dettaglio attraverso l'identificatore del documento. Mantenere i parametri nella navigazione permette al lettore di tornare alla ricerca e recuperare il contesto di partenza.
+
+La Fig.~\ref{fig:sequenza} segue una richiesta semantica dalla query alla risposta paginata.
+
+\input{figure/query-semantica.tex}
+\legendnote{sequenza}{Sequenza della ricerca semantica. Le linee continue indicano richieste, quelle tratteggiate le risposte. La selezione di un risultato avvia una richiesta distinta per aprire la revisione archiviata.}
+
+\textbf{Contratto di annotazione.} Il pacchetto porta con sé i testi e i criteri del topic. Il database registra chi ha lavorato sulla coppia e quale versione del giudizio è stata salvata. Le citazioni puntano a intervalli del testo importato. Se una pagina su Wikimedia cambia durante la valutazione, quegli intervalli continuano a individuare il passaggio letto.
+
+\textbf{Disponibilità.} La verifica di salute del backend controlla la connessione autenticata a Elasticsearch. Il controllo di prontezza richiede anche che gli indici previsti siano disponibili e coerenti. La postazione di annotazione dispone di un controllo separato. Questa distinzione aiuta a interpretare una pagina web raggiungibile che ancora non può restituire risultati: il processo può rispondere mentre manca un indice. Viceversa, un pacchetto già importato consente di proseguire le letture in SQLite anche durante un fermo del motore lessicale.
+
+\clearpage
+
+\section{Dal dump all'archivio}\label{dal-dump-allarchivio}
+
+Lo snapshot Wikimedia Enterprise HTML del 20 marzo 2025 contiene pagine del namespace principale di Wikinotizie in italiano. Il file compresso occupa circa 73~MB e il suo membro NDJSON circa 591~MB. Il formato dispone un record JSON su ogni riga. Il programma può quindi leggere in sequenza e usare un database SQLite temporaneo per confrontare le revisioni, senza mantenere in memoria l'intero archivio.
+
+I conteggi della Fig.~\ref{fig:selezione} consentono di riconciliare le pagine ammesse con i record iniziali.
+
+\flowrow{12.261 record\\nel dump}{12.213 pagine\\distinte}{11.032 articoli\\nel corpus}
+\legendnote{selezione}{La selezione elimina 48 revisioni superate e 1.181 pagine prive della categoria editoriale richiesta. I conteggi si riconciliano con l’intero input.}
+
+Per ogni pagina si sceglie la revisione con identificatore numerico più alto. Si controllano lingua, namespace, URL e presenza della categoria \emph{Pubblicati}. Redirect effettivi, corpi vuoti e marcatori di cancellazione hanno regole esplicite. Un record illeggibile o due contenuti discordanti per la stessa revisione bloccano la certificazione. La categoria è un criterio osservabile, ma può lasciare fuori pagine dal titolo giornalistico prive di quel marcatore.
+
+Il pulitore conserva paragrafi, sottotitoli, elenchi, didascalie e celle informative; separa le fonti dalla prosa e rimuove navigazione, avvisi e collegamenti di servizio. La data editoriale proviene dai template della revisione. Quando le date sono discordanti abbiamo lasciato il campo vuoto. Usare la data dell'ultima modifica avrebbe potuto far comparire una cronaca nell'anno della sua revisione.
+
+Gli esiti della validazione temporale sono riportati nella Tab.~\ref{tab:date}.
+
+\tabletitle{date}{Validazione della data editoriale negli 11.032 articoli}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3478}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.1594}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.4928}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Data editoriale nel corpus
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Articoli
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Effetto sul filtro per anno
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Valida e concorde & 10.819 & L'anno è confrontabile con l'intervallo richiesto. \\
+Ambigua & 130 & Il valore resta nullo. \\
+Invalida & 2 & Il valore resta nullo. \\
+Assente & 81 & Il valore resta nullo. \\
+\end{longtable}
+}
+
+\clearpage
+
+\subsection{Provenienza di una revisione}\label{provenienza-di-una-revisione}
+
+Per Q37 si può seguire il documento 1374, \emph{Incidente ferroviario in Giappone}. Il suo titolo è al singolare. L'apertura colloca l'incidente tra Osaka e Kobe e il testo riporta il 25 aprile 2005. L'articolo offre quindi più elementi per giudicare il bisogno informativo di quanti ne renda visibili la sola corrispondenza fra titolo e query \citeproc{ref-wiki}{{[}2{]}}.
+
+La Fig.~\ref{fig:revisione} collega il record elaborato alla revisione utilizzata per il giudizio.
+
+\branchrow{Sorgente}{Snapshot del 20 marzo 2025, riga 4.427 del membro NDJSON. Pagina 1374, revisione 100252.}
+\branchrow{Testo editoriale}{Titolo e corpo restano campi distinti. Il corpo conserva l’apertura «25 aprile 2005» e la cronaca.}
+\branchrow{Record elaborato}{Data di pubblicazione 2005-04-25, tre fonti separate, URL originale, licenza CC BY-SA 4.0 e provenienza.}
+\legendnote{revisione}{Lettura guidata di un record reale. La riga individua il materiale sorgente e la revisione consente di riaprire la versione citata.}
+
+\subsubsection{Come si controlla la trasformazione}\label{come-si-controlla-la-trasformazione}
+
+La build pubblica gli articoli ordinati per ID, un registro delle decisioni, un audit e un manifest con hash e versioni. Su due preparazioni indipendenti coincidono byte per byte articoli, registro e audit. Le date di esecuzione appartengono al manifest. L'identità dell'output rende verificabile la ripetizione del processo, mentre l'esame dei testi misura un'altra proprietà: quanto bene le regole preservano il contenuto giornalistico.
+
+La revisione manuale campiona 40 casi tra ammessi, esclusi e critici. Tabelle lunghe, date incerte e articoli molto estesi meritano attenzione perché una trasformazione può essere deterministica e perdere comunque informazioni. Per esempio, leggere le celle nell'ordine corretto conserva il testo di una classifica sportiva, ma può rendere meno evidente il rapporto visivo fra intestazioni e colonne.
+
+\clearpage
+
+\section{Recupero lessicale}\label{recupero-lessicale}
+
+Per la query «incidenti ferroviari Giappone 2005», Elasticsearch cerca nei campi titolo e corpo. Un indice invertito consente di partire da un termine e raggiungere le pagine che lo contengono. Costruire due indici sugli stessi 11.032 documenti permette di variare l'analisi delle parole mantenendo fissi i testi. Un indice usa l'analizzatore standard, l'altro quello italiano.
+
+La Fig.~\ref{fig:lessicale} individua le fasi che determinano l'ordine dei risultati.
+
+\flowrow{Testo e profilo\\della richiesta}{Analisi dei termini\\e clausole di ricerca}{Punteggio BM25\\e ordine dei risultati}
+\legendnote{lessicale}{Percorso lessicale. Il profilo sceglie l’indice e le regole per interrogare titolo e corpo. A parità di punteggio decide l’ID del documento.}
+
+BM25 combina l'importanza del termine nella raccolta con la frequenza nel documento. Una parola rara aiuta a distinguere le pagine; ripeterla molte volte dà un beneficio via via minore. La normalizzazione per lunghezza evita che un articolo esteso prevalga solo perché contiene più parole. I due indici usano gli stessi parametri, \(k_1=1{,}2\) e \(b=0{,}75\) \citeproc{ref-bm25}{{[}3{]}}. L'analizzatore italiano riduce varianti della stessa parola a forme confrontabili. Nel nostro esempio, questo rende meno rigida la distanza tra \emph{ferroviari} e \emph{ferroviario}.
+
+Il motore combina titolo e corpo privilegiando il campo con la corrispondenza migliore. Con l'operatore OR anche una corrispondenza parziale può recuperare una pagina. La scelta favorisce la scoperta di candidati ma lascia al punteggio il compito di far emergere gli articoli centrali. Un anno esplicito nel filtro limita le date di pubblicazione. Nel benchmark Q37, invece, il vincolo del topic riguarda l'anno dell'incidente.
+
+\clearpage
+
+\subsection{Cinque modi di interrogare due indici}\label{cinque-modi-di-interrogare-due-indici}
+
+Le variazioni rispetto al profilo di base sono sintetizzate nella Tab.~\ref{tab:profili}.
+
+\tabletitle{profili}{Configurazioni lessicali confrontate sullo stesso corpus}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.1471}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.1618}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.6912}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Profilo
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Indice
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Differenza verificabile nella query
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+E0 & Standard & BM25 su titolo e corpo con uguale peso. \\
+E1 & Italiano & Stessa query di E0, con analisi della lingua italiana. \\
+E2 & Italiano & Il peso del titolo sale a 3. \\
+E3 & Italiano & Alla base di E2 si aggiunge una corrispondenza tollerante ai refusi, con peso 0,2. \\
+E4 & Italiano & Alla base di E2 si aggiunge la frase con peso 2. Le sequenze fra virgolette diventano obbligatorie. \\
+\end{longtable}
+}
+
+Il confronto E0--E1 isola l'effetto dell'analizzatore. E2 verifica l'ipotesi che il titolo riassuma l'argomento centrale. E3 ed E4 partono entrambi da E2. Per un refuso come \emph{ferroviri} l'espansione di E3 può recuperare una forma simile: conserva il primo carattere e considera fino a 25 espansioni. E4 riconosce sia le virgolette dritte sia quelle tipografiche e segnala delimitatori vuoti o spaiati. Nelle query senza virgolette la frase può migliorare il punteggio.
+
+\subsubsection{Latenza delle interrogazioni}\label{latenza-delle-interrogazioni}
+
+La Tab.~\ref{tab:latenza} confronta i tempi di risposta dei due profili.
+
+\tabletitle{latenza}{Latenza HTTP nella seconda sessione locale, 40 richieste per profilo dopo il riscaldamento}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}lrr@{}}
+\toprule\noalign{}
+Profilo & Mediana HTTP (ms) & 95º percentile (ms) \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+E1 · italiano & 21,34 & 27,38 \\
+E3 · refusi & 52,65 & 216,48 \\
+\end{longtable}
+}
+
+Il 95º percentile descrive la parte lenta delle risposte. Il costo delle espansioni emerge soprattutto lì. Questi tempi dipendono dalla macchina e dalle query impiegate; la qualità della classifica viene misurata separatamente.
+
+\clearpage
+
+\section{Recupero semantico}\label{recupero-semantico}
+
+Una cronaca può descrivere un deragliamento senza usare l'espressione scelta dal lettore. Il percorso semantico rappresenta il testo con una sequenza di numeri, detta \emph{vettore}. Ollama esegue il modello Qwen3 Embedding 0.6B; Qdrant confronta il vettore della query con quelli degli articoli usando la similarità coseno. Un punteggio alto esprime vicinanza secondo il modello. Verificare luogo, data e pertinenza resta un compito distinto.
+
+La Fig.~\ref{fig:vettori} distingue la preparazione del corpus dal calcolo eseguito per ciascuna domanda.
+
+\flowrow{Preparazione\\Titolo e apertura}{Ollama\\Vettore del testo}{Pacchetto verificato\\Collezione Qdrant}
+\flowrow{Ollama\\riceve la query}{Qdrant\\riceve il vettore}{Lettore d’archivio\\apre la revisione}
+\legendnote{vettori}{Il percorso superiore prepara la raccolta una volta. Quello inferiore calcola il vettore della domanda a ogni ricerca e riapre il documento attraverso l’archivio.}
+
+La Tab.~\ref{tab:modello} descrive la rappresentazione vettoriale impiegata.
+
+\tabletitle{modello}{Caratteristiche del pacchetto vettoriale completo}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}lr@{}}
+\toprule\noalign{}
+Proprietà del pacchetto completo & Valore \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Documenti rappresentati & 11.032 \\
+Dimensioni per vettore & 1.024 \\
+Budget per il testo, incluso il token finale & 256 token \\
+\end{longtable}
+}
+
+Il programma risale all'HTML della revisione e rimuove elementi come figure e didascalie prima di comporre titolo e apertura. Conserva l'input esatto e conta i token con il vocabolario del modello. Questa scelta rende ispezionabile ciò che influenza un vettore. Il limite riguarda la copertura del testo: un luogo menzionato soltanto negli ultimi paragrafi può essere decisivo per chi legge e restare fuori dall'input semantico.
+
+\clearpage
+
+\subsection{Dal pacchetto alla ricerca verificabile}\label{dal-pacchetto-alla-ricerca-verificabile}
+
+I vettori vengono scritti in lotti. Un'interruzione non obbliga a ripartire dal primo articolo e gli input identici possono essere riusati quando modello e runtime corrispondono. Il manifest lega i lotti al corpus e registra la configurazione dell'encoder. L'importazione crea una collezione, controlla i punti e aggiorna l'alias in un'unica operazione. Il lettore passa così a un insieme già verificato. La collezione precedente resta identificabile per il ripristino.
+
+La Fig.~\ref{fig:alias} mostra in quale momento una nuova collezione diventa disponibile.
+
+\flowrow{Lotti e manifest\\con impronte}{Verifica di punti\\e revisione}{Cambio di alias\\alla collezione pronta}
+\legendnote{alias}{Pubblicazione dei vettori. L’alias separa il nome usato dalle richieste web dalla collezione fisica in costruzione.}
+
+\subsubsection{Una prova circoscritta}\label{una-prova-circoscritta}
+
+La Tab.~\ref{tab:calibrazione} confronta i metodi sullo stesso insieme di candidati.
+
+\tabletitle{calibrazione}{Calibrazione su quattro query e 24 candidati con giudizi silver}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}lrr@{}}
+\toprule\noalign{}
+Metodo su 24 candidati & nDCG@10 media & Tempo mediano (s) \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+BM25 italiano & 0,9522 & 0,039 \\
+Vettori su testo naturale & 0,8183 & 15,468 \\
+Vettori su termini ridotti alla radice & 0,8349 & 17,336 \\
+Testo naturale, ricerca indicizzata & 0,8183 & 17,547 \\
+\end{longtable}
+}
+
+La media usa i casi con nDCG definita. Il profilo lessicale conserva le statistiche del corpus completo. La modalità esatta confronta i vettori direttamente, mentre quella indicizzata chiede a Qdrant una ricerca approssimata; su una raccolta così piccola il servizio può comunque scegliere una scansione completa. L'uguaglianza delle due medie sul testo naturale non stabilisce quale strategia convenga per 11.032 vettori. Servirebbe un confronto sul corpus intero, con giudizi e condizioni di misura comuni.
+
+\clearpage
+
+\section{Dalla pagina dei risultati alla lettura}\label{dalla-pagina-dei-risultati-alla-lettura}
+
+Una scheda utile deve aiutare a decidere se vale la pena aprire l'articolo. NewsFinder mostra titolo e anteprima e permette di evidenziare le corrispondenze. Nelle schermate di collaudo la domanda riguarda l'energia. Il titolo «Energia solare, inaugurato il nuovo centro di ricerca» passa dalla lista al lettore: la continuità del titolo rende riconoscibile la pagina scelta. I contenuti dimostrativi servono qui a leggere i controlli dell'interfaccia.
+
+La Fig.~\ref{fig:lettore} documenta il passaggio dalla selezione del risultato alla lettura.
+
+\shot{risultati}
+\shot{lettore}
+\legendnote{lettore}{Due ritagli della stessa sessione dimostrativa. In alto si sceglie una notizia dalla classifica, in basso si ritrova il titolo e si legge il testo.}
+
+Le opzioni di ricerca riuniscono modalità e periodo. Nell'archivio il lettore può anche navigare per argomenti e aprire i salvati. Il sito conserva nel browser i riferimenti salvati e le ricerche recenti. La disponibilità in una successiva visita dipende quindi dal browser utilizzato. Il ritorno ai risultati conserva query e pagina, particolarmente utile quando si confrontano più resoconti dello stesso evento.
+
+\clearpage
+
+\subsection{Archivio, articolo e fonte aggiornata}\label{archivio-articolo-e-fonte-aggiornata}
+
+La Fig.~\ref{fig:percorsi} distingue i percorsi di accesso alle fonti.
+
+\branchrow{Esplorazione}{Home o cartella tematica → elenco di articoli → lettore della revisione archiviata.}
+\branchrow{Ricerca filtrata}{Query e intervallo di anni → risultati dell’archivio → ritorno alla stessa ricerca.}
+\branchrow{Consultazione live}{Ricerca su Wikimedia → risultati del servizio esterno → pagina della fonte.}
+\legendnote{percorsi}{I percorsi disponibili al lettore. La scelta della fonte determina se il risultato appartiene allo snapshot o al sito aggiornato.}
+
+Nell'archivio, un intervallo di anni riconosciuto nella casella di ricerca può alimentare i campi del periodo. Il lettore può controllarli e modificarli. La selezione riguarda la pubblicazione: per Q37 un articolo commemorativo uscito nel 2015 potrebbe parlare proprio dell'incidente del 2005. Se limitiamo il filtro al 2005 lo escludiamo a monte, prima ancora di valutarne il contenuto. Per questo il testo della domanda sperimentale e i parametri effettivi della richiesta vanno conservati insieme.
+
+Il lettore rende consultabili testo e informazioni editoriali. Blocchi strutturati e immagini, quando disponibili, migliorano la lettura di notizie lunghe; il collegamento alla fonte permette di proseguire sul sito originale. Le evidenze dei valutatori restano ancorate al testo congelato, anche se la presentazione pubblica dispone di una resa più ricca.
+
+Un articolo può avere molte categorie editoriali. Per presentarlo in cartelle, il sistema assegna la corrispondenza più profonda nella gerarchia e usa una priorità prestabilita in caso di parità. Per esempio, una pagina con categorie Sport, Calcio e Serie A compare nel ramo più specifico. Il lettore strutturato usa invece un catalogo SQLite ricavato dalla revisione HTML: conserva tabelle, citazioni e collegamenti interni verso gli articoli disponibili. Le immagini riportano i crediti e la licenza quando questi dati soddisfano i controlli previsti.
+
+Un elenco vuoto ha un significato preciso solo quando la ricerca è riuscita. La pagina comunica separatamente un errore del servizio e l'assenza di corrispondenze. Questa distinzione conta anche nell'uso quotidiano: nel primo caso ripetere la richiesta può avere senso, nel secondo cambiare termini o ampliare il periodo modifica davvero l'insieme dei candidati.
+
+\clearpage
+
+\section{Metodo di valutazione}\label{metodo-di-valutazione}
+
+Per Q37, nominare il Giappone è insufficiente. Il topic richiede un incidente ferroviario avvenuto nel 2005. Il valutatore legge il testo completo usando una rubrica a tre livelli: 2 per una trattazione centrale e sostanziale, 1 per informazioni concrete ma secondarie, 0 se il bisogno resta insoddisfatto. Un vincolo essenziale incerto può motivare una richiesta di revisione. Assegnare 1 per esprimere incertezza confonderebbe due situazioni diverse.
+
+La Fig.~\ref{fig:pool} ricostruisce la selezione delle coppie sottoposte a giudizio.
+
+\flowrow{Topic e criteri\\congelati}{Classifiche riunite\\e coppie distinte}{Letture assegnate\\e giudizi finali}
+\legendnote{pool}{Costruzione del pool. Le classifiche di più sistemi propongono candidati. L’unità di giudizio è la coppia fra un topic e un documento.}
+
+La Tab.~\ref{tab:assegnazioni} distingue le letture assegnate dalle coppie distinte.
+
+\tabletitle{assegnazioni}{Copertura del giudizio umano e carico di lettura per insieme di topic}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Raccolta
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Topic
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Coppie nel pool
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Con giudizio umano
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Letture assegnate
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Sviluppo & 24 & 595 & 116 & 139 \\
+Test & 16 & 387 & 74 & 89 \\
+Totale & 40 & 982 & 190 & 228 \\
+\end{longtable}
+}
+
+La calibrazione iniziale permette di provare istruzioni, confrontare interpretazioni e misurare il tempo richiesto prima di fissare il carico dei valutatori. Le letture superano le coppie umane perché alcune vengono assegnate due volte. Tra le 38 doppie letture, 30 producono lo stesso grado e otto differiscono di un livello. Un terzo valutatore risolve questi otto casi; una nona revisione chiude una richiesta relativa a una lettura singola. La decisione finale si affianca alla storia dei giudizi individuali.
+
+\clearpage
+
+\subsection{Tracciabilità dei giudizi}\label{tracciabilituxe0-dei-giudizi}
+
+La Fig.~\ref{fig:postazioni} illustra la ripartizione dei compiti fra valutatore e coordinatore.
+
+\shot{giudizio}
+\shot{coord}
+\legendnote{postazioni}{Postazioni di collaudo. Chi valuta affianca testo e grado; chi coordina prepara il blocco di assegnazioni per un topic.}
+
+Il valutatore seleziona un passaggio, lo associa al giudizio e ne motiva il grado. Il sistema conserva campo, citazione e posizioni iniziale e finale. Controllare questi riferimenti consente di ritrovare l'evidenza nella stessa revisione. I salvataggi sono versionati: un tentativo ripetuto non deve creare una seconda decisione e una bozza obsoleta non deve cancellare il lavoro successivo.
+
+Il coordinatore assegna blocchi e doppie letture, segue le richieste di revisione ed esporta i giudizi finali. Le \emph{qrels} associano topic, documento e grado. Il riferimento umano, detto \emph{gold}, copre 190 coppie. Un secondo processo, svolto senza mostrare al modello classifiche e gold, produce giudizi \emph{silver} per tutte le 982 coppie. Sulle 74 coppie condivise del test il confronto dà macro-F1 pari a 0,8357 e kappa con pesi lineari pari a 0,8803. Nei sei disaccordi il silver assegna sempre il grado inferiore. L'ampliamento della copertura porta dunque anche una diversa fonte di errore.
+
+\clearpage
+
+\section{Risultati sperimentali}\label{risultati-sperimentali}
+
+Prima del test abbiamo fissato la regola di scelta: massimizzare nDCG@10 sul gold di sviluppo, usare P@5 in caso di parità e infine l'ordine dei profili. E1 prevale sui 24 topic di sviluppo (0,6659 in nDCG@10 e 0,2833 in P@5). Abbiamo quindi congelato E1 prima di aprire il test. Il confronto finale usa i 16 topic riservati e classifiche archiviate fino a 100 posizioni. Anche il confronto Wikimedia usa una classifica salvata, proiettata sui documenti del corpus \citeproc{ref-esperimenti}{{[}4{]}}.
+
+La Tab.~\ref{tab:test} riporta i risultati finali secondo le tre metriche.
+
+\tabletitle{test}{Confronto sul test con giudizi umani. nDCG e precisione su 16 topic, MRR sui quattro topic evento}
+
+\input{figure/risultati-test.tex}
+
+\textbf{Come leggere i valori.} P@5 conta quanti dei primi cinque risultati hanno grado almeno 1 e divide per cinque. MRR@10 considera la posizione del primo pertinente sui quattro topic di tipo evento: trovarlo al secondo posto vale \(1/2\). nDCG@10 assegna più peso ai gradi alti e alle prime posizioni, poi divide per il guadagno dell'ordine ideale ricavato dai giudizi \citeproc{ref-dcg}{{[}5{]}}. Con due soli documenti di grado 2 e 0, mettere il pertinente al primo posto dà 1; spostarlo al secondo riduce il rapporto a \(1/\log_2(3)\), circa 0,63.
+
+E1 supera E0 di 0,0596 in nDCG@10 sul test. Il confronto cambia se chiediamo quanto presto emerge il primo risultato utile nei topic evento: su quei quattro casi E0 e Wikimedia ottengono 0,7500 contro 0,6250 di E1. Sono differenze descrittive su un campione piccolo. La scelta di una metrica determina quale esperienza del lettore stiamo sintetizzando.
+
+\clearpage
+
+\subsection{Discussione e analisi di sensibilità}\label{discussione-e-analisi-di-sensibilituxe0}
+
+La Tab.~\ref{tab:ranghi} identifica i documenti ai primi due ranghi per Q37.
+
+\tabletitle{ranghi}{Prime due posizioni sulla query Q37 e relativi giudizi umani}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Posizione su Q37
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E0 · standard
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Grado gold
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+E1 · italiano
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Grado gold
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+1 & 21736 & Senza giudizio & 1374 & 2 \\
+2 & 27073 & 1 & 2273 & 2 \\
+\end{longtable}
+}
+
+La prima riga riporta al documento da cui siamo partiti. L'analizzatore italiano porta in testa proprio la cronaca tra Osaka e Kobe. Il guadagno nDCG@10 su Q37 è 0,6994. Su Q09, invece, il documento 4230 di grado 2 scende dalla prima alla seconda posizione passando da E0 a E1 e la metrica perde 0,3691. Aumentando il peso del titolo con E2, lo stesso articolo esce dai primi dieci. Il vantaggio medio di E1 convive quindi con errori ben localizzati.
+
+La Tab.~\ref{tab:sensibilita} riunisce le verifiche sulle principali fonti di variazione.
+
+\tabletitle{sensibilita}{Effetto della copertura e delle varianti di query sui risultati}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Verifica di sensibilità
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Risultato osservato
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Copertura gold di E1 sul test & 31 posizioni giudicate su 80 a profondità 5; 43 su 160 a profondità 10. \\
+Rimozione dei risultati senza giudizio & Ricomponendo la classifica sui primi 100, nDCG@10 di E1 passa da 0,6558 a 0,7842. \\
+Query con refusi & Sul test la perdita di nDCG è 0,1434 per E2 e 0,1401 per E3. \\
+Query con più vincoli & In tutti i dieci casi osservati E4 ed E2 danno lo stesso ordine. Nessuna query contiene una frase obbligatoria fra virgolette. \\
+\end{longtable}
+}
+
+Nella misura principale un documento senza giudizio mantiene la sua posizione e riceve guadagno nullo. Per capire quanto pesi questa scelta, siamo partiti dallo stesso elenco restituito dal motore. Entro i primi 100 risultati abbiamo rimosso quelli privi di giudizio e ricalcolato la metrica. I documenti giudicati sono avanzati di posizione: è questo passaggio a far salire nDCG@10 da 0,6558 a 0,7842. Lo scarto fra i valori mostra la sensibilità della conclusione alla copertura. Rimane sconosciuto il numero totale di articoli pertinenti allo stesso bisogno presenti negli 11.032 documenti. Di conseguenza, il richiamo assoluto non è stimabile da questo pool.
+
+\clearpage
+
+\section{Distribuzione e verifica}\label{distribuzione-e-verifica}
+
+La Fig.~\ref{fig:deploy} riassume il percorso di accesso al servizio distribuito.
+
+\input{figure/distribuzione.tex}
+\legendnote{deploy}{Distribuzione su server con Docker Compose. Caddy termina la connessione HTTPS. Il collegamento tratteggiato rappresenta il profilo semantico opzionale; il catalogo e il database dei giudizi sono disponibili su volumi montati. I lavori di preparazione e i backup seguono un ciclo distinto dalle richieste dei lettori.}
+
+La configurazione locale separa dipendenze Python, credenziali e dati persistenti. Il comando di preparazione riusa un dump verificato; il comando di indicizzazione controlla il corpus prima di riutilizzare gli indici. Nel rilascio su server i test precedono la costruzione dell'immagine Linux, trasferita via SSH. Caddy gestisce l'ingresso HTTPS. Il database di annotazione richiede un backup dedicato: ricostruire gli indici dal dump recupera il testo, ma i giudizi umani esistono soltanto se si conserva il database o il relativo export.
+
+La Tab.~\ref{tab:verifiche} associa ogni livello di verifica a una proprietà osservabile.
+
+\tabletitle{verifiche}{Controlli del servizio e proprietà verificate}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Livello di verifica
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Esempio di proprietà controllata
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Unitario & Una query con virgolette spaiate viene respinta; una revisione conflittuale impedisce di certificare il corpus. \\
+Integrazione & Le query raggiungono Elasticsearch e gli indici previsti rispondono sul corpus preparato. \\
+Browser & Aprire un articolo e tornare ai risultati conserva la ricerca; le postazioni permettono di completare il lavoro assegnato. \\
+Ripetizione sperimentale & Le classifiche di otto query di controllo coincidono prima e dopo la ricostruzione degli indici. \\
+\end{longtable}
+}
+
+\clearpage
+
+\section{Conclusioni}\label{conclusioni}
+
+Siamo partiti da una ricerca sugli incidenti ferroviari in Giappone. Su Q37 l'analizzatore italiano porta ai primi due posti due cronache di grado 2. Su Q09, con lo stesso analizzatore, un articolo di grado 2 scende dal primo al secondo posto. Abbiamo scelto E1 sulla base del risultato medio di sviluppo. I due casi di test ci aiutano a capire come quella scelta cambia ciò che il lettore trova per primo. Per decidere se estendere la preferenza al recupero semantico, il passo sperimentale più informativo sarebbe giudicare anche i suoi primi risultati sullo stesso insieme di topic. L'architettura consente questo confronto; la copertura osservata quantifica il lavoro di annotazione ancora necessario.
+
+\subsection{Fonti e riproducibilità}\label{fonti-e-riproducibilituxe0}
+
+Il codice descritto corrisponde alla revisione \texttt{8fe85c8} del repository. I risultati congelati si riferiscono alla revisione sperimentale \texttt{1c6e51d}. La release pubblica riunisce classifiche, giudizi e risultati. Per verificare i numeri si confrontano prima le impronte SHA-256 con il manifest archiviato, poi si ricostruiscono le medie per sistema mantenendo fonte, profondità e insieme dei topic. La tabella del test è generata dal riepilogo tabulare originale.
+
+\textbf{Riprodurre il servizio.} Con Python 3.12 e le dipendenze fissate nel lockfile, la sequenza comprende l'avvio di Elasticsearch tramite Docker Compose, la preparazione del corpus, la costruzione degli indici e l'avvio dell'applicazione FastAPI. La componente semantica richiede anche il modello e la collezione vettoriale. La postazione di giudizio richiede un account e un pacchetto importato. I comandi completi e i prerequisiti sono nella documentazione associata alla revisione del progetto.
+
+\textbf{Nota sulle immagini.} I diagrammi rappresentano i percorsi del codice. I ritagli delle interfacce provengono dal collaudo con dati dimostrativi. L'esempio documentale deriva dalla revisione di Wikinotizie indicata fra le fonti, distribuita con licenza \href{https://creativecommons.org/licenses/by-sa/4.0/}{Creative Commons Attribuzione-Condividi allo stesso modo 4.0}.
+
+\subsection{Riferimenti}\label{riferimenti}
+
+\protect\phantomsection\label{refs}
+\begin{CSLReferences}{0}{0}
+\bibitem[\citeproctext]{ref-repo}
+\CSLLeftMargin{{[}1{]} }%
+\CSLRightInline{Progetto NewsFinder, {«Codice, configurazioni e documentazione del motore di ricerca»}. 2026. Disponibile su: \url{https://github.com/Forest904/wikinews-search-engine/tree/8fe85c8b65b742e71c15a4c92d3e1ebc58f94363}}
+
+\bibitem[\citeproctext]{ref-wiki}
+\CSLLeftMargin{{[}2{]} }%
+\CSLRightInline{Wikinotizie, {«Incidente ferroviario in Giappone»}. 2005. Disponibile su: \url{https://it.wikinews.org/w/index.php?oldid=100252}}
+
+\bibitem[\citeproctext]{ref-bm25}
+\CSLLeftMargin{{[}3{]} }%
+\CSLRightInline{S. Robertson e H. Zaragoza, {«The Probabilistic Relevance Framework: BM25 and Beyond»}, \emph{Foundations and Trends in Information Retrieval}, vol. 4, pp. 1--143, 2009, doi: \href{https://doi.org/10.1561/1500000019}{10.1561/1500000019}.}
+
+\bibitem[\citeproctext]{ref-esperimenti}
+\CSLLeftMargin{{[}4{]} }%
+\CSLRightInline{Progetto NewsFinder, {«Artefatti e risultati della consegna sperimentale»}. 2026. Disponibile su: \url{https://github.com/Forest904/wikinews-search-engine/releases/tag/v1.0.0}}
+
+\bibitem[\citeproctext]{ref-dcg}
+\CSLLeftMargin{{[}5{]} }%
+\CSLRightInline{K. Järvelin e J. Kekäläinen, {«Cumulated Gain-Based Evaluation of IR Techniques»}, \emph{ACM Transactions on Information Systems}, vol. 20, pp. 422--446, 2002, doi: \href{https://doi.org/10.1145/582415.582418}{10.1145/582415.582418}.}
+
+\end{CSLReferences}
+\end{document}

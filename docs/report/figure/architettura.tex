@@ -1,0 +1,19 @@
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=.95cm,
+ component/.style={draw=ink,align=center,minimum height=1.1cm,text width=3.3cm,font=\small\sffamily},
+ service/.style={component,fill=pale}, link/.style={->,draw=ink,thick}]
+\node[component] (client) at (1.6,1.9) {Browser\\ricerca e valutazione};
+\node[service] (api) at (1.6,0) {FastAPI\\pagine e richieste};
+\node[service] (es) at (10,3.5) {Elasticsearch\\indici lessicali};
+\node[service] (model) at (10,2.1) {Ollama\\codifica della query};
+\node[service] (db) at (10,.7) {Qdrant\\indice vettoriale};
+\node[service] (reader) at (10,-.7) {Catalogo SQLite\\lettura strutturata};
+\node[service] (annotations) at (10,-2.1) {Database SQLite\\giudizi e assegnazioni};
+\node[component] (external) at (10,-3.5) {Wikimedia\\servizio esterno};
+\draw[link] (client) -- node[right,font=\footnotesize\sffamily]{richiesta HTTP} (api);
+\draw[draw=ink,thick] (api.east) -- (4.5,0);
+\draw[draw=ink,thick] (4.5,-3.5) -- (4.5,3.5);
+\foreach \dest/\height/\dato in {es/3.5/query e filtri,model/2.1/testo della query,db/.7/vettore e filtri,reader/-.7/ID e revisione,annotations/-2.1/giudizio e citazione,external/-3.5/query live}
+  \draw[link] (4.5,\height) -- node[above,font=\footnotesize\sffamily]{\dato} (\dest.west);
+\end{tikzpicture}
+\end{center}

@@ -1,0 +1,39 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[a4paper,top=27mm,bottom=24mm,left=28mm,right=28mm]{geometry}
+\usepackage{fontspec}
+\IfFontExistsTF{Georgia}{\setmainfont{Georgia}}{\setmainfont{Latin Modern Roman}}
+\IfFontExistsTF{Arial}{\setsansfont{Arial}}{\setsansfont{Latin Modern Sans}}
+\usepackage[italian]{babel}
+\usepackage[protrusion=true,expansion=false]{microtype}
+\usepackage{graphicx,booktabs,longtable,array,calc,xurl,tikz,fancyhdr,hyperref}
+\definecolor{ink}{HTML}{232A2C}
+\definecolor{accent}{HTML}{37474B}
+\definecolor{pale}{HTML}{F1F3F3}
+\hypersetup{colorlinks=true,linkcolor=ink,urlcolor=accent,citecolor=ink,pdftitle={NewsFinder — Architettura e valutazione},pdfsubject={Ricerca nelle notizie italiane}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.68em}
+\setlength{\emergencystretch}{2em}
+\linespread{1.10}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\small\sffamily NewsFinder}\fancyhead[R]{\small\sffamily Wikinotizie in italiano}
+\fancyfoot[R]{\sffamily\thepage}
+\setlength{\headheight}{15pt}
+\setcounter{tocdepth}{1}
+\setcounter{secnumdepth}{2}
+\renewcommand{\thetable}{\Roman{table}}
+\newcommand{\tabletitle}[2]{\refstepcounter{table}\label{tab:#1}\par\noindent{\small\sffamily\color{ink}\textbf{Tabella \thetable.} #2\par}\nopagebreak}
+\newcounter{none}
+\newcommand{\legendnote}[2]{\refstepcounter{figure}\label{fig:#1}\par{\small\sffamily\color{ink}\textbf{Fig. \thefigure.} #2\par}}
+\newcommand{\flowrow}[3]{\begin{tikzpicture}[x=1cm,y=1cm,box/.style={rounded corners=3pt,draw=accent,fill=pale,align=center,text width=3.8cm,minimum height=1.42cm,font=\small\sffamily}]
+\node[box] (a) at (0,0) {#1};\node[box] (b) at (5,0) {#2};\node[box] (c) at (10,0) {#3};
+\draw[->,thick,color=ink] (a)--(b);\draw[->,thick,color=ink] (b)--(c);\end{tikzpicture}\par}
+\newcommand{\branchrow}[2]{\par\noindent\colorbox{pale}{\parbox{0.27\linewidth}{\strut\sffamily\bfseries\color{ink} #1}}\hfill\parbox{0.67\linewidth}{\sffamily\small #2}\par}
+\newcommand{\shot}[1]{\begin{center}\includegraphics[width=.96\linewidth,height=52mm,keepaspectratio]{figure/#1.png}\end{center}}
+\newenvironment{CSLReferences}[2]{\begingroup\small\raggedright\renewcommand{\bibitem}[2][]{\par\hypertarget{##2}{}}\setlength{\parskip}{.55em}}{\endgroup}
+\newcommand{\citeproc}[2]{\hyperlink{#1}{#2}}
+\newcommand{\CSLLeftMargin}[1]{\hangindent=2em\noindent\makebox[2em][l]{#1}}
+\newcommand{\CSLRightInline}[1]{#1}
+
+\begin{document}
+$body$
+\end{document}
