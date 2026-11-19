@@ -236,6 +236,7 @@ def test_phrase_error_and_safe_highlighting(seeded_backend, browser_page):
         }))
         page.get_by_role("button", name="Cerca", exact=True).click()
         expect(page.locator("#results mark")).to_have_text(hostile)
+        expect(page.locator("#status")).to_have_text("1 risultato in 0.000 secondi")
         expect(page.locator("#results img")).to_have_count(0)
         assert page.evaluate("window.injected") is None
 
@@ -253,11 +254,11 @@ def test_search_history_recovery_and_responsive_layout(seeded_backend, browser_p
         page.get_by_role("button", name="Cerca", exact=True).click()
         expect(page.locator("#results a")).to_have_count(1)
         expect(page.locator("#results a").first).to_be_in_viewport()
-        expect(page.locator("#status")).to_have_text("1 risultato")
+        expect(page.locator("#status")).to_have_text(re.compile(r"^1 risultato in \d+\.\d{3} secondi$"))
         page.screenshot(path=str(output / "search-results.png"))
         page.get_by_label("Cerca nelle notizie").fill("zzzznonpresente")
         page.get_by_role("button", name="Cerca", exact=True).click()
-        expect(page.locator("#status")).to_contain_text("Nessun risultato")
+        expect(page.locator("#status")).to_have_text(re.compile(r"^Nessun risultato in \d+\.\d{3} secondi$"))
         page.go_back()
         expect(page.get_by_label("Cerca nelle notizie")).to_have_value("terremoto")
         expect(page.locator("#results a")).to_have_count(1)
@@ -301,6 +302,7 @@ def test_live_results_and_navigation(browser_page, width):
         content_type="image/svg+xml", body='<svg xmlns="http://www.w3.org/2000/svg"/>'))
     page.route("**/api/search/live?*", lambda route: route.fulfill(json={
         "total": 12, "hits": [hit, {**hit, "document_id": "43", "local_url": None, "image": None}],
+        "elapsed_ms": 1230 if "cursor=" in route.request.url else 7,
         "next_cursor": None if "cursor=" in route.request.url else "next"}))
     backend = RetrievalEngine()
     try:
@@ -313,11 +315,13 @@ def test_live_results_and_navigation(browser_page, width):
             page.locator("#q").fill("test")
             page.locator("#q").press("Enter")
             expect(page.locator("#results li")).to_have_count(2)
+            expect(page.locator("#status")).to_have_text("12 risultati in 0.007 secondi")
             expect(page.locator(".live-figure")).to_be_visible()
             expect(page.locator(".result-copy > a").first).to_have_attribute("href", re.compile("/articles/42.*mode=live"))
             expect(page.locator(".result-copy > a").last).to_have_attribute("href", hit["url"])
             page.locator("#next").click()
             expect(page.locator("#page-status")).to_have_text("Pagina 2")
+            expect(page.locator("#status")).to_have_text("12 risultati in 1.230 secondi")
             page.go_back()
             expect(page.locator("#page-status")).to_have_text("Pagina 1")
             page.locator("#filters").click()

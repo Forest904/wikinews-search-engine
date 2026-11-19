@@ -186,9 +186,10 @@ async function search(push = true, applied = null, previousCursors = []) {
     document.querySelector("#standard-search").hidden = profile === "E0";
     if (live) data.page = page;
     const hasHits = data.hits.length > 0;
-    status.textContent = hasHits
+    const countLabel = hasHits
       ? `${data.total.toLocaleString("it-IT")} ${data.total === 1 ? "risultato" : "risultati"}`
       : "Nessun risultato";
+    status.textContent = `${countLabel} in ${(data.elapsed_ms / 1000).toFixed(3)} secondi`;
     document.querySelector("#foot-status").textContent =
       `Pagina ${data.page} · ${data.total} notizie`;
     document.querySelector("#no-results").hidden = hasHits;

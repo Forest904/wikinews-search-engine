@@ -1,6 +1,6 @@
 """Public API schemas shared with Python callers."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from wikinews_ir.models import Article, SearchHit, SearchRequest, SearchResponse
 
@@ -29,5 +29,6 @@ class LiveHit(BaseModel):
 
 class LiveSearchResponse(BaseModel):
     total: int
+    elapsed_ms: int = Field(ge=0)
     hits: list[LiveHit]
     next_cursor: str | None

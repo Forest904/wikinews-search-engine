@@ -157,7 +157,8 @@ async def live_search(request: Request, q: str = Query(min_length=1, max_length=
         continuation(cursor)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
-    deadline = time.monotonic() + 5
+    started = time.monotonic()
+    deadline = started + 5
     try:
         page = await request.app.state.wikinews.page(q, cursor, deadline - 0.6)
     except (TimeoutError, httpx.HTTPError, ValueError, KeyError):
@@ -168,7 +169,8 @@ async def live_search(request: Request, q: str = Query(min_length=1, max_length=
         archived = await asyncio.wait_for(asyncio.to_thread(backend.archived_ids, ids, remaining), remaining)
     except TimeoutError:
         archived = set()
-    return {**page, "hits": [{**hit, "local_url": "/articles/" + hit["document_id"]
+    return {**page, "elapsed_ms": int((time.monotonic() - started) * 1000),
+            "hits": [{**hit, "local_url": "/articles/" + hit["document_id"]
                               if hit["document_id"] in archived else None} for hit in page["hits"]]}
 
 

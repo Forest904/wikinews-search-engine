@@ -67,7 +67,10 @@ def test_live_cache_pagination_links_and_optional_images():
         one, two = page["hits"]
         assert one["snippet"] == "x" and one["local_url"] == "/articles/7"
         assert two["local_url"] is None and two["image"]["width"] == 320
-        assert client.get(endpoint, params={"q": "prova"}).json() == page
+        cached = client.get(endpoint, params={"q": "prova"}).json()
+        assert cached.pop("elapsed_ms") >= 0
+        assert page.pop("elapsed_ms") >= 0
+        assert cached == page
         assert len(calls) == 3
         assert (
             client.get(endpoint, params={"q": "prova", "cursor": page["next_cursor"]}).json()[
