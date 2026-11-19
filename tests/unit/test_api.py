@@ -155,6 +155,44 @@ def test_article_routes(client, path, failure, expected):
         app.dependency_overrides.clear()
 
 
+def test_search_article_archive_navigation(client, monkeypatch):
+    from bs4 import BeautifulSoup
+    from wikinews_ir.archive import build_catalog
+    from wikinews_ir.models import Article
+
+    backend = Mock()
+    backend.get_article.return_value = Article(
+        document_id="demo-01", title="Finale", body="Testo", url="https://it.wikinews.org/wiki/Finale"
+    )
+    backend.archive.return_value = build_catalog([
+        dict(document_id="demo-01", title="Finale", categories=["Serie A 2012-2013 (calcio)"])
+    ])
+    monkeypatch.setitem(app.dependency_overrides, engine, lambda: backend)
+    query = "q=calcio&profile=E0&page=2&page_size=10&year_from=2012"
+    folder = "sport/calcio/serie-a/2012-2013"
+
+    def open_article(params):
+        response = client.get("/articles/demo-01?" + params)
+        assert response.status_code == 200
+        return BeautifulSoup(response.text, "html.parser")
+
+    search = open_article(query)
+    archive = open_article("folder=" + folder + "&page=2")
+    assert search.select_one(".breadcrumbs").get_text(strip=True) == archive.select_one(".breadcrumbs").get_text(strip=True)
+    assert [a["href"] for a in search.select(".breadcrumbs a")] == [
+        "/", "/archivio", "/archivio/sport", "/archivio/sport/calcio",
+        "/archivio/sport/calcio/serie-a", "/archivio/" + folder,
+    ]
+    assert search.select_one('[aria-label="Livello superiore"]')["href"] == "/archivio/" + folder
+    assert archive.select_one('[aria-label="Livello superiore"]')["href"] == "/archivio/" + folder + "?page=2"
+    assert search.select_one(".back-link")["href"] == "/?" + query
+
+    backend.archive.return_value = build_catalog([])
+    fallback = open_article(query)
+    assert fallback.select_one(".breadcrumbs a:last-of-type").get_text(strip=True) == "Risultati"
+    assert fallback.select_one(".breadcrumbs a:last-of-type")["href"] == "/?" + query
+
+
 def test_static_assets_change_url_with_content(client, monkeypatch):
     from pathlib import Path
 

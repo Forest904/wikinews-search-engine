@@ -242,10 +242,12 @@ def article_page(
             today = date.fromisoformat(current[0])
             peers.sort(key=lambda row: abs((date.fromisoformat(row[0]) - today).days) if row[0] else float("inf"))
         context["peers"] = peers[:3]
-        if origin == folder.path and not (q or years or saved_origin):
-            context.update(crumbs=ancestors(catalog, origin) + [folder],
-                           back_url=folder.url + "?" + urlencode({"page": page}),
-                           back_label="Torna a " + folder.label)
+        if not saved_origin and (context["search_origin"] or origin == folder.path):
+            parent_url = folder.url
+            if not context["search_origin"]:
+                parent_url += "?" + urlencode({"page": page})
+                context.update(back_url=parent_url, back_label="Torna a " + folder.label)
+            context.update(crumbs=ancestors(catalog, folder.path) + [folder], parent_url=parent_url)
     context.update({
         "article": item,
         "source_url": item.url if urlsplit(item.url).scheme in {"http", "https"} else None,

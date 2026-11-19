@@ -28,7 +28,7 @@
 </use>
 </svg>
 </button>
-<a href="{{ back_url|default('/') }}" aria-label="Livello superiore">
+<a href="{{ parent_url|default(back_url|default('/')) }}" aria-label="Livello superiore">
 <svg class="icon" aria-hidden="true">
 <use href="/static/explorer-icons.svg#up">
 </use>
