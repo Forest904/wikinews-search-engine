@@ -12,7 +12,7 @@ Il default E0 non costituisce una selezione sperimentale del modello migliore.
 Le definizioni in `configs/` sono replicate nelle risorse del pacchetto per
 funzionare anche da wheel/container; un test ne impone l'identità. Una modifica
 agli analyzer richiede una nuova versione di indice, ai profili una nuova versione
-di profilo. I profili E2 e successivi non sono attivati.
+di profilo. In M3 erano attivi E0 ed E1. M4 ha aggiunto E2–E4 secondo [ADR 0005](0005-advanced-retrieval.md). M6-B ha selezionato E1 sul development. Il default della UI rimane E0.
 
 La costruzione valida tutti gli artefatti M2 e ogni record prima di mutare gli
 indici. Bulk streaming, ID stabili, retry limitati e verifica dell'intero `_source`

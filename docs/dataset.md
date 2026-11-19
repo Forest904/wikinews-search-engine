@@ -186,3 +186,7 @@ Suite aggiornata: **93 test superati, 6 integration/E2E saltati**, Ruff superato
 I 21 test di acquisizione coprono HTTP simulato, retry, redirect HTTPS, checksum,
 dimensioni, interruzioni, preservazione dei file e riuso offline. Nessun download
 reale è richiesto in CI; la CI remota resta da verificare dopo il push.
+
+## Attribuzione nella consegna
+
+Per citare una notizia conservare il collegamento alla pagina originale, la revisione e la licenza indicata nel record. Wikinotizie indica CC BY per i testi dal 25 settembre 2005 e pubblico dominio per quelli precedenti salvo eccezioni. La pagina corrente rimanda a CC BY 4.0. Tutti gli 11.032 record del dump assegnato riportano invece CC-BY-SA-4.0 nel campo license. La pipeline conserva questa dichiarazione originale. Per redistribuire testi o immagini verificare la licenza e i crediti della singola revisione. La licenza software del repository riguarda il codice. [Copyright di Wikinotizie](https://it.wikinews.org/wiki/Wikinotizie:Copyright)

@@ -10,3 +10,6 @@
 - [0005 — Retrieval M4](0005-advanced-retrieval.md): E2/E3/E4, virgolette, highlight sicuro e versioni delle run.
 
 - [0006 — Annotazione M5-B](0006-collaborative-annotation.md): SQLite, accessi, assegnazioni, revisione, finalizzazione ed export.
+
+- [0007 — Calibrazione e congelamento](0007-pilot-calibration.md)
+- [0008 — Deployment operativo](0008-operational-deployment.md)

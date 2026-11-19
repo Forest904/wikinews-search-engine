@@ -37,7 +37,7 @@ Regole di esecuzione:
 | M6-A — Implementazione valutazione | Metriche, confronti e generazione report | M5-A | Completata su fixture sintetiche il 18 novembre 2026 |
 | M6-B — Esperimenti reali | Tuning development, confronto finale, error analysis | M4, M6-A; gold development per tuning, M5-D per finale | Completata il 19 novembre 2026. E1 selezionato su development, test gold valutato una volta |
 | M7-A — Pubblicazione operativa | Sito condivisibile con i validatori | M5-B | Sito pubblicato; ricerca e annotazione pronte via HTTPS. Collaudo operativo da confermare |
-| M7-B — Consegna accademica | GitHub, README, slide, demo live | M6-B | Installazione pulita e presentazione provate |
+| M7-B — Consegna accademica | GitHub, README, slide, demo live | M6-B | Release tecnica v1.0.0 e demo locale collaudata. Presentazione rinviata, rete d’aula da verificare |
 
 **Parallelismo consentito:** dopo M1, la preparazione dei topic e delle linee guida può avanzare insieme al preprocessing. Il pooling definitivo, invece, dipende dalle run candidate disponibili e dall'identità stabile dei documenti.
 
@@ -337,17 +337,17 @@ Questa fase dipende da M5-B, non dagli esperimenti finali. Il sito può essere c
 
 ### M7-B — Consegna accademica
 
-Documentazione, struttura delle slide e preparazione della demo possono avanzare durante M5-D. Risultati, conclusioni e release finale richiedono M6-B completata.
+M6-B è completata. La consegna del 19 novembre riguarda repository, risultati congelati e demo. Presentazione, PDF e prova orale sono rinviati. [Collaudo e verifiche residue](consegna/collaudo.md)
 
 #### Release repository
 
-- [ ] Aggiornare `README.md`: panoramica, requisiti hardware/software, setup, download dump, `.env`, `make up`, ingest, run, test, benchmark, troubleshooting.
-- [ ] Documentare architettura reale e decisioni finali; rimuovere voci obsolete dal blueprint.
-- [ ] Aggiornare `docs/dataset.md`, `docs/evaluation.md` e ADR effettivamente necessari.
-- [ ] Inserire link alla fonte e indicazioni corrette su copyright/licenza dei contenuti; non committare l'intero dump.
-- [ ] Verificare che non siano presenti segreti, file temporanei, indici Elasticsearch o gigabyte di raw data.
-- [ ] Pubblicare release/tag e commit di riferimento dei risultati sperimentali.
-- [ ] Provare installazione da clone pulito con i soli prerequisiti dichiarati.
+- [x] Aggiornare `README.md`: panoramica, requisiti hardware/software, setup, download dump, `.env`, `make up`, ingest, run, test, benchmark, troubleshooting.
+- [x] Documentare architettura reale e decisioni finali; rimuovere voci obsolete dal blueprint.
+- [x] Aggiornare `docs/dataset.md`, `docs/evaluation.md` e ADR effettivamente necessari.
+- [x] Inserire link alla fonte e indicazioni corrette su copyright/licenza dei contenuti; non committare l'intero dump.
+- [x] Verificare che non siano presenti segreti, file temporanei, indici Elasticsearch o gigabyte di raw data.
+- [x] Pubblicare release/tag e commit di riferimento dei risultati sperimentali.
+- [x] Provare installazione da clone pulito con i soli prerequisiti dichiarati.
 
 #### Presentazione di circa 20 minuti
 
@@ -365,11 +365,11 @@ Totale ~20 minuti; **nessun codice nelle slide**, come richiesto. La demo live �
 
 #### Demo live e contingency
 
-- [ ] Avviare Elasticsearch con indice già persistito, backend e UI prima della prova.
-- [ ] Preparare 3–5 query rappresentative (semplice, avanzata, typo/phrase, no-results), senza selezionarle per simulare metriche.
-- [ ] Verificare `/api/health`, conteggio indice, funzionamento dei link e filtro data se presente.
-- [ ] Mostrare almeno un confronto controllato di profilo, senza dipendere da chiamate LLM in tempo reale.
-- [ ] Preparare istruzioni di ripristino rapide per container/indice/app.
+- [x] Avviare Elasticsearch con indice già persistito, backend e UI prima della prova.
+- [x] Preparare 3–5 query rappresentative (semplice, avanzata, typo/phrase, no-results), senza selezionarle per simulare metriche.
+- [x] Verificare `/api/health`, conteggio indice, funzionamento dei link e filtro data se presente.
+- [x] Mostrare almeno un confronto controllato di profilo, senza dipendere da chiamate LLM in tempo reale.
+- [x] Preparare istruzioni di ripristino rapide per container/indice/app.
 - [ ] Fare prova completa su macchina e rete della presentazione, preferendo demo che funzioni offline dal sito Wikinotizie e dai servizi LLM.
 
 ### Exit criteria / Definition of Done
@@ -405,7 +405,7 @@ M0–M4, M5-A e M5-B sono completate localmente. Il percorso di riferimento è:
 
 **Lavoro parallelo completato.** La baseline HTTP M4-P è disponibile per E0–E4 e può essere ripetuta durante il pilot e la raccolta gold/silver.
 
-**M5-D completata il 19 novembre 2026.** M6-B completata il 19 novembre 2026. Prossimo passo M7-B. [Consolidamento gold e silver](m5d-validation.md).
+**M5-D completata il 19 novembre 2026.** M6-B completata il 19 novembre 2026. Consegna tecnica M7-B e collaudo locale documentati. [Consolidamento gold e silver](m5d-validation.md).
 
 ## 13. Tracciabilità tra requisito e milestone
 

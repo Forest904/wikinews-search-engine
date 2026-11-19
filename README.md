@@ -3,21 +3,13 @@
 Monorepo sperimentale per un motore di ricerca **lessicale** delle notizie italiane
 Wikinotizie, basato su Elasticsearch, con valutazione IR riproducibile.
 
-> **Stato attuale:** **M5-B completata e verificata localmente su fixture**: 11.032 articoli,
-> profili E0–E4, highlight, paginazione, dettaglio ed export TREC riproducibile.
-> Vedi [report M4](docs/m4-validation.md) e [roadmap](docs/roadmap.md).
-> Infrastruttura benchmark e pacchetti silver per chat Codex disponibili:
-> [guida](docs/evaluation.md), [verifica M5-A](docs/m5a-validation.md).
-> UI di annotazione e coordinamento, persistenza e flusso multiutente disponibili:
-> [guida annotazione](docs/annotation.md), [verifica M5-B](docs/m5b-validation.md).
->
-> **M5-C: preparazione locale pronta.** Pilot reale da 24 coppie, timer e tripla
-> calibrazione, 40 topic in bozza e strumenti di budget/congelamento. Le valutazioni
-> umane e il congelamento effettivo restano pendenti. Prima prova silver indipendente
-> completata: **24 giudizi**, modello dichiarato GPT-6.0-Astra, validati e importati:
-> [guida pilot](docs/m5c-pilot.md), [verifica M5-C](docs/m5c-validation.md).
-> Pubblicazione, completamento pilot, raccolta di produzione e metriche restano M7-A, M5-C/D e M6;
-> CI remota da verificare dopo il push.
+## Consegna accademica
+
+Il motore cerca in **11.032 articoli** dello snapshot del 20 marzo 2025. Sul test gold di 16 topic il profilo E1, selezionato sul development, raggiunge nDCG@10 **0,6558**. Il campione e la copertura dei giudizi limitano la portata del confronto.
+
+- [Demo e recupero](docs/consegna/demo.md) · [Collaudo](docs/consegna/collaudo.md)
+- [Run, qrels e risultati congelati (ZIP)](https://github.com/Forest904/wikinews-search-engine/releases/download/v1.0.0/risultati-m6b.zip)
+- [Risultati e limiti](docs/m6b-validation.md) · [Manifest dei risultati](benchmarks/v1/manifests/m6b-production-1.1.json) · [Commit sperimentale](https://github.com/Forest904/wikinews-search-engine/commit/1c6e51d6cf41a515a9b2986d0f7b31768dfd0bd2)
 
 ## Documentazione di progetto
 
@@ -27,23 +19,27 @@ Wikinotizie, basato su Elasticsearch, con valutazione IR riproducibile.
 
 ## Prerequisiti
 
+- Git per clonare il repository
 - Python **3.12**
 - [`uv`](https://docs.astral.sh/uv/) **0.12.9** (o compatibile con il lockfile)
 - Docker Engine / Docker Desktop con Docker Compose v2
-- Idealmente almeno 4 GB disponibili per Docker in locale
+- Almeno 4 GB consigliati per Docker in locale. Nel collaudo, checkout, ambiente Python e corpus hanno occupato circa 534 MB complessivi, i due indici circa 128 MB nel volume. Durante la preparazione è stato osservato un database temporaneo di 537 MB. Prevedere anche spazio per immagine Docker e cache degli strumenti.
 
-## Avvio locale su Windows
+## Avvio su Windows dopo il primo setup
 
-Doppio clic su **Avvia-locale.cmd**, oppure task VS Code **Locale: avvia/riavvia**.
+Per il primo avvio seguire la procedura da clone qui sotto. Per gli avvii successivi fare doppio clic su **Avvia-locale.cmd**, oppure task VS Code **Locale: avvia/riavvia**.
 Il sito si apre su `http://127.0.0.1:8000/`; una precedente istanza di questa
 checkout viene riavviata. [Comandi, prerequisiti e primo accesso](docs/local-development.md).
 
 ## Avvio rapido in ambiente locale
 
 ```bash
-cp .env.example .env
+git clone --branch v1.0.0 https://github.com/Forest904/wikinews-search-engine.git
+cd wikinews-search-engine
+cp .env.example .env  # PowerShell: Copy-Item .env.example .env
 # Modifica ELASTIC_PASSWORD in .env: usa una password locale non banale.
 uv sync --locked
+# corpus prepare scarica il dump. Se indisponibile, copiare lo snapshot assegnato in data/raw/.
 
 docker compose up -d --wait elasticsearch
 uv run --locked wikinews-ir corpus prepare
@@ -126,7 +122,7 @@ dimensione e checksum attesi prima di avviare la build. Un archivio locale valid
 viene riusato senza rete. Un corpus esistente viene riusato solo dopo verifica
 di manifest, versioni, dipendenze e hash degli artefatti. File locali diversi dal
 riferimento non vengono sovrascritti: per output incompatibili scegliere una
-nuova directory. La disponibilità del download dipende dal server Wikimedia.
+nuova directory. Il 19 novembre 2026 la verifica HTTP HEAD sull’URL storico ha restituito 403. In caso di errore usare la copia originale fornita per il corso o richiederla al coordinatore e verificare il checksum indicato nella guida al dataset.
 
 I comandi offline restano disponibili per input espliciti; le fixture dei test
 sono sintetiche:
@@ -221,9 +217,8 @@ Limiti di cleaning e misure: [report M3](docs/m3-validation.md) e
 
 ## Licenze
 
-La licenza del **codice** non è ancora stata scelta. Le condizioni di riutilizzo
-**dei contenuti Wikimedia** sono distinte e dovranno essere rispettate nell'eventuale
-redistribuzione di dati. Il repository non include il dump né articoli del corpus.
+Il codice è distribuito con [licenza MIT](LICENSE). Le condizioni di riutilizzo
+**dei contenuti Wikimedia** sono documentate nella [guida al dataset](docs/dataset.md). Il repository non include il dump né articoli del corpus.
 
 ## Setup Windows e comandi operativi
 

@@ -182,3 +182,19 @@ I test includono una catena completa con corpus sintetico, run e HTTP simulati,
 pacchetto Codex, esecuzione del validatore in Python isolato, import e qrels.
 Le directory `experiments/runs`, `experiments/reports` e `output` restano ignorate;
 topic adattati e contratti sono versionati. Nessuna dipendenza dal percorso Downloads.
+
+## Risultati della consegna
+
+Il commit sperimentale è `1c6e51d`. Per ricostruire la tabella principale leggere i due file `canonical/summary.tsv` sotto `experiments/reports/m6b-production-1.1/{development,final}`, filtrare source=gold e arrotondare mean a quattro decimali. I denominatori sono nella colonna topics. La release distribuisce i file del manifest M6-B insieme alle sei run canoniche e ai qrels gold/silver in un [archivio ZIP](https://github.com/Forest904/wikinews-search-engine/releases/download/v1.0.0/risultati-m6b.zip) da estrarre nella radice del clone. Verificarli con il comando del report prima di usarli. Gli input privati di raccolta rimangono presso il coordinatore. [Rapporto sperimentale](m6b-validation.md)
+
+Da PowerShell, nella radice di un clone della release, salvare lo ZIP scaricato nella directory superiore ed eseguire:
+
+```powershell
+$zip = "../risultati-m6b.zip"
+if ((Get-FileHash $zip).Hash -ne "c8b16318b31d145883b275a54a2d6e93fbe979f6c39fa9643fd829846d2fa967") { throw "ZIP diverso dalla release" }
+Expand-Archive -LiteralPath $zip -DestinationPath . -Force
+Import-Csv experiments/reports/m6b-production-1.1/final/canonical/summary.tsv -Delimiter ([char]9) |
+    Where-Object source -eq gold | Format-Table run,metric,mean,topics
+```
+
+L’estrazione ripristina anche i byte originali del manifest M5-D per la verifica SHA-256 su sistemi con conversione automatica dei fine riga. Per confrontare entrambe le partizioni, ripetere la lettura della tabella sostituendo `final` con `development`.
