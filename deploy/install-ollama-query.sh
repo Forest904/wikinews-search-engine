@@ -5,6 +5,11 @@ key=$1
 [[ $key =~ ^[A-Za-z0-9+/=]+$ ]]
 [[ $(sshd -T | awk '$1=="gatewayports" {print $2}') == no ]]
 test -x /usr/lib/systemd/systemd-socket-proxyd
+# Release a stale reverse listener when the PC sleeps or changes networks.
+keepalive=/etc/ssh/sshd_config.d/97-newsfinder-query.conf
+printf '%s\n' 'Match User newsfinder-query' '    ClientAliveInterval 15' '    ClientAliveCountMax 3' 'Match all' > "$keepalive"
+sshd -t
+systemctl reload ssh
 account=newsfinder-query
 home=/var/lib/newsfinder-query
 if ! id "$account" >/dev/null 2>&1; then

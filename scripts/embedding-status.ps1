@@ -17,7 +17,10 @@ do {
             $done += $counts[$block.Name]
         }
     }
-    $phase = if (Test-Path (Join-Path $root 'output/semantic-full/completed.json')) { 'Trasferimento verificato' }
+    $completionFile = Join-Path $root 'output/semantic-full/completed.json'
+    $completion = if (Test-Path $completionFile) { Get-Content -Raw $completionFile | ConvertFrom-Json }
+    $phase = if ($completion.production_verified) { 'Produzione verificata' }
+             elseif ($completion.uploaded) { 'Trasferimento verificato' }
              elseif (Test-Path (Join-Path $package 'manifest.json')) { 'Pacchetto generato' }
              elseif (!(Get-CimInstance Win32_Process -Filter "Name='python.exe'" | Where-Object { $_.CommandLine -like "*semantic generate*semantic-qwen3-06b-full*" })) {
                  $reason = Get-Content -LiteralPath (Join-Path $root 'output/semantic-full/qwen3-error.log') -ErrorAction SilentlyContinue | Select-String '^Ricerca semantica:' | Select-Object -Last 1
@@ -25,5 +28,5 @@ do {
              }
              else { 'Generazione (ultimo batch salvato)' }
     Write-Output ('{0:HH:mm:ss}  {1}/{2} articoli ({3:P1})  {4}' -f (Get-Date), $done, $total, ($done/$total), $phase)
-    if ($Watch -and $phase -ne 'Trasferimento verificato') { Start-Sleep 30 }
-} while ($Watch -and $phase -ne 'Trasferimento verificato')
+    if ($Watch -and $phase -ne 'Produzione verificata') { Start-Sleep 30 }
+} while ($Watch -and $phase -ne 'Produzione verificata')
